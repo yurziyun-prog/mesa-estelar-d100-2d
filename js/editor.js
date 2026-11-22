@@ -36,15 +36,7 @@ function selectTool(tool) {
   document.querySelectorAll('#architectTools [data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === tool));
 }
 
-function openCategoryMenu(cat) {
-  if (cat === 'furniture') {
-    document.getElementById('furnitureOptions').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    selectProp('table');
-  } else {
-    document.getElementById('treeOptions').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    selectProp('tree');
-  }
-}
+function openCategoryMenu(cat) { openArchitectLibrary(cat === 'trees' ? 'nature' : cat); }
 
 function selectMaterial(mat) {
   state.material = mat;
@@ -284,6 +276,8 @@ function applyArchitectAction(wx, wy, isDrag = false) {
       upper.stairs.push({ x: wx, y: wy, dir: 'down', label: `→ ${state.currentFloor + 1}º`, style: state.buildStyle });
       upper.openings.push({ x: wx - 36, y: wy - 52, w: 72, h: 104 });
     }
+  } else if (state.tool === 'character') {
+    if (!isDrag) placeArchitectCharacter(wx,wy);
   } else if (state.tool === 'prop') {
     if (!isDrag) floor.props.push({ x: wx, y: wy, type: state.propType, rot: state.rotation, style: state.buildStyle });
   } else if (state.tool === 'chest') {
