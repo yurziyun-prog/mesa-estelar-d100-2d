@@ -16,7 +16,15 @@ const ARCHITECT_LIBRARY = {
   ['kenney_ladder','🪜','RPG Base · Escada de mão decorativa','downloadProp'],
   ['kenney_door','🚪','RPG Base · Porta decorativa','downloadProp'],
   ['kenney_urn','🏺','RPG Base · Vaso de pedra','downloadProp'],
-  ['kenney_fence','🪵','RPG Base · Cerca','downloadProp']
+  ['kenney_fence','🪵','RPG Base · Cerca','downloadProp'],
+  ['kenney_rl_tree','🌳','Roguelike · Árvore','downloadProp'],
+  ['kenney_rl_pine','🌲','Roguelike · Pinheiro','downloadProp'],
+  ['kenney_rl_bush','🌿','Roguelike · Arbusto','downloadProp'],
+  ['kenney_rl_torch','🔥','Roguelike · Tocha','downloadProp'],
+  ['kenney_rl_fire','🔥','Roguelike · Fogueira','downloadProp'],
+  ['kenney_rl_stone','🪨','Roguelike · Pedra','downloadProp'],
+  ['kenney_rl_flowers','🌼','Roguelike · Flores','downloadProp'],
+  ['kenney_rl_stairs','🪜','Roguelike · Escadaria decorativa','downloadProp']
  ],
  terrain:[['grass','🌿','Grama','mat'],['sand','🏜️','Areia','mat'],['dirt','🟤','Terra','mat'],['snow','❄️','Neve','mat'],['water','🌊','Água','mat'],['bridge','🌉','Ponte','mat'],['wood','🪵','Madeira','mat'],['checker','🔲','Ladrilho','mat'],['marble','🏛️','Mármore','mat'],['carpet','🟥','Tapete','mat'],['stone','🪨','Pedra irregular','mat'],['cobble','🧱','Calçamento','mat'],['metal','🔩','Piso metálico','mat'],['mosaic','🌀','Mosaico','mat']],
  furniture:[['table','🪵','Mesa','prop'],['chair','🪑','Cadeira','prop'],['bed','🛏️','Cama de solteiro','prop'],['bedDouble','🛏️','Cama de casal','prop'],['sleepingBag','⛺','Saco de dormir','prop'],['capsuleBed','🛸','Cápsula de sono','prop'],['bookshelf','📚','Estante','prop'],['hearth','🔥','Lareira','prop'],['barrel','🛢️','Barril','prop'],['bench','🪑','Banco','prop'],['cabinet','🚪','Armário','prop'],['desk','🗄️','Escrivaninha','prop'],['sofa','🛋️','Sofá bege','prop'],['sofaBlue','🛋️','Sofá azul','prop'],['sofaRed','🛋️','Sofá vermelho','prop'],['sofaGreen','🛋️','Sofá verde','prop'],['lowTable','🫖','Mesa baixa','prop'],['console','🖥️','Console','prop'],['lamp','💡','Luminária','prop']],
