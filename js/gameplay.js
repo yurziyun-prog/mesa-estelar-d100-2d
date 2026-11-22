@@ -27,7 +27,19 @@ function refreshGmFocus(){
  const stats=document.getElementById('gmSessionStats');if(stats){const actors=gmActors(),pcs=actors.filter(e=>e.type==='pc');stats.textContent='Personagens: '+pcs.length+' · NPCs/criaturas: '+(actors.length-pcs.length)+' · Total no banco: '+state.entities.length+' · Cenário: '+getScene().name;}
 }
 function setMode(mode) {
-  state.mode = mode;
+  const priorMode=state.mode;
+  if(state.scenes && state.activeSceneId){
+    migrateModeScenes();
+    if(priorMode==='architect'||priorMode==='gm')state.modeScenes[priorMode]=state.activeSceneId;
+  }
+  state.mode=mode;
+  if(mode==='architect'||mode==='gm'){
+    state.activeSceneId=state.modeScenes[mode]||state.activeSceneId;
+    state.currentFloor=0;updateFloorLabel();
+  }else if(mode==='player'){
+    const pc=state.entities.find(e=>e.id===state.selectedEntityId&&e.type==='pc')||state.entities.find(e=>e.type==='pc');
+    if(pc){state.selectedEntityId=pc.id;state.activeSceneId=pc.sceneId;state.currentFloor=pc.floor;updateFloorLabel();}
+  }
   gmControlledId=null;gmPreviewId=null;
   if(mode==='player' && getSelectedEntity()?.type!=='pc') {
     const pc=state.entities.find(e=>e.type==='pc');
