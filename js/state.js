@@ -129,6 +129,7 @@ function createInitialState() {
     tool: 'floor',
     material: 'grass',
     propType: 'tree',
+    buildStyle: 'normal',
     rotation: 0,
     selectedEntityId: 'pc_1',
     selectedWallIdx: null,
@@ -180,6 +181,7 @@ function init() {
   const saved = localStorage.getItem('rpg_vtt_aligned_v8');
   state = saved ? JSON.parse(saved) : createInitialState();
   migrateFixedTerrain();
+  migrateBuildStyles();
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
   setupInputs();
@@ -196,7 +198,7 @@ function refreshSceneSelect() {
   ).join('');
   document.getElementById('activeSceneTag').textContent = getScene().name;
   const styleSelect = document.getElementById('sceneStyleSelect');
-  if(styleSelect) styleSelect.value = getScene().style === 'futurist' ? 'futurist' : 'normal';
+  if(styleSelect) styleSelect.value = state.buildStyle || 'normal';
   renderGmPullList();
   if (typeof refreshGmSpawnList === 'function') refreshGmSpawnList();
 }
@@ -315,6 +317,7 @@ function importJSON(e) {
       beginEdit();
       state = JSON.parse(ev.target.result);
       migrateFixedTerrain();
+      migrateBuildStyles();
       finishEdit();
       state.currentFloor = 0;
       state.selectedWallIdx = null;
@@ -346,6 +349,7 @@ function finishEdit(){
 function restoreState(serialized){
   state = JSON.parse(serialized);
   migrateFixedTerrain();
+  migrateBuildStyles();
   dragStart = null; previewRect = null; draggedObj = null;
   selectedMapObject = null; draggingEntity = null; isDragging = false;
   updateFloorLabel(); setMode(state.mode); refreshSceneSelect(); updateSelectedWallBar(); updateUI();
@@ -381,14 +385,22 @@ function migrateFixedTerrain() {
   }
 }
 
-function setSceneStyle(style) {
-  if(state.mode !== 'architect' || !['normal','futurist'].includes(style)) return;
-  const scene = getScene();
-  if(scene.style === style) return;
-  beginEdit();
-  scene.style = style;
-  finishEdit();
-  const select = document.getElementById('sceneStyleSelect');
-  if(select) select.value = style;
-  logEvent('🎨 Estilo do cenário: ' + (style === 'futurist' ? 'Retro-futurista' : 'Normal') + '.');
+function setBuildStyle(style) {
+  if(state.mode!=='architect' || !['normal','futurist','arabia'].includes(style))return;
+  state.buildStyle=style;
+  document.getElementById('sceneStyleSelect').value=style;
+  logEvent('🧱 Coleção de construção: '+(style==='arabia'?'Arábia':style==='futurist'?'Retro-futurista':'Normal'));
+}
+function migrateBuildStyles(){
+  if(!state.buildStyle)state.buildStyle='normal';
+  for(const scene of Object.values(state.scenes||{})){
+    const oldStyle=scene.style==='futurist'?'futurist':'normal';
+    for(const floor of scene.floors||[]){
+      for(const kind of ['walls','doors','windows','stairs','props','chests']){
+        for(const item of floor[kind]||[]) if(!item.style)item.style=oldStyle;
+      }
+    }
+    // O estilo do cenário antigo serve apenas para migrar os objetos.
+    delete scene.style;
+  }
 }
