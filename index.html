@@ -108,7 +108,8 @@
           <button class="tool-btn" onclick="openArchitectLibrary('terrain')">🌱 Terrenos e pisos</button>
           <button class="tool-btn" onclick="openArchitectLibrary('furniture')">🪑 Móveis</button>
           <button class="tool-btn" onclick="openArchitectLibrary('nature')">🌴 Árvores e natureza</button>
-          <button class="tool-btn" onclick="openArchitectLibrary('architecture')">🏛️ Elementos de construção</button>
+          <button class="tool-btn" onclick="openArchitectLibrary('walls')">🧱 Paredes</button>
+          <button class="tool-btn" onclick="openArchitectLibrary('architecture')">🏛️ Outros elementos</button>
           <button class="tool-btn" onclick="openArchitectLibrary('characters')">🎭 Personagens e NPCs</button>
           <button class="tool-btn" onclick="openArchitectLibrary('props')">🏺 Decoração e objetos</button>
           <button class="tool-btn" onclick="openArchitectLibrary('downloads')">📦 Packs baixados</button>
@@ -238,6 +239,26 @@
             </select>
           </label>
           <p class="library-hint">Clique e arraste para pintar. Ctrl+Z desfaz a pincelada inteira.</p>
+        </div>
+        <div id="wallSettings" class="hidden">
+          <label class="library-hint" for="wallThickness">Espessura: <output id="wallThicknessLabel">16</output> unidades</label>
+          <input id="wallThickness" type="range" min="8" max="40" step="2" value="16" oninput="setWallThickness(Number(this.value))" style="width:100%"/>
+          <p class="library-hint">Selecione uma parede com Arrastar para editar a espessura depois.</p>
+        </div>
+        <div id="objectColorSettings" class="hidden">
+          <div class="section-title">Cor do objeto</div>
+          <div class="row" style="align-items:center;gap:8px">
+            <input type="color" id="objectColorPicker" value="#a35d64" aria-label="Cor do objeto" oninput="setArchitectObjectColor(this.value)"/>
+            <span id="objectColorHint" class="library-hint">Cor dos próximos objetos</span>
+          </div>
+          <div id="objectColorSwatches" class="color-swatches">
+            <button style="background:#a35d64" onclick="setArchitectObjectColor('#a35d64')" title="Vermelho"></button>
+            <button style="background:#577fab" onclick="setArchitectObjectColor('#577fab')" title="Azul"></button>
+            <button style="background:#649475" onclick="setArchitectObjectColor('#649475')" title="Verde"></button>
+            <button style="background:#d5b997" onclick="setArchitectObjectColor('#d5b997')" title="Bege"></button>
+            <button style="background:#8b73ad" onclick="setArchitectObjectColor('#8b73ad')" title="Violeta"></button>
+            <button style="background:#c9d9e5" onclick="setArchitectObjectColor('#c9d9e5')" title="Branco"></button>
+          </div>
         </div>
         <div id="createSettings" class="hidden">
           <p class="library-hint">Área reservada à futura criação de móveis, personagens, NPCs e monstros. Por enquanto, use os itens existentes da biblioteca.</p>
