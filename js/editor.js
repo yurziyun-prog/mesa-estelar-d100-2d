@@ -22,10 +22,12 @@ function expandFloorToInclude(floor, x, y, pad = 120) {
 function expandCurrentMap() {
   const floor = getScene().floors[state.currentFloor];
   if (!floor.bounds) floor.bounds = { x: 80, y: 60, w: 680, h: 480 };
+  beginEdit();
   floor.bounds.x -= 90;
   floor.bounds.y -= 70;
   floor.bounds.w += 180;
   floor.bounds.h += 140;
+  finishEdit();
   logEvent(`📐 Área do ${state.currentFloor + 1}º andar expandida.`);
 }
 
@@ -136,6 +138,7 @@ function alignSelectedWall(mode) {
   const w = floor?.walls[state.selectedWallIdx];
   if (!w) return;
 
+  beginEdit();
   if (mode === 'ortho') {
     const seg = makeOrthoSegment(w.x1, w.y1, w.x2, w.y2);
     Object.assign(w, seg);
@@ -152,14 +155,17 @@ function alignSelectedWall(mode) {
     });
     logEvent('🧲 Extremidades da parede encaixadas.');
   }
+  finishEdit();
 }
 
 function deleteSelectedWall() {
   const floor = getScene().floors[state.currentFloor];
   if (state.selectedWallIdx !== null && floor?.walls[state.selectedWallIdx]) {
+    beginEdit();
     floor.walls.splice(state.selectedWallIdx, 1);
     state.selectedWallIdx = null;
     updateSelectedWallBar();
+    finishEdit();
     logEvent('🗑️ Parede removida.');
   }
 }
@@ -167,19 +173,22 @@ function deleteSelectedWall() {
 // CONSTRUÇÃO (ARQUITETO)
 let dragStart = null;
 let previewRect = null;
+let selectedMapObject = null;
 let draggedObj = null; // { kind, item, offsetX, offsetY, wallEnd }
 
 function applyArchitectAction(wx, wy, isDrag = false) {
   const floor = getScene().floors[state.currentFloor];
-  expandFloorToInclude(floor, wx, wy, 120);
+  // Colocar objetos não altera a extensão do terreno-base.
 
   if (state.tool === 'move') {
     if (!isDrag) {
+      selectedMapObject = null;
       // Verifica parede primeiro (extremidade ou corpo)
       for (let i = 0; i < floor.walls.length; i++) {
         const w = floor.walls[i];
         if (Math.hypot(wx - w.x1, wy - w.y1) < 16) {
           state.selectedWallIdx = i;
+          selectedMapObject = { kind: 'walls', index: i };
           updateSelectedWallBar();
           draggedObj = { kind: 'wallEnd', item: w, end: 1 };
           return;
@@ -187,12 +196,14 @@ function applyArchitectAction(wx, wy, isDrag = false) {
         if (Math.hypot(wx - w.x2, wy - w.y2) < 16) {
           state.selectedWallIdx = i;
           updateSelectedWallBar();
+          selectedMapObject = { kind: 'walls', index: i };
           draggedObj = { kind: 'wallEnd', item: w, end: 2 };
           return;
         }
         if (distToSegment(wx, wy, w.x1, w.y1, w.x2, w.y2) < 12) {
           state.selectedWallIdx = i;
           updateSelectedWallBar();
+          selectedMapObject = { kind: 'walls', index: i };
           draggedObj = { kind: 'wallMove', item: w, lastX: wx, lastY: wy };
           return;
         }
@@ -200,19 +211,22 @@ function applyArchitectAction(wx, wy, isDrag = false) {
 
       // Verifica props, portas, janelas, baús, escadas
       const lists = [
-        { kind: 'point', arr: floor.props },
-        { kind: 'point', arr: floor.doors },
-        { kind: 'point', arr: floor.windows },
-        { kind: 'point', arr: floor.chests },
-        { kind: 'point', arr: floor.stairs }
+        { kind: 'props', arr: floor.props },
+        { kind: 'doors', arr: floor.doors },
+        { kind: 'windows', arr: floor.windows },
+        { kind: 'chests', arr: floor.chests },
+        { kind: 'stairs', arr: floor.stairs }
       ];
       for (const entry of lists) {
         const found = entry.arr.find(it => Math.hypot(it.x - wx, it.y - wy) < 28);
         if (found) {
+          selectedMapObject = { kind: entry.kind, index: entry.arr.indexOf(found) };
           draggedObj = { kind: 'point', item: found };
           return;
         }
       }
+      const idx = [...floor.areas].map((a, i) => ({a, i})).reverse().find(({a}) => wx >= a.x && wx <= a.x + a.w && wy >= a.y && wy <= a.y + a.h)?.i;
+      if (idx !== undefined) selectedMapObject = {kind:'areas',index:idx};
       state.selectedWallIdx = null;
       updateSelectedWallBar();
     } else if (draggedObj) {
@@ -234,7 +248,6 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   }
 
   if (state.tool === 'floor') {
-    if (!floor.baseTerrain && state.currentFloor === 0) floor.baseTerrain = state.material;
     if (!dragStart) dragStart = { x: snapCoord(wx), y: snapCoord(wy) };
     const ex = snapCoord(wx), ey = snapCoord(wy);
     previewRect = {
@@ -311,11 +324,11 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
     const w = Math.max(32, Math.abs(ex - dragStart.x));
     const h = Math.max(32, Math.abs(ey - dragStart.y));
     floor.areas.push({ x, y, w, h, mat: state.material });
-    expandFloorToInclude(floor, x + w, y + h, 100);
+    selectedMapObject = {kind:'areas', index:floor.areas.length - 1};
   } else if (state.tool === 'wall' && dragStart && Math.hypot(wx - dragStart.x, wy - dragStart.y) > 12) {
     const seg = makeOrthoSegment(dragStart.x, dragStart.y, wx, wy);
     floor.walls.push(seg);
-    expandFloorToInclude(floor, Math.max(seg.x1, seg.x2), Math.max(seg.y1, seg.y2), 100);
+    selectedMapObject = {kind:'walls', index:floor.walls.length - 1};
   }
   dragStart = null;
   previewRect = null;
@@ -330,3 +343,29 @@ function distToSegment(px, py, x1, y1, x2, y2) {
 }
 
 // COLISÃO E INTERAÇÃO
+
+function copySelectedObject() {
+  if (state.mode !== 'architect' || !selectedMapObject) return false;
+  const obj = getScene().floors[state.currentFloor]?.[selectedMapObject.kind]?.[selectedMapObject.index];
+  if (!obj) return false;
+  window.mapClipboard = {kind: selectedMapObject.kind, item: structuredClone(obj)};
+  logEvent('📋 Objeto copiado. Ctrl+V para duplicar.');
+  return true;
+}
+function pasteSelectedObject() {
+  if (state.mode !== 'architect' || !window.mapClipboard) return;
+  const floor = getScene().floors[state.currentFloor];
+  const {kind, item} = window.mapClipboard;
+  beginEdit();
+  const copy = structuredClone(item);
+  if (kind === 'walls') {copy.x1 += 32;copy.x2 += 32;copy.y1 += 32;copy.y2 += 32;}
+  else {copy.x += 32; copy.y += 32;}
+  floor[kind].push(copy);
+  selectedMapObject = {kind,index:floor[kind].length - 1};
+  if(kind === 'walls') state.selectedWallIdx = selectedMapObject.index;
+  updateSelectedWallBar();
+  finishEdit();
+  // Atualizar a referência permite colar sucessivamente ao lado da cópia anterior.
+  window.mapClipboard.item = structuredClone(copy);
+  logEvent('📋 Cópia adicionada ao mapa.');
+}
