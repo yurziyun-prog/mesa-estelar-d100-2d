@@ -11,11 +11,11 @@ const ARCHITECT_LIBRARY = {
 ],
  characters:[['warrior','⚔️','Guerreiro','character'],['mage','🪄','Maga','character'],['ranger','🏹','Arqueira','character'],['villager','🧑','Aldeão','character'],['guard','🛡️','Guarda','character'],['merchant','🧳','Mercadora','character'],['goblin','👺','Goblin','character'],['skeleton','💀','Esqueleto','character'],['wolf','🐺','Lobo','character'],['dragon','🐉','Dragão','character']]
 };
-const LIBRARY_LABELS={terrain:'Terrenos e texturas',furniture:'Móveis',nature:'Árvores e natureza',props:'Objetos e decoração',architecture:'Elementos de construção',characters:'Personagens e NPCs'};
+const LIBRARY_LABELS={brush:'Pincel e texturas',create:'Criar (futuro)',downloads:'Packs baixados',terrain:'Terrenos e texturas',furniture:'Móveis',nature:'Árvores e natureza',props:'Objetos e decoração',architecture:'Elementos de construção',characters:'Personagens e NPCs'};
 let architectCategory='furniture';
 let architectCharacterTemplate=null;
 function openArchitectLibrary(category){
- if(!ARCHITECT_LIBRARY[category])return;
+ if(!ARCHITECT_LIBRARY[category] && !['brush','create','downloads'].includes(category))return;
  architectCategory=category;
  const search=document.getElementById('architectLibrarySearch');
  if(search)search.value='';
@@ -24,7 +24,7 @@ function openArchitectLibrary(category){
 function renderArchitectLibrary(){
  const grid=document.getElementById('architectLibraryGrid');if(!grid)return;
  document.getElementById('architectLibraryTitle').textContent=LIBRARY_LABELS[architectCategory];
- document.getElementById('architectLibraryDescription').textContent=architectCategory==='terrain'?'Pisos independentes dos estilos arquitetônicos.':
+ document.getElementById('architectLibraryDescription').textContent=architectCategory==='brush'?'Pinte diretamente no mapa com formatos e texturas diferentes.':architectCategory==='create'?'Um espaço preparado para editores futuros.':architectCategory==='downloads'?'Assets externos CC0, organizados por pacote de origem.':architectCategory==='terrain'?'Pisos independentes dos estilos arquitetônicos.':
   architectCategory==='characters'?'Selecione um modelo e clique no mapa para colocá-lo.':
   'Os novos itens seguem a coleção de construção selecionada, sem modificar os anteriores.';
  const query=(document.getElementById('architectLibrarySearch')?.value||'').toLocaleLowerCase('pt-BR');
@@ -77,4 +77,18 @@ function isItemInBuildCollection(id,category){
  if(style==='arabia')return !futurist.has(id);
  if(style==='futurist')return !arabia.has(id) || id==='palm';
  return !futurist.has(id) && !arabia.has(id);
+}
+
+function setArchitectBrush(key,value){
+ if(!state.brush)state.brush={shape:'redondo',size:32,texture:'solida',mat:'grass'};
+ state.brush[key]=value;
+ if(key==='size')document.getElementById('brushSizeLabel').textContent=value;
+ selectTool('brush');
+}
+function syncArchitectBrushUI(){
+ const b=state.brush||{shape:'redondo',size:32,texture:'solida',mat:'grass'};
+ for(const [id,key] of [['brushShape','shape'],['brushTexture','texture'],['brushMaterial','mat'],['brushSize','size']]){
+  const el=document.getElementById(id);if(el)el.value=b[key];
+ }
+ document.getElementById('brushSizeLabel').textContent=b.size;
 }
