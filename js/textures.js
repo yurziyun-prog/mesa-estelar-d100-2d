@@ -180,6 +180,44 @@ function drawTexturedArea(x, y, w, h, mat) {
   ctx.restore();
 }
 
+
+function brushPointInside(stroke,point,x,y,index){
+ const r=stroke.size/2,dx=x-point.x,dy=y-point.y;
+ const hash=Math.abs(Math.sin((x+index*13)*12.37+y*7.33))*100;
+ if(stroke.shape==='quadrado')return Math.abs(dx)<=r && Math.abs(dy)<=r;
+ if(stroke.shape==='irregular')return dx*dx+dy*dy<r*r*(.8+.32*Math.sin(Math.atan2(dy,dx)*7+hash));
+ if(stroke.shape==='spray')return dx*dx+dy*dy<r*r && hash%1>.28;
+ return dx*dx+dy*dy<=r*r;
+}
+function drawBrushStrokes(floor){
+ for(const stroke of (floor.brushStrokes||[])){
+  if(!stroke.points?.length)continue;
+  const r=stroke.size/2;
+  for(let pi=0;pi<stroke.points.length;pi++){
+   const p=stroke.points[pi];ctx.save();ctx.beginPath();
+   if(stroke.shape==='quadrado')ctx.rect(p.x-r,p.y-r,stroke.size,stroke.size);
+   else if(stroke.shape==='irregular'){
+    for(let i=0;i<=16;i++){const a=i*Math.PI/8,rr=r*(.78+.2*Math.sin(i*3.21+p.x*.07+p.y*.04));
+     const x=p.x+Math.cos(a)*rr,y=p.y+Math.sin(a)*rr;
+     if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    }ctx.closePath();
+   }else ctx.arc(p.x,p.y,r,0,Math.PI*2);
+   ctx.clip();
+   if(stroke.mat==='void'){ctx.fillStyle='#0b0e15';ctx.fillRect(p.x-r-2,p.y-r-2,r*2+4,r*2+4);}
+   else drawTexturedArea(p.x-r-2,p.y-r-2,r*2+4,r*2+4,stroke.mat);
+   if(stroke.shape==='spray'||stroke.texture!=='solida'){
+    const density=stroke.texture==='pontilhada'?18:stroke.texture==='giz'?40:25;
+    for(let j=0;j<density;j++){
+      const n=Math.sin((j+1)*23.37+p.x*7.1+p.y*3.4)*43758.5,frac=n-Math.floor(n);
+      const a=frac*Math.PI*2,dist=r*Math.sqrt(Math.abs(Math.sin(n*3.3)));
+      ctx.fillStyle=stroke.mat==='void'?'#0b0e15':stroke.texture==='giz'?'rgba(246,244,225,.26)':'rgba(27,29,28,.22)';
+      ctx.beginPath();ctx.arc(p.x+Math.cos(a)*dist,p.y+Math.sin(a)*dist,stroke.texture==='ranhura'?1.5:2,0,Math.PI*2);ctx.fill();
+    }
+   }
+   ctx.restore();
+  }
+ }
+}
 function drawFloorLayer(sc, floorIdx, isBelow) {
   const floor = sc.floors[floorIdx];
   if (!floor) return;
@@ -201,6 +239,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
   }
 
   floor.areas.forEach(a => drawTexturedArea(a.x, a.y, a.w, a.h, a.mat));
+  drawBrushStrokes(floor);
 
   floor.stairs.forEach(s => {
     if(isRetroFuture(s)){
