@@ -343,3 +343,6 @@
 .d100-skill-row{display:block;width:100%;cursor:pointer;text-align:left;font:inherit;color:inherit;background:transparent;}
 .d100-note{font-size:10px;line-height:1.5;color:var(--text-muted);margin-top:8px;}
 #skeletonAIControl.hidden{display:none;}
+
+.d100-edit{display:inline-flex;margin:0 0 8px 2px;padding:4px 10px;font-size:11px;}
+#d100AttrEdit.hidden{display:none;}
