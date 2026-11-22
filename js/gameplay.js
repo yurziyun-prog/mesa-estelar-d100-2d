@@ -97,8 +97,10 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   if (floor.windows.some(win => Math.hypot(win.x - nx, win.y - ny) < r + 8)) return false;
   if (floor.chests.some(c => Math.hypot(c.x - nx, c.y - ny) < r + 14)) return false;
 
-  const solidProps = ['tree', 'pine', 'fruitTree', 'rock', 'table', 'bed', 'bookshelf', 'hearth', 'barrel'];
+  const solidProps = ['tree', 'pine', 'fruitTree', 'rock', 'table', 'bookshelf', 'hearth', 'barrel', 'cabinet', 'sofa', 'sofaBlue', 'sofaRed', 'sofaGreen'];
   if (floor.props.some(p => solidProps.includes(p.type) && Math.hypot(p.x - nx, p.y - ny) < r + 14)) return false;
+  // As camas têm colisão retangular proporcional ao seu tamanho.
+  if(floor.props.some(p=>isSleepingFurniture(p)&&p.type!=='sleepingBag' && Math.abs(nx-p.x)<sleepFurnitureSize(p).w/2+r-4 && Math.abs(ny-p.y)<sleepFurnitureSize(p).h/2+r-4))return false;
 
   const onWater = floor.areas.some(a => a.mat === 'water' && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
   const onBridge = floor.areas.some(a => a.mat === 'bridge' && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
@@ -108,8 +110,38 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   return true;
 }
 
+const SLEEP_TYPES=new Set(['bed','bedDouble','sleepingBag','capsuleBed']);
+function isSleepingFurniture(item){return Boolean(item&&SLEEP_TYPES.has(item.type));}
+function sleepFurnitureSize(item) {
+  const sizes={bed:{w:44,h:84},bedDouble:{w:78,h:90},sleepingBag:{w:32,h:76},capsuleBed:{w:66,h:100}};
+  const s=sizes[item.type]||sizes.bed;
+  return (item.rot||0)%2?{w:s.h,h:s.w}:s;
+}
+function awakenEntity(ent){
+  if(!ent.sleepPose)return;
+  const rest=ent.sleepRest;
+  if(rest){ent.x=rest.x;ent.y=rest.y;}
+  ent.sleepPose=null;ent.sleepRest=null;
+  logEvent('☀️ '+ent.name+' levantou.');
+}
+function interactWithBed(ent,bed){
+  if(ent.sleepPose)return;
+  if(!confirm('Deitar em '+({bed:'cama',bedDouble:'cama de casal',sleepingBag:'saco de dormir',capsuleBed:'cápsula de sono'}[bed.type]||'cama')+'?'))return;
+  ent.sleepRest={x:ent.x,y:ent.y};
+  ent.sleepPose='lying';
+  ent.sleepBed={x:bed.x,y:bed.y,type:bed.type,rot:bed.rot||0};
+  ent.x=bed.x;ent.y=bed.y;
+  logEvent('🛏️ '+ent.name+' deitou.');
+  if(confirm('Dormir agora?')){
+    ent.sleepPose='sleeping';
+    logEvent('💤 '+ent.name+' está dormindo.');
+  }
+}
 function interactNearby(entity) {
   const floor = getScene().floors[entity.floor];
+  if(entity.sleepPose)return;
+  const nearBed=floor.props.filter(isSleepingFurniture).map(p=>({p,d:Math.hypot(p.x-entity.x,p.y-entity.y)})).sort((a,b)=>a.d-b.d)[0];
+  if(nearBed && nearBed.d<90){interactWithBed(entity,nearBed.p);return;}
   const keyIndex=floor.props.findIndex(p=>p.type==='key'&&Math.hypot(p.x-entity.x,p.y-entity.y)<48);
   if(keyIndex!==-1){const key=floor.props.splice(keyIndex,1)[0];entity.inventory.push(key.keyId);updateUI();logEvent('🔑 '+entity.name+' recolheu '+(key.label||'uma chave')+'.');return;}
 
