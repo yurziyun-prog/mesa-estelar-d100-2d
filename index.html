@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mesa RPG 2D — Arquiteto, Mestre & Jogador</title>
-  <link rel="stylesheet" href="css/style.css?v=asset-colors-walls-20261123b" />
+  <link rel="stylesheet" href="css/style.css?v=d100-sheet-20261123b" />
 </head>
 <body>
 
@@ -309,6 +309,7 @@
     <div class="card">
       <div class="section-title">Atributos d100 (FOR · CON · TAM · DES · INT · POD · CAR)</div>
       <div class="stat-grid" id="attrGrid"></div>
+      <button id="d100AttrEdit" class="btn hidden" style="margin-top:8px;width:100%" onclick="editD100Attributes()">Editar atributos d100</button>
     </div>
 
     <div class="card">
@@ -331,16 +332,16 @@
   </aside>
 </div>
 
-<script src="js/d100.js?v=d100-sheet-20261123a" defer></script>
-<script src="js/state.js?v=d100-sheet-20261123a" defer></script>
-<script src="js/editor.js?v=d100-sheet-20261123a" defer></script>
-<script src="js/library.js?v=d100-sheet-20261123a" defer></script>
-<script src="js/gameplay.js?v=d100-sheet-20261123a" defer></script>
-<script src="js/download-assets.js?v=d100-sheet-20261123a" defer></script>
-<script src="js/download-objects.js?v=d100-sheet-20261123a" defer></script>
-<script src="js/download-roguelike-objects.js?v=d100-sheet-20261123a" defer></script>
-<script src="js/textures.js?v=d100-sheet-20261123a" defer></script>
-<script src="js/main.js?v=d100-sheet-20261123a" defer></script>
+<script src="js/d100.js?v=d100-sheet-20261123b" defer></script>
+<script src="js/state.js?v=d100-sheet-20261123b" defer></script>
+<script src="js/editor.js?v=d100-sheet-20261123b" defer></script>
+<script src="js/library.js?v=d100-sheet-20261123b" defer></script>
+<script src="js/gameplay.js?v=d100-sheet-20261123b" defer></script>
+<script src="js/download-assets.js?v=d100-sheet-20261123b" defer></script>
+<script src="js/download-objects.js?v=d100-sheet-20261123b" defer></script>
+<script src="js/download-roguelike-objects.js?v=d100-sheet-20261123b" defer></script>
+<script src="js/textures.js?v=d100-sheet-20261123b" defer></script>
+<script src="js/main.js?v=d100-sheet-20261123b" defer></script>
 <dialog id="lockDialog" class="lock-dialog">
   <form method="dialog" onsubmit="return false;">
     <h3 id="lockDialogTitle">Configurar tranca</h3>
