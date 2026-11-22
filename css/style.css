@@ -346,3 +346,12 @@
 
 .d100-edit{display:inline-flex;margin:0 0 8px 2px;padding:4px 10px;font-size:11px;}
 #d100AttrEdit.hidden{display:none;}
+
+#constructionOptions:not(.hidden){display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:8px;padding:10px;margin:9px 0;}
+#constructionOptions label{font-size:12px;color:var(--text-muted);display:flex;flex-direction:column;gap:5px;}
+#constructionOptions select{width:100%;}
+#wallColorException{flex-direction:row!important;align-items:center;gap:8px;}
+#wallColorException input{width:auto;}
+.color-expanded{font-size:11px;color:var(--text-muted);margin-top:7px;}
+.color-expanded summary{cursor:pointer;color:var(--gold);}
+#objectColorHex{text-transform:lowercase;font-family:monospace;}
