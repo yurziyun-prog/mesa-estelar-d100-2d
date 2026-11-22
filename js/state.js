@@ -388,6 +388,7 @@ function setBuildStyle(style) {
   if(state.mode!=='architect' || !['normal','futurist','arabia'].includes(style))return;
   state.buildStyle=style;
   document.getElementById('sceneStyleSelect').value=style;
+  if(typeof renderArchitectLibrary==='function')renderArchitectLibrary();
   logEvent('🧱 Coleção de construção: '+(style==='arabia'?'Arábia':style==='futurist'?'Retro-futurista':'Normal'));
 }
 function migrateBuildStyles(){
