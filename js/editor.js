@@ -23,11 +23,6 @@ function expandCurrentMap() {
   const floor = getScene().floors[state.currentFloor];
   if (!floor.bounds) floor.bounds = { x: 80, y: 60, w: 680, h: 480 };
   beginEdit();
-  // Congela o terreno pintado antes de ampliar a área de trabalho.
-  if (floor.baseTerrain) {
-    floor.areas.unshift({x:floor.bounds.x,y:floor.bounds.y,w:floor.bounds.w,h:floor.bounds.h,mat:floor.baseTerrain});
-    floor.baseTerrain = null;
-  }
   floor.bounds.x -= 90;
   floor.bounds.y -= 70;
   floor.bounds.w += 180;
