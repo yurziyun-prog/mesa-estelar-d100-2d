@@ -172,6 +172,18 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   const floor = getScene().floors[state.currentFloor];
   // Colocar objetos não altera a extensão do terreno-base.
 
+  if(state.tool==='brush'){
+    if(!floor.brushStrokes)floor.brushStrokes=[];
+    const brush=state.brush||{shape:'redondo',size:32,texture:'solida',mat:'grass'};
+    let stroke=window.activeBrushStroke;
+    if(!isDrag || !stroke){
+      stroke={mat:brush.mat,shape:brush.shape,size:brush.size,texture:brush.texture,points:[]};
+      floor.brushStrokes.push(stroke);window.activeBrushStroke=stroke;
+    }
+    const last=stroke.points[stroke.points.length-1];
+    if(!last||Math.hypot(last.x-wx,last.y-wy)>=Math.max(3,stroke.size/6))stroke.points.push({x:wx,y:wy});
+    return;
+  }
   if (state.tool === 'move') {
     if (!isDrag) {
       selectedMapObject = null;
@@ -299,6 +311,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
 }
 
 function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
+  window.activeBrushStroke=null;
   const floor = getScene().floors[state.currentFloor];
 
   if (draggedObj) {
