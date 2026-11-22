@@ -633,6 +633,7 @@ function drawSleepingFurniture(p){
 }
 function drawProp(p) {
   if(isKenneyObject(p.type)){drawKenneyObject(p);return;}
+  if(isKenneyRoguelikeObject(p.type)){drawKenneyRoguelikeObject(p);return;}
   if(isSleepingFurniture(p)){drawSleepingFurniture(p);return;}
   if(drawExpandedProp(p))return;
   if(p.type==='key'){
