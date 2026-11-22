@@ -1,5 +1,34 @@
+let gmControlledId=null,gmPreviewId=null;
+function getGmControlledEntity(){return gmControlledId?state.entities.find(e=>e.id===gmControlledId&&e.sceneId===state.activeSceneId&&e.floor===state.currentFloor):null;}
+function activeActor(){return state.mode==='gm'?getGmControlledEntity():state.mode==='player'?getSelectedEntity():null;}
+function gmActors(){return state.entities.filter(e=>e.sceneId===state.activeSceneId&&e.floor===state.currentFloor);}
+function gmCycle(){
+ const actors=gmActors();if(!actors.length){logEvent('Sem personagens neste andar.');return;}
+ const at=actors.findIndex(e=>e.id===gmPreviewId);
+ gmPreviewId=actors[(at+1)%actors.length].id;
+ refreshGmFocus();
+}
+function gmConfirm(){
+ if(!gmPreviewId)return;gmControlledId=gmPreviewId;
+ state.selectedEntityId=gmControlledId;refreshGmFocus();updateUI();
+ logEvent('👑 Controlando '+(getGmControlledEntity()?.name||'personagem'));
+}
+function gmRelease(){
+ gmControlledId=null;gmPreviewId=null;
+ refreshGmFocus();logEvent('👑 Mestre: câmera livre.');
+}
+function refreshGmFocus(){
+ const controlled=getGmControlledEntity(),preview=state.entities.find(e=>e.id===gmPreviewId);
+ const hint=document.getElementById('gmControlHint');
+ if(hint)hint.textContent=controlled?'Controlando '+controlled.name+' · Esc libera':preview?'Enter para controlar '+preview.name+' · Tab muda':'Tab escolhe · Enter controla · Esc libera';
+ const sheet=document.getElementById('characterSheetPanel');if(sheet)sheet.classList.toggle('hidden',state.mode==='architect'||(state.mode==='gm'&&!controlled));
+ const empty=document.getElementById('gmNoCharacter');if(empty)empty.classList.toggle('hidden',state.mode!=='gm'||!!controlled);
+ const tools=document.getElementById('rightPlayerControls');if(tools)tools.classList.toggle('hidden',state.mode!=='gm'||!controlled);
+ const stats=document.getElementById('gmSessionStats');if(stats){const actors=gmActors(),pcs=actors.filter(e=>e.type==='pc');stats.textContent='Personagens: '+pcs.length+' · NPCs/criaturas: '+(actors.length-pcs.length)+' · Total no banco: '+state.entities.length+' · Cenário: '+getScene().name;}
+}
 function setMode(mode) {
   state.mode = mode;
+  gmControlledId=null;gmPreviewId=null;
   if(mode==='player' && getSelectedEntity()?.type!=='pc') {
     const pc=state.entities.find(e=>e.type==='pc');
     if(pc){state.selectedEntityId=pc.id;state.activeSceneId=pc.sceneId;state.currentFloor=pc.floor;updateFloorLabel();}
@@ -9,7 +38,7 @@ function setMode(mode) {
   document.getElementById('gmTools').classList.toggle('hidden', mode !== 'gm');
   document.getElementById('playerTools').classList.toggle('hidden', mode !== 'player');
   document.getElementById('gmEntityControls').classList.toggle('hidden', mode !== 'gm');
-  document.getElementById('characterSheetPanel').classList.toggle('hidden', mode === 'architect');
+  document.getElementById('characterSheetPanel').classList.toggle('hidden', mode === 'architect' || mode === 'gm');
   document.getElementById('architectLibraryPanel').classList.toggle('hidden', mode !== 'architect');
   if(mode==='architect')renderArchitectLibrary();
 
@@ -25,6 +54,7 @@ function setMode(mode) {
   refreshSceneSelect();
   refreshGmSpawnList();
   updateUI();
+  refreshGmFocus();
 }
 
 function onPaintedGround(floor, x, y) {
