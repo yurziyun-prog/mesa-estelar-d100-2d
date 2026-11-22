@@ -130,6 +130,7 @@ function createInitialState() {
     material: 'grass',
     propType: 'tree',
     buildStyle: 'normal',
+    brush: {shape:'redondo',size:32,texture:'solida',mat:'grass'},
     rotation: 0,
     selectedEntityId: 'pc_1',
     selectedWallIdx: null,
@@ -385,14 +386,15 @@ function migrateFixedTerrain() {
 }
 
 function setBuildStyle(style) {
-  if(state.mode!=='architect' || !['normal','futurist','arabia'].includes(style))return;
+  if(state.mode!=='architect' || !['normal','futurist','arabia','downloads'].includes(style))return;
   state.buildStyle=style;
   document.getElementById('sceneStyleSelect').value=style;
   if(typeof renderArchitectLibrary==='function')renderArchitectLibrary();
-  logEvent('🧱 Coleção de construção: '+(style==='arabia'?'Arábia':style==='futurist'?'Retro-futurista':'Normal'));
+  logEvent('🧱 Coleção de construção: '+(style==='arabia'?'Arábia':style==='futurist'?'Retro-futurista':style==='downloads'?'Downloads':'Normal'));
 }
 function migrateBuildStyles(){
   if(!state.buildStyle)state.buildStyle='normal';
+  if(!state.brush)state.brush={shape:'redondo',size:32,texture:'solida',mat:'grass'};
   for(const scene of Object.values(state.scenes||{})){
     const oldStyle=scene.style==='futurist'?'futurist':'normal';
     for(const floor of scene.floors||[]){
