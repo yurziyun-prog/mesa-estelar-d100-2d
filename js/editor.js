@@ -209,6 +209,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
           updateSelectedWallBar();
           selectedMapObject = { kind: 'walls', index: i };
           draggedObj = { kind: 'wallMove', item: w, lastX: wx, lastY: wy };
+          onArchitectSelectionChange();
           return;
         }
       }
@@ -226,6 +227,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
         if (found) {
           selectedMapObject = { kind: entry.kind, index: entry.arr.indexOf(found) };
           draggedObj = { kind: 'point', item: found };
+          onArchitectSelectionChange();
           return;
         }
       }
@@ -291,7 +293,10 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   } else if (state.tool === 'character') {
     if (!isDrag) placeArchitectCharacter(wx,wy);
   } else if (state.tool === 'prop') {
-    if (!isDrag) floor.props.push({ x: wx, y: wy, type: state.propType, rot: state.rotation, style: state.propType.startsWith('kenney_')?'downloads':state.buildStyle });
+    if (!isDrag) {
+      floor.props.push({ x: wx, y: wy, type: state.propType, rot: state.rotation, color:state.propColor, style: state.propType.startsWith('kenney_')?'downloads':state.buildStyle });
+      selectedMapObject={kind:'props',index:floor.props.length-1};onArchitectSelectionChange();
+    }
   } else if (state.tool === 'chest') {
     if (!isDrag) {
       const loot = document.getElementById('chestLootInput').value.split(',').map(s => s.trim()).filter(Boolean);
@@ -336,7 +341,7 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
     selectedMapObject = {kind:'areas', index:floor.areas.length - 1};
   } else if (state.tool === 'wall' && dragStart && Math.hypot(wx - dragStart.x, wy - dragStart.y) > 12) {
     const seg = makeOrthoSegment(dragStart.x, dragStart.y, wx, wy);
-    floor.walls.push({...seg, style:state.buildStyle==='downloads'?'normal':state.buildStyle, material:state.wallVariant||'wallMasonry'});
+    floor.walls.push({...seg, style:state.buildStyle==='downloads'?'normal':state.buildStyle, material:state.wallVariant||'wallMasonry',width:state.wallWidth||16});
     mergeCollinearWalls(floor);
     selectedMapObject=null;state.selectedWallIdx=null;updateSelectedWallBar();
   }
