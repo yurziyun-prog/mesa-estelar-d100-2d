@@ -12,7 +12,7 @@ function setMode(mode) {
 
   const hud = document.getElementById('hudStatus');
   if (mode === 'architect') hud.textContent = 'Modo Arquiteto • Paredes retas alinhadas • Porta/Janela abre vão na parede • R: Rotacionar';
-  if (mode === 'gm') hud.textContent = 'Modo Mestre • Arraste personagens/NPCs • Troque cenários e puxe tokens • Fale em balões';
+  if (mode === 'gm') hud.textContent = 'Modo Mestre • Escolha personagens prontos ou marque existentes e clique em Colocar • Arraste no mapa';
   if (mode === 'player') hud.textContent = 'Modo Jogador • WASD/Setas: Mover • E ou Clique próximo: Portas, baús e escadas';
 
   refreshSceneSelect();
@@ -201,43 +201,92 @@ function logEvent(msg) {
 }
 
 
-let gmPlacementId = null;
+// Catálogo permanente de modelos. Não depende das entidades já presentes no mapa.
+const GM_TEMPLATES = [
+  {id:'warrior',name:'Guerreiro',role:'Combatente',type:'pc',icon:'⚔️',color:'#4f8cff',hp:30,attrs:{FOR:16,DES:12,CON:15,INT:10,SAB:10,CAR:11},skills:['Espadas +5'],inventory:['Espada','Escudo']},
+  {id:'mage',name:'Maga',role:'Arcanista',type:'pc',icon:'🪄',color:'#9474f5',hp:18,attrs:{FOR:8,DES:12,CON:10,INT:17,SAB:14,CAR:12},skills:['Arcanismo +6'],powers:['Bola de Fogo'],inventory:['Cajado']},
+  {id:'ranger',name:'Arqueira',role:'Exploradora',type:'pc',icon:'🏹',color:'#58bf8c',hp:23,attrs:{FOR:12,DES:17,CON:13,INT:11,SAB:14,CAR:10},skills:['Pontaria +6'],inventory:['Arco','Flechas']},
+  {id:'villager',name:'Aldeão',role:'Civil',type:'npc',icon:'🧑',color:'#d6aa64',hp:12,attrs:{FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10}},
+  {id:'guard',name:'Guarda',role:'Soldado',type:'npc',icon:'🛡️',color:'#648eba',hp:25,attrs:{FOR:14,DES:12,CON:14,INT:10,SAB:11,CAR:10},inventory:['Lança']},
+  {id:'merchant',name:'Mercadora',role:'Comerciante',type:'npc',icon:'🧳',color:'#e0ac5c',hp:14,attrs:{FOR:9,DES:11,CON:10,INT:14,SAB:12,CAR:15}},
+  {id:'goblin',name:'Goblin',role:'Monstro',type:'npc',icon:'👺',color:'#78ae45',hp:12,attitude:'Hostil',attrs:{FOR:9,DES:14,CON:10,INT:8,SAB:8,CAR:7}},
+  {id:'skeleton',name:'Esqueleto',role:'Monstro',type:'npc',icon:'💀',color:'#c4c8c8',hp:15,attitude:'Hostil',attrs:{FOR:11,DES:12,CON:10,INT:6,SAB:8,CAR:5}},
+  {id:'wolf',name:'Lobo',role:'Fera',type:'npc',icon:'🐺',color:'#8f998e',hp:18,attitude:'Hostil',attrs:{FOR:12,DES:15,CON:13,INT:4,SAB:13,CAR:6}},
+  {id:'dragon',name:'Dragão',role:'Monstro',type:'npc',icon:'🐉',color:'#d96363',hp:95,attitude:'Hostil',attrs:{FOR:20,DES:12,CON:20,INT:14,SAB:14,CAR:16},powers:['Sopro de Fogo']}
+];
+let gmPlacementTemplate = null;
+let gmRosterPlacementIds = null;
 function refreshGmSpawnList(){
- const sel=document.getElementById('gmSpawnSelect'); if(!sel) return;
- const selected=sel.value;
- sel.replaceChildren();
- for(const ent of state.entities){
-  const option=document.createElement('option');
-  option.value=ent.id; option.textContent=(ent.icon||'🎭')+' '+ent.name;
-  sel.append(option);
- }
- if(state.entities.some(e=>e.id===selected)) sel.value=selected;
+  const sel = document.getElementById('gmSpawnSelect');
+  if (!sel) return;
+  const old = sel.value;
+  sel.replaceChildren();
+  for (const template of GM_TEMPLATES) {
+    const option = document.createElement('option');
+    option.value = template.id;
+    option.textContent = template.icon + ' ' + template.name + ' (' + template.role + ')';
+    sel.append(option);
+  }
+  if(GM_TEMPLATES.some(t=>t.id===old)) sel.value=old;
 }
 function armGmPlacement(){
- gmPlacementId=document.getElementById('gmSpawnSelect')?.value || null;
- if(gmPlacementId) logEvent('📍 Clique no mapa para posicionar o personagem.');
+  const select = document.getElementById('gmSpawnSelect');
+  gmPlacementTemplate = GM_TEMPLATES.find(t=>t.id===select?.value) || GM_TEMPLATES[0];
+  gmRosterPlacementIds = null;
+  logEvent('📍 Clique no mapa para colocar '+gmPlacementTemplate.name+'.');
 }
-function placeGmEntityAt(wx,wy){
- const ent=state.entities.find(e=>e.id===gmPlacementId);
- if(!ent)return false;
- beginEdit();
- ent.sceneId=state.activeSceneId;ent.floor=state.currentFloor;ent.x=wx;ent.y=wy;
- state.selectedEntityId=ent.id;gmPlacementId=null;
- finishEdit();updateUI();refreshSceneSelect();
- logEvent('📍 '+ent.name+' colocado no cenário.');
- return true;
+function instantiateTemplate(template, wx, wy) {
+  const attrs = {FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10,...template.attrs};
+  return {
+    id:'entity_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
+    type:template.type,name:template.name,role:template.role,icon:template.icon,color:template.color,
+    sceneId:state.activeSceneId,floor:state.currentFloor,x:wx,y:wy,
+    hp:template.hp,maxHp:template.hp,hunger:100,attitude:template.attitude || 'Neutro',
+    speech:'',speechTimer:0,attrs,skills:[...(template.skills||[])],
+    powers:[...(template.powers||[])],inventory:[...(template.inventory||[])]
+  };
+}
+function placeGmEntityAt(wx, wy){
+  if (gmRosterPlacementIds?.length) {
+    beginEdit();
+    gmRosterPlacementIds.forEach((id,i)=>{
+      const ent=state.entities.find(e=>e.id===id);
+      if(!ent)return;
+      ent.sceneId=state.activeSceneId;
+      ent.floor=state.currentFloor;
+      ent.x=wx+(i%3)*36;
+      ent.y=wy+Math.floor(i/3)*36;
+      state.selectedEntityId=ent.id;
+    });
+    finishEdit();
+    gmRosterPlacementIds=null;
+    renderGmPullList();updateUI();
+    logEvent('📍 Personagens colocados no mapa aberto.');
+    return true;
+  }
+  if (!gmPlacementTemplate) return false;
+  beginEdit();
+  const entity=instantiateTemplate(gmPlacementTemplate,wx,wy);
+  state.entities.push(entity);
+  state.selectedEntityId=entity.id;
+  finishEdit();
+  updateUI();
+  renderGmPullList();
+  logEvent('📍 '+entity.name+' colocado no mapa.');
+  return true;
 }
 function createGmNpc(){
- const input=document.getElementById('gmNpcName');const name=input?.value.trim();
- if(!name) return;
- beginEdit();
- const npc={id:'npc_'+Date.now(),type:'npc',name,role:'NPC',icon:'🎭',color:'#17a2b8',
- sceneId:state.activeSceneId,floor:state.currentFloor,x:340,y:380,hp:20,maxHp:20,hunger:100,attitude:'Neutro',
- speech:'',speechTimer:0,attrs:{FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10},
- skills:[],powers:[],inventory:[]};
- state.entities.push(npc);state.selectedEntityId=npc.id;
- finishEdit();input.value='';refreshGmSpawnList();renderGmPullList();updateUI();
- document.getElementById('gmSpawnSelect').value=npc.id;
- armGmPlacement();
- logEvent('🎭 NPC criado: '+name+'. Clique no mapa para posicioná-lo.');
+  const input=document.getElementById('gmNpcName');
+  const name=input?.value.trim();
+  if(!name) return;
+  beginEdit();
+  const template={...GM_TEMPLATES.find(t=>t.id==='villager'),name,role:'NPC'};
+  const npc=instantiateTemplate(template,340,380);
+  state.entities.push(npc);
+  state.selectedEntityId=npc.id;
+  finishEdit();
+  input.value='';
+  renderGmPullList();
+  updateUI();
+  logEvent('🎭 NPC '+name+' criado. Marque-o na lista de cima e use Colocar.');
 }
