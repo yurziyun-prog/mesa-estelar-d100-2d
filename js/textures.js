@@ -445,6 +445,15 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
   });
 
   floor.props.forEach(p => drawProp(p));
+  if(state.mode==='architect'&&!isBelow&&typeof selectedMapObject!=='undefined'&&selectedMapObject){
+    const sel=floor[selectedMapObject.kind]?.[selectedMapObject.index];
+    if(sel&&sel.x!==undefined&&sel.y!==undefined){
+      const rr=selectedMapObject.kind==='stairs'?53: selectedMapObject.kind==='props'&&['bed','bedDouble','capsuleBed'].includes(sel.type)?53:29;
+      ctx.save();ctx.setLineDash([5,4]);ctx.strokeStyle='#ffe49a';ctx.lineWidth=2.5;
+      ctx.strokeRect(sel.x-rr,sel.y-rr,rr*2,rr*2);ctx.restore();
+    }
+  }
+
 
   state.entities.filter(e => e.sceneId === state.activeSceneId && e.floor === floorIdx).forEach(ent => {
     drawCharacterToken(ent, isBelow);
