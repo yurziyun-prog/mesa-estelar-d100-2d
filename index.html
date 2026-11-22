@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mesa RPG 2D — Arquiteto, Mestre & Jogador</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=hybrid-locks-20261122f" />
 </head>
 <body>
 
@@ -155,10 +155,7 @@
 
       <div class="card" id="doorChestOptions">
         <div class="section-title">Porta / Baú</div>
-        <div class="row">
-          <label style="font-size:12px;">Chave:</label>
-          <input type="text" id="lockKeyInput" class="ctrl" placeholder="Ex: chave_dourada" />
-        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:5px;">Ao colocar uma porta ou baú, você pode escolher tranca e destino da chave.</div>
         <div class="row" style="margin-bottom:0;">
           <label style="font-size:12px;">Loot:</label>
           <input type="text" id="chestLootInput" class="ctrl" value="Poção de Cura, 25 Moedas" />
@@ -301,10 +298,30 @@
   </aside>
 </div>
 
-<script src="js/state.js?v=movement-20261122d" defer></script>
-<script src="js/editor.js?v=movement-20261122d" defer></script>
-<script src="js/gameplay.js?v=movement-20261122d" defer></script>
-<script src="js/textures.js?v=movement-20261122d" defer></script>
-<script src="js/main.js?v=movement-20261122d" defer></script>
+<script src="js/state.js?v=hybrid-locks-20261122f" defer></script>
+<script src="js/editor.js?v=hybrid-locks-20261122f" defer></script>
+<script src="js/gameplay.js?v=hybrid-locks-20261122f" defer></script>
+<script src="js/textures.js?v=hybrid-locks-20261122f" defer></script>
+<script src="js/main.js?v=hybrid-locks-20261122f" defer></script>
+<dialog id="lockDialog" class="lock-dialog">
+  <form method="dialog" onsubmit="return false;">
+    <h3 id="lockDialogTitle">Configurar tranca</h3>
+    <p id="lockDialogHint">Este objeto pode ficar sem tranca.</p>
+    <label class="check-row"><input type="checkbox" id="lockEnabled" onchange="updateLockForm()"/> Ativar tranca</label>
+    <div id="lockOptions" class="hidden">
+      <label id="lockCodeLabel" for="lockValue">Chave ou código</label>
+      <input class="ctrl" id="lockValue" placeholder="Código" autocomplete="off" style="width:100%;margin:6px 0 8px;"/>
+      <div id="keyDestinationBox">
+        <label for="lockDestination">Onde deixar a chave?</label>
+        <select class="ctrl" id="lockDestination" style="width:100%;margin-top:5px;"></select>
+        <p style="font-size:11px;margin-top:6px;">No mapa: clique depois onde deseja colocar a chave.</p>
+      </div>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:15px;">
+      <button class="btn" type="button" onclick="saveLockDialog(false)">Sem tranca</button>
+      <button class="btn btn-primary" type="button" onclick="saveLockDialog(true)">Confirmar</button>
+    </div>
+  </form>
+</dialog>
 </body>
 </html>
