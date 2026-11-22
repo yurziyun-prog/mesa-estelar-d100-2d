@@ -251,48 +251,44 @@ function duplicateCurrentScene() {
 }
 
 function renderGmPullList() {
-  const targetSceneId = document.getElementById('sceneSelect').value || state.activeSceneId;
   const box = document.getElementById('gmPullEntitiesList');
   if (!box) return;
-
-  box.innerHTML = state.entities.map(ent => {
-    const here = ent.sceneId === targetSceneId;
-    return `
-      <label class="check-row">
-        <input type="checkbox" class="gm-pull-chk" value="${ent.id}" ${!here ? 'checked' : ''} />
-        <span>${ent.icon || (ent.type === 'pc' ? '🗡️' : '🎭')} <b>${ent.name}</b></span>
-        <span style="margin-left:auto; font-size:10px; color:${here ? 'var(--success)' : 'var(--gold)'};">
-          ${here ? 'Aqui' : 'Outro'}
-        </span>
-      </label>
-    `;
-  }).join('');
+  const previous = new Set([...box.querySelectorAll('.gm-pull-chk:checked')].map(el => el.value));
+  box.replaceChildren();
+  for (const ent of state.entities) {
+    const here = ent.sceneId === state.activeSceneId && ent.floor === state.currentFloor;
+    const label = document.createElement('label');
+    label.className = 'check-row';
+    const check = document.createElement('input');
+    check.type = 'checkbox';
+    check.className = 'gm-pull-chk';
+    check.value = ent.id;
+    check.checked = previous.has(ent.id);
+    const name = document.createElement('span');
+    name.textContent = (ent.icon || '🎭') + ' ' + ent.name;
+    const status = document.createElement('span');
+    status.style = 'margin-left:auto;font-size:10px;color:' + (here?'var(--success)':'var(--gold)');
+    status.textContent = here ? 'Aqui' : 'Outro';
+    label.append(check,name,status);
+    box.append(label);
+  }
 }
-
-function gmSwitchScene(pullChecked) {
-  beginEdit();
+function armGmRosterPlacement() {
+  const ids = [...document.querySelectorAll('.gm-pull-chk:checked')].map(c => c.value);
+  if (!ids.length) { logEvent('Marque pelo menos um personagem para colocar.'); return; }
+  gmRosterPlacementIds = ids;
+  gmPlacementTemplate = null;
+  logEvent('📍 Clique no mapa aberto para colocar os '+ids.length+' personagens.');
+}
+function gmSwitchScene() {
   const targetId = document.getElementById('sceneSelect').value;
   if (!targetId || !state.scenes[targetId]) return;
-
-  if (pullChecked) {
-    const checkedIds = Array.from(document.querySelectorAll('.gm-pull-chk:checked')).map(c => c.value);
-    state.entities.forEach((ent, idx) => {
-      if (checkedIds.includes(ent.id)) {
-        ent.sceneId = targetId;
-        ent.floor = 0;
-        ent.x = 340 + idx * 48;
-        ent.y = 380;
-      }
-    });
-  }
-
   state.activeSceneId = targetId;
   state.currentFloor = 0;
   updateFloorLabel();
   refreshSceneSelect();
   updateUI();
-  finishEdit();
-  logEvent(`👑 Mestre mudou para "${getScene().name}"${pullChecked ? ' e puxou selecionados' : ''}.`);
+  logEvent('👑 Mestre abriu o cenário "' + getScene().name + '".');
 }
 
 function saveBank() {
