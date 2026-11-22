@@ -247,31 +247,56 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
   floor.areas.forEach(a => drawTexturedArea(a.x, a.y, a.w, a.h, a.mat));
   drawBrushStrokes(floor);
 
-  floor.stairs.forEach(s => {
-    if(isRetroFuture(s)){
-      ctx.fillStyle='#2b3846';ctx.fillRect(s.x-36,s.y-52,72,104);
-      ctx.strokeStyle='#5cc4d5';ctx.lineWidth=2;ctx.strokeRect(s.x-36,s.y-52,72,104);
-      for(let k=0;k<7;k++){
-        ctx.fillStyle=k%2?'#476078':'#8498a6';ctx.fillRect(s.x-31,s.y-46+k*14,62,9);
+  floor.stairs.forEach(stair => {
+    const shape=stair.shape||'straight',material=stair.material||(isRetroFuture(stair)?'metal':'wood');
+    const palette={
+      wood:['#80502c','#d5a36b','#423021'],
+      stone:['#777f81','#bbc2c2','#444b50'],
+      castle:['#737477','#b5b5ae','#353a40'],
+      masonry:['#989fa1','#cbd0cb','#53585c'],
+      brick:['#a55c44','#c58b67','#65392f'],
+      metal:['#688a96','#c1d4da','#344b58'],
+      rust:['#8d5943','#b38357','#533b30'],
+      sandstone:['#bba06b','#e2ca91','#74603f']
+    };
+    const [base,highlight,edge]=palette[material]||palette.wood;
+    ctx.save();ctx.translate(stair.x,stair.y);
+    if(shape==='spiral'){
+      ctx.fillStyle=edge;ctx.beginPath();ctx.arc(0,0,43,0,Math.PI*2);ctx.fill();
+      for(let i=0;i<12;i++){
+        const a=i*Math.PI/6,bb=a+Math.PI/6;
+        ctx.fillStyle=i%2?base:highlight;
+        ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,39,a,bb);ctx.closePath();ctx.fill();
+        ctx.strokeStyle=edge;ctx.lineWidth=1.5;ctx.stroke();
       }
-      ctx.fillStyle='#dceee9';ctx.font='12px system-ui';ctx.fillText(s.label||'ESCADA',s.x-25,s.y+5);
-      return;
+      ctx.fillStyle=highlight;ctx.beginPath();ctx.arc(0,0,8,0,Math.PI*2);ctx.fill();ctx.strokeStyle=edge;ctx.lineWidth=3;ctx.stroke();
+    }else if(shape==='ladder'){
+      ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(-20,-51,43,104);
+      ctx.strokeStyle=edge;ctx.lineWidth=8;
+      ctx.beginPath();ctx.moveTo(-20,-50);ctx.lineTo(-20,50);ctx.moveTo(20,-50);ctx.lineTo(20,50);ctx.stroke();
+      ctx.strokeStyle=highlight;ctx.lineWidth=4;
+      ctx.beginPath();ctx.moveTo(-20,-50);ctx.lineTo(-20,50);ctx.moveTo(20,-50);ctx.lineTo(20,50);ctx.stroke();
+      for(let y=-40;y<=40;y+=13){
+        ctx.strokeStyle=edge;ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(-17,y);ctx.lineTo(17,y);ctx.stroke();
+        ctx.strokeStyle=base;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-17,y-1);ctx.lineTo(17,y-1);ctx.stroke();
+      }
+    }else{
+      ctx.fillStyle=edge;ctx.fillRect(-36,-52,72,104);
+      ctx.fillStyle=base;ctx.fillRect(-32,-48,64,96);
+      for(let i=0;i<7;i++){
+        const y=-46+i*14;
+        ctx.fillStyle=i%2?base:highlight;ctx.fillRect(-30,y,60,11);
+        ctx.strokeStyle=edge;ctx.lineWidth=1.7;ctx.beginPath();ctx.moveTo(-30,y+12);ctx.lineTo(30,y+12);ctx.stroke();
+        if(material==='wood'){ctx.strokeStyle='rgba(48,29,16,.34)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-24,y+4);ctx.lineTo(23,y+5);ctx.stroke();}
+        if(material==='metal'||material==='rust'){ctx.fillStyle=material==='rust'?'#743a24':'#496d76';ctx.fillRect(-26,y+2,4,4);ctx.fillRect(22,y+2,4,4);}
+      }
+      ctx.strokeStyle=edge;ctx.lineWidth=3;ctx.strokeRect(-36,-52,72,104);
     }
-    ctx.fillStyle = 'rgba(0,0,0,0.32)';
-    ctx.fillRect(s.x - 32, s.y - 48, 68, 102);
-    ctx.fillStyle = '#c9a473';
-    ctx.fillRect(s.x - 36, s.y - 52, 72, 104);
-    ctx.strokeStyle = '#382412';
-    ctx.lineWidth = 2.5;
-    ctx.strokeRect(s.x - 36, s.y - 52, 72, 104);
-    for (let stepY = s.y - 38; stepY < s.y + 48; stepY += 14) {
-      ctx.beginPath(); ctx.moveTo(s.x - 36, stepY); ctx.lineTo(s.x + 36, stepY); ctx.stroke();
-    }
-    ctx.fillStyle = '#1f140a';
-    ctx.font = 'bold 13px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(s.label || (s.dir === 'up' ? '→ 2º' : '→ 1º'), s.x, s.y + 5);
-    ctx.textAlign = 'left';
+    ctx.fillStyle=material==='metal'?'#ecffff':'#f6e9cd';
+    ctx.font='bold 11px system-ui';ctx.textAlign='center';
+    ctx.strokeStyle='rgba(0,0,0,.7)';ctx.lineWidth=3;
+    const label=stair.label||'ESCADA';ctx.strokeText(label,0,4);ctx.fillText(label,0,4);
+    ctx.restore();
   });
 
   // Paredes contínuas por material e espessura. Colisões usam a mesma largura.
@@ -621,7 +646,7 @@ function drawExpandedProp(p){
  }else if(t==='crystal'){
    ctx.fillStyle='#6ae2e0';ctx.beginPath();ctx.moveTo(0,-25);ctx.lineTo(18,-3);ctx.lineTo(6,18);ctx.lineTo(-16,7);ctx.closePath();ctx.fill();ctx.strokeStyle='#e6fbff';ctx.lineWidth=2;ctx.stroke();
  }else if(t==='rug'){
-   ctx.fillStyle=arabia?'#a14551':'#744b79';ctx.fillRect(-30,-22,60,44);
+   ctx.fillStyle=p.color||(arabia?'#a14551':'#744b79');ctx.fillRect(-30,-22,60,44);
    ctx.strokeStyle='#d8ad6e';ctx.lineWidth=4;ctx.strokeRect(-26,-18,52,36);
  }else if(t==='fountain'){
    ctx.fillStyle='#9aa8a9';ctx.beginPath();ctx.arc(0,0,28,0,Math.PI*2);ctx.fill();
