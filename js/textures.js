@@ -36,7 +36,7 @@ function drawFutureArea(x,y,w,h,mat) {
   ctx.restore();
 }
 
-function drawTexturedArea(x, y, w, h, mat) {
+function drawTexturedArea(x, y, w, h, mat, customColor = null) {
   if(mat==='kenney_water')mat='water';
   if(mat==='kenney_wood')mat='wood';
   if(isDownloadedMaterial(mat)){drawDownloadedMaterial(x,y,w,h,mat);return;}
@@ -94,7 +94,7 @@ function drawTexturedArea(x, y, w, h, mat) {
       }
     }
   } else if (mat === 'carpet') {
-    ctx.fillStyle = '#8c1d28';
+    ctx.fillStyle = customColor || '#8c1d28';
     ctx.fillRect(x, y, w, h);
     ctx.fillStyle = 'rgba(255, 210, 140, 0.22)';
     for (let cy = y + 10; cy < y + h - 6; cy += 12) {
@@ -244,7 +244,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     }
   }
 
-  floor.areas.forEach(a => drawTexturedArea(a.x, a.y, a.w, a.h, a.mat));
+  floor.areas.forEach(a => drawTexturedArea(a.x, a.y, a.w, a.h, a.mat, a.color));
   drawBrushStrokes(floor);
 
   floor.stairs.forEach(stair => {
