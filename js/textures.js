@@ -37,6 +37,7 @@ function drawFutureArea(x,y,w,h,mat) {
 }
 
 function drawTexturedArea(x, y, w, h, mat) {
+  if(isDownloadedMaterial(mat)){drawDownloadedMaterial(x,y,w,h,mat);return;}
   ctx.save();
   ctx.beginPath();
   ctx.rect(x, y, w, h);
