@@ -377,6 +377,7 @@ function drawCharacterToken(ent, isBelow) {
   }
   ctx.restore();
   ctx.save();
+  if(state.mode==='gm'&&ent.id===gmPreviewId){ctx.strokeStyle='#e6c466';ctx.lineWidth=3;ctx.setLineDash([6,4]);ctx.beginPath();ctx.arc(cx,cy-lift,28,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#e6c466';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('TAB · ENTER',cx,cy-56-lift);}
   ctx.font='bold 11px system-ui';ctx.textAlign='center';
   const labelW=ctx.measureText(ent.name).width+11;
   ctx.fillStyle='rgba(14,18,25,.88)';
