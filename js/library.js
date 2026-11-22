@@ -49,13 +49,20 @@ function openArchitectLibrary(category){
 }
 function renderArchitectLibrary(){
  const grid=document.getElementById('architectLibraryGrid');if(!grid)return;
+ const brush=document.getElementById('brushSettings'),create=document.getElementById('createSettings'),search=document.getElementById('architectLibrarySearch');
+ if(brush)brush.classList.toggle('hidden',architectCategory!=='brush');
+ if(create)create.classList.toggle('hidden',architectCategory!=='create');
+ if(search)search.classList.toggle('hidden',['brush','create'].includes(architectCategory));
+ grid.classList.toggle('hidden',['brush','create'].includes(architectCategory));
+ if(architectCategory==='brush'){selectTool('brush');syncArchitectBrushUI();}
+
  document.getElementById('architectLibraryTitle').textContent=LIBRARY_LABELS[architectCategory];
  document.getElementById('architectLibraryDescription').textContent=architectCategory==='brush'?'Pinte diretamente no mapa com formatos e texturas diferentes.':architectCategory==='create'?'Um espaço preparado para editores futuros.':architectCategory==='downloads'?'Texturas reais dos pacotes Kenney RPG Base e Kenney Roguelike RPG. Licença CC0.':architectCategory==='terrain'?'Pisos independentes dos estilos arquitetônicos.':
   architectCategory==='characters'?'Selecione um modelo e clique no mapa para colocá-lo.':
   'Os novos itens seguem a coleção de construção selecionada, sem modificar os anteriores.';
  const query=(document.getElementById('architectLibrarySearch')?.value||'').toLocaleLowerCase('pt-BR');
  grid.replaceChildren();
- for(const [id,icon,label,kind] of ARCHITECT_LIBRARY[architectCategory]){
+ for(const [id,icon,label,kind] of (ARCHITECT_LIBRARY[architectCategory]||[])){
   if(!label.toLocaleLowerCase('pt-BR').includes(query))continue;
   if(!isItemInBuildCollection(id,architectCategory))continue;
   const button=document.createElement('button');button.type='button';button.className='library-card';
