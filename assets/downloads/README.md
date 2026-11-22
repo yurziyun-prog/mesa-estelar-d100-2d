@@ -19,3 +19,12 @@ Foram incorporadas mais doze miniaturas de sprites do pack `kenney_rpg-base.zip`
 Esses recursos foram reduzidos para 32×32 com amostragem nearest-neighbor e armazenados na mini-atlas local em `js/download-objects.js`, sob licença CC0.
 
 **Nota de funcionamento:** porta, janela, arco e escada de mão desta coleção são, por enquanto, **elementos gráficos decorativos**, não substituem as portas/escadas/janelas funcionais de **Elementos de construção**. Os demais objetos sólidos bloqueiam o movimento. A biblioteca Downloads é independente da coleção arquitetônica selecionada.
+
+## Seleção 3: objetos Roguelike RPG Pack
+
+Oito sprites extraídos de `kenney_roguelike-rpg-pack.zip` → `Spritesheet/roguelikeSheet_transparent.png`, em células de 16×16 px separadas por margem de 1 px:
+
+- Árvore (13,11), pinheiro (16,11), arbusto (13,9)
+- Tocha (17,8), fogueira (14,8), pedra (9,17), flores (0,9), escadaria decorativa (15,20)
+
+Coordenadas no formato (coluna, linha), zero-indexadas. Os sprites estão compactados numa mini-atlas local `js/download-roguelike-objects.js`. Escadaria decorativa não muda de andar. Licença CC0.
