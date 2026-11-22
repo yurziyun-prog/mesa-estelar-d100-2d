@@ -83,6 +83,7 @@
           <button class="tool-btn" data-tool="furnitureMenu" onclick="openCategoryMenu('furniture')">🪑 Móveis...</button>
           <button class="tool-btn" data-tool="treeMenu" onclick="openCategoryMenu('trees')">🌳 Árvores...</button>
           <button class="tool-btn" data-tool="chest" onclick="selectTool('chest')">🧰 Baú</button>
+          <button class="tool-btn" data-prop="log" onclick="selectProp('log')">🪵 Tronco / Ponte</button>
           <button class="tool-btn" data-tool="erase" onclick="selectTool('erase')">🧹 Apagar</button>
         </div>
         <div id="selectedWallBar" class="hidden" style="margin-top:8px; padding-top:6px; border-top:1px solid var(--border);">
@@ -209,8 +210,10 @@
         <div class="section-title">Comandos</div>
         <div style="font-size:12px; line-height:1.6; color:var(--text-muted);">
           • <b>WASD / Setas:</b> Caminhar<br/>
+          • <b>Shift:</b> Correr · <b>Espaço:</b> Pular<br/>
+          • <b>Arrastar tronco:</b> Aproximar-se e mover com o mouse<br/>
           • <b>E ou Clique próximo:</b> Portas, baús, escadas<br/>
-          • <b>Botão Direito / Shift+Arrastar:</b> Mover câmera<br/>
+          • <b>Botão Direito:</b> Mover câmera<br/>
           • <b>Scroll:</b> Zoom
         </div>
       </div>
