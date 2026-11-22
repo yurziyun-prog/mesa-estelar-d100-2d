@@ -242,6 +242,8 @@ function updateUI() {
   document.getElementById('hungerBar').style.width = `${ent.hunger}%`;
   document.getElementById('attitudeSelect').value = ent.attitude;
 
+  const editAttr=document.getElementById('d100AttrEdit');
+  if(editAttr)editAttr.classList.toggle('hidden',state.mode!=='gm');
   const attrsRoot=document.getElementById('attrGrid');
   attrsRoot.replaceChildren();
   for(const key of D100_ATTRIBUTES){
