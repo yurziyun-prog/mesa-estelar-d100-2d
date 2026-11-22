@@ -1,5 +1,11 @@
 // Biblioteca do Arquiteto, independente da ficha do Mestre e do Jogador.
 const ARCHITECT_LIBRARY = {
+ downloads:[
+  ['kenney_grass','🌿','RPG Base · Grama','mat'],['kenney_sand','🏜️','RPG Base · Terra arenosa','mat'],
+  ['kenney_water','💧','RPG Base · Água','mat'],['kenney_stone','🏛️','RPG Base · Pedra clara','mat'],
+  ['kenney_wood','🪵','Roguelike · Madeira','mat'],['kenney_brick','🪨','Roguelike · Pedra cinza','mat'],
+  ['kenney_masonry','🧱','Roguelike · Alvenaria','mat'],['kenney_flowers','🌷','Roguelike · Flores','mat']
+ ],
  terrain:[['grass','🌿','Grama','mat'],['sand','🏜️','Areia','mat'],['dirt','🟤','Terra','mat'],['snow','❄️','Neve','mat'],['water','🌊','Água','mat'],['bridge','🌉','Ponte','mat'],['wood','🪵','Madeira','mat'],['checker','🔲','Ladrilho','mat'],['marble','🏛️','Mármore','mat'],['carpet','🟥','Tapete','mat'],['stone','🪨','Pedra irregular','mat'],['cobble','🧱','Calçamento','mat'],['metal','🔩','Piso metálico','mat'],['mosaic','🌀','Mosaico','mat']],
  furniture:[['table','🪵','Mesa','prop'],['chair','🪑','Cadeira','prop'],['bed','🛏️','Cama de solteiro','prop'],['bedDouble','🛏️','Cama de casal','prop'],['sleepingBag','⛺','Saco de dormir','prop'],['capsuleBed','🛸','Cápsula de sono','prop'],['bookshelf','📚','Estante','prop'],['hearth','🔥','Lareira','prop'],['barrel','🛢️','Barril','prop'],['bench','🪑','Banco','prop'],['cabinet','🚪','Armário','prop'],['desk','🗄️','Escrivaninha','prop'],['sofa','🛋️','Sofá bege','prop'],['sofaBlue','🛋️','Sofá azul','prop'],['sofaRed','🛋️','Sofá vermelho','prop'],['sofaGreen','🛋️','Sofá verde','prop'],['lowTable','🫖','Mesa baixa','prop'],['console','🖥️','Console','prop'],['lamp','💡','Luminária','prop']],
  nature:[['tree','🌳','Carvalho','prop'],['pine','🌲','Pinheiro','prop'],['fruitTree','🍎','Frutífera','prop'],['bush','🌿','Arbusto','prop'],['rock','🪨','Rocha','prop'],['palm','🌴','Palmeira','prop'],['desertTree','🌳','Árvore de deserto','prop'],['cactus','🌵','Cacto','prop'],['flowers','🌸','Flores','prop'],['reeds','🌾','Juncos','prop'],['crystal','💎','Cristal','prop']],
@@ -24,7 +30,7 @@ function openArchitectLibrary(category){
 function renderArchitectLibrary(){
  const grid=document.getElementById('architectLibraryGrid');if(!grid)return;
  document.getElementById('architectLibraryTitle').textContent=LIBRARY_LABELS[architectCategory];
- document.getElementById('architectLibraryDescription').textContent=architectCategory==='brush'?'Pinte diretamente no mapa com formatos e texturas diferentes.':architectCategory==='create'?'Um espaço preparado para editores futuros.':architectCategory==='downloads'?'Assets externos CC0, organizados por pacote de origem.':architectCategory==='terrain'?'Pisos independentes dos estilos arquitetônicos.':
+ document.getElementById('architectLibraryDescription').textContent=architectCategory==='brush'?'Pinte diretamente no mapa com formatos e texturas diferentes.':architectCategory==='create'?'Um espaço preparado para editores futuros.':architectCategory==='downloads'?'Texturas reais dos pacotes Kenney RPG Base e Kenney Roguelike RPG. Licença CC0.':architectCategory==='terrain'?'Pisos independentes dos estilos arquitetônicos.':
   architectCategory==='characters'?'Selecione um modelo e clique no mapa para colocá-lo.':
   'Os novos itens seguem a coleção de construção selecionada, sem modificar os anteriores.';
  const query=(document.getElementById('architectLibrarySearch')?.value||'').toLocaleLowerCase('pt-BR');
@@ -70,7 +76,7 @@ function placeArchitectCharacter(x,y){
 function isItemInBuildCollection(id,category){
  const style=state?.buildStyle||'normal';
  // Terrenos são universais. Os itens básicos podem coexistir em todos os estilos.
- if(category==='terrain'||category==='architecture'||category==='characters')return true;
+ if(category==='terrain'||category==='architecture'||category==='characters'||category==='downloads')return true;
  if(id==='capsuleBed')return style==='futurist';
  const arabia=new Set(['palm','desertTree','cactus','tent','oilLamp','cushions','lowTable','urn','rug','fountain']);
  const futurist=new Set(['console','lamp','crystal','capsuleBed']);
