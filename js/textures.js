@@ -274,54 +274,78 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     ctx.textAlign = 'left';
   });
 
-  // Desenhar todas as paredes por camada evita as emendas nas esquinas
-  // e nas junções em T: sombra -> moldura -> preenchimento -> detalhes.
+  // Paredes contínuas por material e espessura. Colisões usam a mesma largura.
   const walls=floor.walls;
   function wallPath(w){ctx.moveTo(w.x1,w.y1);ctx.lineTo(w.x2,w.y2);}
-  for(const pass of ['shadow','frame']){
-    ctx.save();ctx.lineCap='square';ctx.lineJoin='miter';ctx.lineWidth=18;
-    ctx.strokeStyle=pass==='shadow'?'rgba(0,0,0,.35)':'#28303c';
-    ctx.beginPath();
-    for(const w of walls){
-      if(pass==='shadow'){ctx.moveTo(w.x1+5,w.y1+6);ctx.lineTo(w.x2+5,w.y2+6);}
-      else wallPath(w);
-    }
-    ctx.stroke();ctx.restore();
-  }
-  // Agrupar trechos do mesmo material no mesmo desenho mantém as junções limpas.
-  const wallGroups=new Map();
+  const groups=new Map();
   for(const w of walls){
-    const key=(w.style||'normal')+'|'+(w.material||'');
-    if(!wallGroups.has(key))wallGroups.set(key,[]);
-    wallGroups.get(key).push(w);
+    const key=(w.style||'normal')+'|'+(w.material||'wallMasonry')+'|'+(w.width||16)+'|'+(w.color||'');
+    if(!groups.has(key))groups.set(key,[]);
+    groups.get(key).push(w);
   }
-  for(const group of wallGroups.values()){
-    const w=group[0];
-    const fill=w.material==='wallWood'?'#926443':w.material==='wallBrick'?'#a4523d':
-      w.material==='wallMasonry'?'#b5b9b5':w.material==='wallMetal'?'#c2d8df':
-      isRetroFuture(w)?'#d1e0e6':isArabia(w)?'#d9b889':'#535d70';
-    ctx.save();ctx.lineCap='square';ctx.lineJoin='miter';ctx.lineWidth=14;ctx.strokeStyle=fill;
-    ctx.beginPath();for(const segment of group)wallPath(segment);ctx.stroke();ctx.restore();
+  const wallBase=(w)=>{
+    const colors={wallWood:'#966a40',wallBrick:'#ae6047',wallMasonry:'#adb5b4',wallCastle:'#91918b',
+      wallMetal:'#c3d5de',wallRust:'#917762',wallSandstone:'#d8b982'};
+    return w.color||colors[w.material]||(isRetroFuture(w)?'#d1e0e6':isArabia(w)?'#d9b889':'#747c86');
+  };
+  for(const group of groups.values()){
+    const w=group[0],width=w.width||16;
+    for(const [extra,color,offset] of [[9,'rgba(0,0,0,.28)',4],[5,'#313440',0],[0,wallBase(w),0]]){
+      ctx.save();ctx.lineCap='square';ctx.lineJoin='bevel';
+      ctx.strokeStyle=color;ctx.lineWidth=width+extra;
+      ctx.beginPath();
+      for(const line of group){
+        if(offset){ctx.moveTo(line.x1+offset,line.y1+offset);ctx.lineTo(line.x2+offset,line.y2+offset);}
+        else wallPath(line);
+      }
+      ctx.stroke();ctx.restore();
+    }
   }
   walls.forEach((w,idx)=>{
-    ctx.save();
-    if(w.material==='wallBrick'){
-      ctx.fillStyle='rgba(100,45,30,.7)';
-      const len=Math.hypot(w.x2-w.x1,w.y2-w.y1);
-      for(let d=18;d<len-5;d+=24){
-        const t=d/len;ctx.beginPath();ctx.arc(w.x1+(w.x2-w.x1)*t,w.y1+(w.y2-w.y1)*t,1.6,0,Math.PI*2);ctx.fill();
+    const width=w.width||16,material=w.material||'wallMasonry';
+    const dx=w.x2-w.x1,dy=w.y2-w.y1,length=Math.hypot(dx,dy);
+    if(!length)return;
+    ctx.save();ctx.translate(w.x1,w.y1);ctx.rotate(Math.atan2(dy,dx));
+    if(material==='wallCastle'||material==='wallMasonry'||material==='wallBrick'||material==='wallSandstone'){
+      const joint=material==='wallBrick'?'rgba(79,36,25,.6)':'rgba(58,59,56,.50)';
+      ctx.strokeStyle=joint;ctx.lineWidth=1.5;
+      for(let row=-1;row<2;row++){
+        const offset=(row%2?12:0);
+        for(let t=offset;t<length;t+=material==='wallCastle'?34:material==='wallBrick'?23:29){
+          const jitter=(Math.sin(t*1.7+row*9.2)+1)*2;
+          ctx.beginPath();ctx.moveTo(t+jitter,row*width/3-width/6);ctx.lineTo(t-2+jitter,row*width/3+width/8);ctx.stroke();
+        }
       }
-    }else if(w.material==='wallWood'){
-      ctx.strokeStyle='#dbb483';ctx.lineWidth=2;ctx.beginPath();wallPath(w);ctx.stroke();
+      ctx.strokeStyle='rgba(255,255,255,.16)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(2,-width*.38);ctx.lineTo(length-2,-width*.38);ctx.stroke();
+    }else if(material==='wallWood'){
+      ctx.strokeStyle='rgba(61,35,19,.57)';ctx.lineWidth=1.5;
+      for(let t=17;t<length;t+=40){ctx.beginPath();ctx.moveTo(t,-width*.45);ctx.lineTo(t,width*.45);ctx.stroke();}
+      ctx.strokeStyle='rgba(242,203,146,.40)';ctx.lineWidth=1;
+      for(let k=-1;k<=1;k++){ctx.beginPath();ctx.moveTo(3,k*width/4);ctx.lineTo(length-3,k*width/4);ctx.stroke();}
+    }else if(material==='wallMetal'||material==='wallRust'){
+      ctx.strokeStyle='rgba(36,49,58,.55)';ctx.lineWidth=2;
+      for(let t=26;t<length;t+=44){ctx.beginPath();ctx.moveTo(t,-width/2);ctx.lineTo(t,width/2);ctx.stroke();}
+      for(let t=9;t<length;t+=44){
+        ctx.fillStyle='#3f4f57';for(const off of [-width*.32,width*.32]){ctx.beginPath();ctx.arc(t,off,2.1,0,Math.PI*2);ctx.fill();}
+        if(material==='wallRust'){
+          ctx.fillStyle='rgba(165,74,33,.53)';
+          ctx.beginPath();ctx.ellipse(t+11,1,10,Math.max(3,width*.18),.1,0,Math.PI*2);ctx.fill();
+          ctx.fillStyle='rgba(80,45,30,.36)';ctx.fillRect(t+8,0,3,width*.45);
+        }
+      }
     }
     if(isRetroFuture(w)){
-      ctx.strokeStyle='#43b5c4';ctx.lineWidth=2;ctx.beginPath();wallPath(w);ctx.stroke();
-    }
-    if(!isBelow&&state.mode==='architect'&&state.selectedWallIdx===idx){
-      ctx.strokeStyle='#f5b942';ctx.lineWidth=3;ctx.beginPath();wallPath(w);ctx.stroke();
-      ctx.fillStyle='#f5b942';ctx.beginPath();ctx.arc(w.x1,w.y1,6,0,Math.PI*2);ctx.arc(w.x2,w.y2,6,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#70dce9';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(4,-width*.22);ctx.lineTo(length-4,-width*.22);ctx.stroke();
     }
     ctx.restore();
+    if(!isBelow&&state.mode==='architect'&&state.selectedWallIdx===idx){
+      ctx.save();ctx.strokeStyle='#f5b942';ctx.lineWidth=2;
+      ctx.beginPath();wallPath(w);ctx.stroke();
+      ctx.fillStyle='#f5b942';for(const xy of [[w.x1,w.y1],[w.x2,w.y2]]){ctx.beginPath();ctx.arc(...xy,5,0,Math.PI*2);ctx.fill();}
+      ctx.restore();
+    }
   });
 
   floor.windows.forEach(win => {
