@@ -116,9 +116,12 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
   if (!floor) return;
 
   // Área inicial compacta e expansível
+  if (floor.terrainBounds && floor.baseTerrain) {
+    const b = floor.terrainBounds;
+    drawTexturedArea(b.x, b.y, b.w, b.h, floor.baseTerrain);
+  }
   if (floor.bounds) {
     const b = floor.bounds;
-    if (floor.baseTerrain) drawTexturedArea(b.x, b.y, b.w, b.h, floor.baseTerrain);
     if (!isBelow && state.mode === 'architect') {
       ctx.strokeStyle = 'rgba(245, 185, 66, 0.35)';
       ctx.setLineDash([6, 6]);
