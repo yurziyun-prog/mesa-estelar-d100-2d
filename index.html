@@ -69,14 +69,15 @@
 
     <div id="architectTools">
       <div class="card" style="margin-bottom:10px;">
-        <div class="section-title">Estilo visual do cenário</div>
+        <div class="section-title">Coleção de construção</div>
         <div class="row" style="margin-bottom:4px;">
-          <select id="sceneStyleSelect" class="ctrl" onchange="setSceneStyle(this.value)" aria-label="Estilo visual">
+          <select id="sceneStyleSelect" class="ctrl" onchange="setBuildStyle(this.value)" aria-label="Coleção de construção">
             <option value="normal">🏰 Normal</option>
             <option value="futurist">🚀 Retro-futurista</option>
+            <option value="arabia">🕌 Arábia</option>
           </select>
         </div>
-        <div style="font-size:11px;color:var(--text-muted);">Altera paredes, pisos, portas e móveis deste cenário, sem substituir objetos nem mapas.</div>
+        <div style="font-size:11px;color:var(--text-muted);">Define a aparência dos próximos elementos. Misture livremente no mesmo mapa. O terreno não muda.</div>
       </div>
       <div class="card" style="margin-bottom:10px;">
         <div class="section-title">
@@ -144,6 +145,11 @@
           <button class="tool-btn" data-prop="fruitTree" onclick="selectProp('fruitTree')">🍎 Árvore Frutífera</button>
           <button class="tool-btn" data-prop="bush" onclick="selectProp('bush')">🌿 Arbusto</button>
           <button class="tool-btn" data-prop="rock" onclick="selectProp('rock')">🪨 Rocha</button>
+          <button class="tool-btn" data-prop="palm" onclick="selectProp('palm')">🌴 Palmeira</button>
+          <button class="tool-btn" data-prop="desertTree" onclick="selectProp('desertTree')">🌳 Árvore do deserto</button>
+          <button class="tool-btn" data-prop="tent" onclick="selectProp('tent')">⛺ Tenda</button>
+          <button class="tool-btn" data-prop="oilLamp" onclick="selectProp('oilLamp')">🪔 Lâmpada</button>
+          <button class="tool-btn" data-prop="cushions" onclick="selectProp('cushions')">🧵 Almofadas</button>
         </div>
       </div>
 
