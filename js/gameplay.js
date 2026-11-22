@@ -16,6 +16,7 @@ function setMode(mode) {
   if (mode === 'player') hud.textContent = 'Modo Jogador • WASD/Setas: Mover • E ou Clique próximo: Portas, baús e escadas';
 
   refreshSceneSelect();
+  refreshGmSpawnList();
   updateUI();
 }
 
@@ -199,3 +200,44 @@ function logEvent(msg) {
   box.prepend(div);
 }
 
+
+let gmPlacementId = null;
+function refreshGmSpawnList(){
+ const sel=document.getElementById('gmSpawnSelect'); if(!sel) return;
+ const selected=sel.value;
+ sel.replaceChildren();
+ for(const ent of state.entities){
+  const option=document.createElement('option');
+  option.value=ent.id; option.textContent=(ent.icon||'🎭')+' '+ent.name;
+  sel.append(option);
+ }
+ if(state.entities.some(e=>e.id===selected)) sel.value=selected;
+}
+function armGmPlacement(){
+ gmPlacementId=document.getElementById('gmSpawnSelect')?.value || null;
+ if(gmPlacementId) logEvent('📍 Clique no mapa para posicionar o personagem.');
+}
+function placeGmEntityAt(wx,wy){
+ const ent=state.entities.find(e=>e.id===gmPlacementId);
+ if(!ent)return false;
+ beginEdit();
+ ent.sceneId=state.activeSceneId;ent.floor=state.currentFloor;ent.x=wx;ent.y=wy;
+ state.selectedEntityId=ent.id;gmPlacementId=null;
+ finishEdit();updateUI();refreshSceneSelect();
+ logEvent('📍 '+ent.name+' colocado no cenário.');
+ return true;
+}
+function createGmNpc(){
+ const input=document.getElementById('gmNpcName');const name=input?.value.trim();
+ if(!name) return;
+ beginEdit();
+ const npc={id:'npc_'+Date.now(),type:'npc',name,role:'NPC',icon:'🎭',color:'#17a2b8',
+ sceneId:state.activeSceneId,floor:state.currentFloor,x:340,y:380,hp:20,maxHp:20,hunger:100,attitude:'Neutro',
+ speech:'',speechTimer:0,attrs:{FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10},
+ skills:[],powers:[],inventory:[]};
+ state.entities.push(npc);state.selectedEntityId=npc.id;
+ finishEdit();input.value='';refreshGmSpawnList();renderGmPullList();updateUI();
+ document.getElementById('gmSpawnSelect').value=npc.id;
+ armGmPlacement();
+ logEvent('🎭 NPC criado: '+name+'. Clique no mapa para posicioná-lo.');
+}
