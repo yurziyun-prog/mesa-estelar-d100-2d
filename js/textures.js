@@ -1,6 +1,5 @@
-function isRetroFuture() {
-  return getScene()?.style === 'futurist';
-}
+function isRetroFuture(item) { return (item?.style || 'normal') === 'futurist'; }
+function isArabia(item) { return (item?.style || 'normal') === 'arabia'; }
 
 function drawFutureArea(x,y,w,h,mat) {
   const palette = {
@@ -38,27 +37,22 @@ function drawFutureArea(x,y,w,h,mat) {
 }
 
 function drawTexturedArea(x, y, w, h, mat) {
-  if(isRetroFuture()) { drawFutureArea(x,y,w,h,mat); return; }
   ctx.save();
   ctx.beginPath();
   ctx.rect(x, y, w, h);
   ctx.clip();
 
   if (mat === 'grass') {
-    ctx.fillStyle = '#365c29';
-    ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = 'rgba(145, 205, 105, 0.18)';
-    ctx.lineWidth = 1.2;
-    const step = 44;
-    const startX = Math.floor(x / step) * step;
-    const startY = Math.floor(y / step) * step;
-    for (let gy = startY; gy < y + h; gy += step) {
-      for (let gx = startX; gx < x + w; gx += step) {
-        ctx.beginPath();
-        ctx.moveTo(gx + 10, gy + 16); ctx.lineTo(gx + 13, gy + 10); ctx.lineTo(gx + 16, gy + 16);
-        ctx.moveTo(gx + 26, gy + 32); ctx.lineTo(gx + 29, gy + 26); ctx.lineTo(gx + 32, gy + 32);
-        ctx.stroke();
-      }
+    ctx.fillStyle='#4e7540';ctx.fillRect(x,y,w,h);
+    const cell=13, sx=Math.floor(x/cell)*cell,sy=Math.floor(y/cell)*cell;
+    for(let gy=sy;gy<y+h;gy+=cell) for(let gx=sx;gx<x+w;gx+=cell){
+      const n=Math.sin(gx*12.9898+gy*78.233)*43758.5453;
+      const f=n-Math.floor(n);
+      ctx.strokeStyle=f>.55?'rgba(148,187,94,.30)':'rgba(28,73,31,.32)';
+      ctx.lineWidth=f>.7?1.7:1.0;
+      const xx=gx+f*10, yy=gy+((f*43)%10);
+      ctx.beginPath();ctx.moveTo(xx,yy+4);ctx.lineTo(xx-2,yy-2-f*3);
+      ctx.moveTo(xx,yy+4);ctx.lineTo(xx+3,yy-1-f*2);ctx.stroke();
     }
   } else if (mat === 'wood') {
     ctx.fillStyle = '#8f582c';
@@ -138,8 +132,14 @@ function drawTexturedArea(x, y, w, h, mat) {
       }
     }
   } else if (mat === 'sand') {
-    ctx.fillStyle = '#c9a966';
-    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle='#dac38c';ctx.fillRect(x,y,w,h);
+    for(let gy=Math.floor(y/11)*11;gy<y+h;gy+=11)for(let gx=Math.floor(x/11)*11;gx<x+w;gx+=11){
+      const n=Math.sin(gx*13.17+gy*8.91)*18437.12,f=n-Math.floor(n);
+      ctx.fillStyle=f>.5?'rgba(255,248,213,.30)':'rgba(137,96,48,.16)';
+      ctx.fillRect(gx+f*7,gy+f*6,f>.8?3:1.4,1.4);
+    }
+    ctx.strokeStyle='rgba(157,117,62,.13)';ctx.lineWidth=1.4;
+    for(let gy=y+14;gy<y+h;gy+=24){ctx.beginPath();ctx.moveTo(x,gy);ctx.quadraticCurveTo(x+w/2,gy-7,x+w,gy+2);ctx.stroke();}
   } else if (mat === 'snow') {
     ctx.fillStyle = '#dce6f0';
     ctx.fillRect(x, y, w, h);
@@ -174,7 +174,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
   floor.areas.forEach(a => drawTexturedArea(a.x, a.y, a.w, a.h, a.mat));
 
   floor.stairs.forEach(s => {
-    if(isRetroFuture()){
+    if(isRetroFuture(s)){
       ctx.fillStyle='#2b3846';ctx.fillRect(s.x-36,s.y-52,72,104);
       ctx.strokeStyle='#5cc4d5';ctx.lineWidth=2;ctx.strokeRect(s.x-36,s.y-52,72,104);
       for(let k=0;k<7;k++){
@@ -208,15 +208,15 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     ctx.lineWidth = 18;
     ctx.beginPath(); ctx.moveTo(w.x1 + 5, w.y1 + 6); ctx.lineTo(w.x2 + 5, w.y2 + 6); ctx.stroke();
 
-    ctx.strokeStyle = isSel ? '#f5b942' : (isRetroFuture() ? '#101f30' : '#1e2430');
+    ctx.strokeStyle = isSel ? '#f5b942' : (isRetroFuture(w) ? '#506e80' : isArabia(w) ? '#735238' : '#1e2430');
     ctx.lineWidth = 18;
     ctx.beginPath(); ctx.moveTo(w.x1, w.y1); ctx.lineTo(w.x2, w.y2); ctx.stroke();
 
-    ctx.strokeStyle = isRetroFuture() ? '#8091a5' : '#535d70';
+    ctx.strokeStyle = isRetroFuture(w) ? '#d1e0e6' : isArabia(w) ? '#d9b889' : '#535d70';
     ctx.lineWidth = 14;
     ctx.beginPath(); ctx.moveTo(w.x1, w.y1); ctx.lineTo(w.x2, w.y2); ctx.stroke();
 
-    if(isRetroFuture()){
+    if(isRetroFuture(w)){
       ctx.strokeStyle='#43b5c4';ctx.lineWidth=2;
       ctx.beginPath();ctx.moveTo(w.x1,w.y1);ctx.lineTo(w.x2,w.y2);ctx.stroke();
       ctx.fillStyle='#d5a55a';
@@ -235,9 +235,9 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     ctx.save();
     ctx.translate(win.x, win.y);
     if (win.orient === 'v') ctx.rotate(Math.PI / 2);
-    ctx.fillStyle = isRetroFuture() ? 'rgba(55, 210, 226, .6)' : 'rgba(135, 220, 255, 0.45)';
+    ctx.fillStyle = isRetroFuture(win) ? 'rgba(55, 210, 226, .6)' : 'rgba(135, 220, 255, 0.45)';
     ctx.fillRect(-20, -8, 40, 16);
-    ctx.strokeStyle = isRetroFuture() ? '#dba95d' : '#eaf7ff';
+    ctx.strokeStyle = isRetroFuture(win) ? '#dba95d' : isArabia(win) ? '#e0a44e' : '#eaf7ff';
     ctx.lineWidth = 2;
     ctx.strokeRect(-20, -8, 40, 16);
     ctx.restore();
@@ -247,11 +247,11 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     ctx.save();
     ctx.translate(d.x,d.y);
     if(d.orient==='v') ctx.rotate(Math.PI/2);
-    const retro=isRetroFuture();
+    const retro=isRetroFuture(d);
     // Trilho ou batente permanece fixo na parede.
-    ctx.fillStyle=retro?'#172d3d':'#3d2819';
+    ctx.fillStyle=retro?'#728b9b':isArabia(d)?'#895f3d':'#3d2819';
     ctx.fillRect(-38,-10,76,20);
-    ctx.fillStyle=retro?'#b7a171':'#a8733e';
+    ctx.fillStyle=retro?'#e3c184':isArabia(d)?'#dcb874':'#a8733e';
     ctx.fillRect(-38,-11,5,22);
     ctx.fillRect(33,-11,5,22);
     if(retro){
@@ -271,7 +271,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
       // Antes girava pelo centro, criando a aparência de porta atravessada.
       ctx.translate(-34,0);
       if(d.open) ctx.rotate(-Math.PI/2);
-      ctx.fillStyle=d.keyId&&!d.open?'#bb843a':'#9c5a27';
+      ctx.fillStyle=d.keyId&&!d.open?'#bb843a':isArabia(d)?'#c28a50':'#9c5a27';
       ctx.fillRect(0,-8,68,16);
       ctx.strokeStyle='#322014';ctx.lineWidth=2.5;ctx.strokeRect(0,-8,68,16);
       ctx.strokeStyle='#c89457';ctx.lineWidth=1;
@@ -285,7 +285,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
   });
 
   floor.chests.forEach(c => {
-    if(isRetroFuture()){
+    if(isRetroFuture(c)){
       ctx.fillStyle='#1e2e3d';ctx.fillRect(c.x-24,c.y-15,48,30);
       ctx.fillStyle=c.opened?'#455668':'#798b99';ctx.fillRect(c.x-20,c.y-12,40,24);
       ctx.strokeStyle='#c69d5b';ctx.lineWidth=2;ctx.strokeRect(c.x-24,c.y-15,48,30);
@@ -294,7 +294,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     }
     ctx.fillStyle = 'rgba(0,0,0,0.32)';
     ctx.fillRect(c.x - 20, c.y - 12, 44, 28);
-    ctx.fillStyle = c.opened ? '#6e563e' : '#f5b942';
+    ctx.fillStyle = c.opened ? '#6e563e' : isArabia(c) ? '#b98a56' : '#f5b942';
     ctx.fillRect(c.x - 22, c.y - 14, 44, 28);
     ctx.strokeStyle = '#2b1c0c';
     ctx.lineWidth = 2.5;
@@ -376,13 +376,13 @@ function drawFutureProp(p){
   const x=p.x,y=p.y;
   ctx.save();ctx.translate(x,y);ctx.rotate((p.rot||0)*Math.PI/2);
   ctx.fillStyle='rgba(0,0,0,.33)';ctx.fillRect(-24,-12,50,32);
-  const casing='#546779',edge='#192b3b',light='#5cd4dd',brass='#dbad62';
+  const casing='#d2e0e9',edge='#597589',light='#5cd4dd',brass='#dbad62';
   if(p.type==='log'){
     ctx.fillStyle=casing;ctx.fillRect(-70,-11,140,22);
     ctx.strokeStyle=light;ctx.lineWidth=2;ctx.strokeRect(-70,-11,140,22);
     for(let i=-60;i<65;i+=20){ctx.fillStyle=brass;ctx.fillRect(i,-7,4,14);}
   }else if(['tree','pine','fruitTree','bush'].includes(p.type)){
-    ctx.fillStyle='#233c39';ctx.beginPath();ctx.arc(0,0,p.type==='bush'?16:27,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#7cae96';ctx.beginPath();ctx.arc(0,0,p.type==='bush'?16:27,0,Math.PI*2);ctx.fill();
     ctx.strokeStyle=light;ctx.lineWidth=2;ctx.stroke();
     ctx.fillStyle='#79ba94';
     for(let i=0;i<5;i++){let a=i*Math.PI*2/5;ctx.beginPath();ctx.arc(Math.cos(a)*12,Math.sin(a)*12,5,0,Math.PI*2);ctx.fill();}
@@ -416,8 +416,42 @@ function drawFutureProp(p){
   ctx.restore();
 }
 
+function drawArabiaProp(p){
+  const x=p.x,y=p.y,t=p.type;
+  ctx.save();ctx.translate(x,y);
+  const palm=t==='palm'||(['tree','pine','fruitTree'].includes(t)&&isArabia(p));
+  if(palm){
+    ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();ctx.ellipse(7,8,25,13,0,0,7);ctx.fill();
+    ctx.fillStyle='#8d6746';ctx.beginPath();ctx.arc(0,0,7,0,7);ctx.fill();
+    for(let i=0;i<9;i++){const a=i*Math.PI*2/9;ctx.strokeStyle=i%2?'#5c8549':'#3d754b';ctx.lineWidth=7;
+      ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(Math.cos(a)*16,Math.sin(a)*16,Math.cos(a)*32,Math.sin(a)*32);ctx.stroke();}
+    ctx.fillStyle='#b18b53';ctx.beginPath();ctx.arc(0,0,5,0,7);ctx.fill();
+  } else if(t==='desertTree'){
+    ctx.strokeStyle='#806344';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(0,10);ctx.lineTo(0,-9);ctx.stroke();
+    for(const [dx,dy] of [[-16,-12],[13,-14],[0,-22]]){ctx.fillStyle='#72854c';ctx.beginPath();ctx.arc(dx,dy,13,0,7);ctx.fill();}
+  } else if(t==='tent'){
+    ctx.fillStyle='#b97851';ctx.beginPath();ctx.moveTo(-40,25);ctx.lineTo(0,-33);ctx.lineTo(40,25);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#714b3a';ctx.lineWidth=3;ctx.stroke();
+    ctx.fillStyle='#e5c592';ctx.beginPath();ctx.moveTo(0,-33);ctx.lineTo(0,25);ctx.lineTo(36,25);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#553c31';ctx.beginPath();ctx.moveTo(-9,25);ctx.lineTo(0,1);ctx.lineTo(9,25);ctx.fill();
+  } else if(t==='oilLamp'){
+    ctx.fillStyle='#b78b49';ctx.beginPath();ctx.ellipse(0,3,17,10,0,0,7);ctx.fill();
+    ctx.fillStyle='#f1c86a';ctx.fillRect(-8,-8,16,10);ctx.strokeStyle='#825321';ctx.lineWidth=3;
+    ctx.beginPath();ctx.arc(15,0,8,-1.2,1.3);ctx.stroke();ctx.fillStyle='#efae37';ctx.beginPath();ctx.arc(0,-12,5,0,7);ctx.fill();
+  } else if(t==='cushions'||t==='chair'){
+    for(const [dx,dy,c] of [[-11,0,'#9d4045'],[10,2,'#d39e4c']]){ctx.fillStyle=c;ctx.beginPath();ctx.ellipse(dx,dy,14,11,0,0,7);ctx.fill();}
+  } else if(t==='table'){
+    ctx.fillStyle='#b17a48';ctx.beginPath();ctx.arc(0,0,27,0,7);ctx.fill();ctx.strokeStyle='#dfbd83';ctx.lineWidth=5;ctx.stroke();
+  } else if(t==='bed'){ctx.fillStyle='#d8b67f';ctx.fillRect(-26,-31,52,62);ctx.fillStyle='#9d3d51';ctx.fillRect(-20,-15,40,40);}
+  else if(t==='bookshelf'){ctx.fillStyle='#c59c69';ctx.fillRect(-27,-18,54,36);ctx.strokeStyle='#916b44';ctx.lineWidth=4;ctx.strokeRect(-27,-18,54,36);}
+  else if(t==='barrel'||t==='hearth'){ctx.fillStyle='#ab7f4d';ctx.beginPath();ctx.arc(0,0,20,0,7);ctx.fill();}
+  else{ctx.restore();drawProp({...p,style:'normal'});return;}
+  ctx.restore();
+}
+
 function drawProp(p) {
-  if(isRetroFuture()) {drawFutureProp(p); return;}
+  if(isRetroFuture(p)) {drawFutureProp(p); return;}
+  if(isArabia(p) || ['palm','desertTree','tent','oilLamp','cushions'].includes(p.type)){drawArabiaProp(p);return;}
   const cx = p.x;
   const cy = p.y;
 
