@@ -325,3 +325,5 @@
 .library-card:hover{border-color:#c5a36c;}
 .library-card.active{border-color:var(--gold);background:#26334d;}
 .library-selection{font-size:12px;color:#edc878;border-top:1px solid var(--border);margin-top:12px;padding-top:9px;}
+
+#gmNoCharacter.hidden,#rightPlayerControls.hidden{display:none;}
