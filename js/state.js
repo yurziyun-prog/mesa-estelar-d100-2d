@@ -409,17 +409,16 @@ function migrateFixedTerrain() {
 }
 
 function setBuildStyle(style) {
-  if(state.mode!=='architect' || !['normal','futurist','arabia','downloads'].includes(style))return;
+  if(state.mode!=='architect' || !['normal','futurist','arabia'].includes(style))return;
   state.buildStyle=style;
   document.getElementById('sceneStyleSelect').value=style;
   if(typeof renderArchitectLibrary==='function'){
-    if(style==='downloads' && typeof openArchitectLibrary==='function')openArchitectLibrary('downloads');
-    else renderArchitectLibrary();
+    renderArchitectLibrary();
   }
-  logEvent('🧱 Coleção de construção: '+(style==='arabia'?'Arábia':style==='futurist'?'Retro-futurista':style==='downloads'?'Downloads':'Normal'));
+  logEvent('🧱 Coleção de construção: '+(style==='arabia'?'Arábia':style==='futurist'?'Retro-futurista':'Normal'));
 }
 function migrateBuildStyles(){
-  if(!state.buildStyle)state.buildStyle='normal';
+  if(!state.buildStyle || state.buildStyle==='downloads')state.buildStyle='normal';
   if(!state.propColor)state.propColor='#a35d64';
   if(!state.wallWidth)state.wallWidth=16;
   if(!state.brush)state.brush={shape:'redondo',size:32,texture:'solida',mat:'grass'};
