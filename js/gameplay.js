@@ -38,6 +38,11 @@ function onPlacedBridge(floor, x, y) {
 function walkableFloor(floor, x, y) {
   return onPaintedGround(floor, x, y) || onPlacedBridge(floor, x, y);
 }
+function openedDoorLeaf(d){
+  if(d.style==='futurist' || !d.open)return null;
+  if(d.orient==='v')return {x1:d.x,y1:d.y-34,x2:d.x+68,y2:d.y-34};
+  return {x1:d.x-34,y1:d.y,x2:d.x-34,y2:d.y-68};
+}
 function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   const floor = getScene().floors[floorIdx];
   if (!floor) return false;
@@ -51,6 +56,7 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   }
 
   if (floor.doors.some(d => !d.open && Math.hypot(d.x - nx, d.y - ny) < r + 12)) return false;
+  if (floor.doors.some(d=>{const leaf=openedDoorLeaf(d);return leaf&&distToSegment(nx,ny,leaf.x1,leaf.y1,leaf.x2,leaf.y2)<r+8;}))return false;
   if (floor.windows.some(win => Math.hypot(win.x - nx, win.y - ny) < r + 8)) return false;
   if (floor.chests.some(c => Math.hypot(c.x - nx, c.y - ny) < r + 14)) return false;
 
@@ -67,6 +73,8 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
 
 function interactNearby(entity) {
   const floor = getScene().floors[entity.floor];
+  const keyIndex=floor.props.findIndex(p=>p.type==='key'&&Math.hypot(p.x-entity.x,p.y-entity.y)<48);
+  if(keyIndex!==-1){const key=floor.props.splice(keyIndex,1)[0];entity.inventory.push(key.keyId);updateUI();logEvent('🔑 '+entity.name+' recolheu '+(key.label||'uma chave')+'.');return;}
 
   const stair = floor.stairs.find(s => Math.hypot(s.x - entity.x, s.y - entity.y) < 64);
   if (stair) {
@@ -82,7 +90,12 @@ function interactNearby(entity) {
 
   const door = floor.doors.find(d => Math.hypot(d.x - entity.x, d.y - entity.y) < 58);
   if (door) {
-    if (door.keyId && !door.open) {
+    if (door.lockCode && !door.open) {
+      const answer=prompt('Digite o código de acesso:');
+      if(answer===null)return;
+      if(answer!==door.lockCode){say(entity,'Código incorreto.');return;}
+      door.open=true;logEvent('🔓 Código aceito. Porta aberta.');
+    } else if (door.keyId && !door.open) {
       if (entity.inventory.includes(door.keyId)) {
         door.open = true;
         logEvent(`🔓 ${entity.name} destrancou a porta com [${door.keyId}].`);
@@ -101,6 +114,11 @@ function interactNearby(entity) {
     if (chest.opened) {
       say(entity, 'Baú vazio.');
       return;
+    }
+    if(chest.lockCode){
+      const code=prompt('Digite o código do baú:');
+      if(code===null)return;
+      if(code!==chest.lockCode){say(entity,'Código incorreto.');return;}
     }
     if (chest.keyId && !entity.inventory.includes(chest.keyId)) {
       say(entity, `Trancado (${chest.keyId}).`);
