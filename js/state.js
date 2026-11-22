@@ -136,6 +136,8 @@ function createInitialState() {
     selectedWallIdx: null,
     camera: { x: 24, y: 12, zoom: 1 },
     activeSceneId: 'scene_1',
+    modeScenes: {architect:'scene_1',gm:'scene_1'},
+    gmTransferIds: ['pc_1','pc_2'],
     scenes: {
       scene_1: buildHouseScene('Casa de 2 Andares'),
       scene_2: buildDesertRuinsScene('Ruínas do Deserto')
@@ -183,6 +185,7 @@ function init() {
   state = saved ? JSON.parse(saved) : createInitialState();
   migrateFixedTerrain();
   migrateBuildStyles();
+  migrateModeScenes();
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
   setupInputs();
@@ -206,6 +209,7 @@ function refreshSceneSelect() {
 function onSceneSelectChange(id) {
   if (state.mode === 'architect') {
     state.activeSceneId = id;
+    state.modeScenes.architect = id;
     if (typeof selectedMapObject !== 'undefined') selectedMapObject = null;
     state.currentFloor = 0;
     state.selectedWallIdx = null;
@@ -226,6 +230,7 @@ function createNewSceneAsArchitect() {
   f0.terrainBounds = {...f0.bounds};
   state.scenes[id] = { name, style: getScene()?.style || 'normal', floors: [f0, createEmptyFloor(null)] };
   state.activeSceneId = id;
+  state.modeScenes.architect = id;
   state.currentFloor = 0;
   state.selectedWallIdx = null;
   input.value = '';
@@ -249,52 +254,66 @@ function duplicateCurrentScene() {
   copy.name = `${cur.name} (Cópia)`;
   state.scenes[id] = copy;
   state.activeSceneId = id;
+  state.modeScenes.architect = id;
   refreshSceneSelect();
   finishEdit();
   saveBank();
 }
 
 function renderGmPullList() {
-  const box = document.getElementById('gmPullEntitiesList');
-  if (!box) return;
-  const previous = new Set([...box.querySelectorAll('.gm-pull-chk:checked')].map(el => el.value));
+  const box=document.getElementById('gmPullEntitiesList');if(!box)return;
+  const selected=new Set(state.gmTransferIds||[]);
   box.replaceChildren();
-  for (const ent of state.entities) {
-    const here = ent.sceneId === state.activeSceneId && ent.floor === state.currentFloor;
-    const label = document.createElement('label');
-    label.className = 'check-row';
-    const check = document.createElement('input');
-    check.type = 'checkbox';
-    check.className = 'gm-pull-chk';
-    check.value = ent.id;
-    check.checked = previous.has(ent.id);
-    const name = document.createElement('span');
-    name.textContent = (ent.icon || '🎭') + ' ' + ent.name;
-    const status = document.createElement('span');
-    status.style = 'margin-left:auto;font-size:10px;color:' + (here?'var(--success)':'var(--gold)');
-    status.textContent = here ? 'Aqui' : 'Outro';
-    label.append(check,name,status);
-    box.append(label);
+  // PJs ficam no começo, todos marcados por padrão. NPCs podem ser marcados manualmente.
+  for(const ent of [...state.entities].sort((a,b)=>(a.type==='pc'?0:1)-(b.type==='pc'?0:1))){
+    const here=ent.sceneId===state.activeSceneId;
+    const label=document.createElement('label');label.className='check-row';
+    const input=document.createElement('input');input.type='checkbox';input.className='gm-pull-chk';
+    input.value=ent.id;input.checked=selected.has(ent.id);
+    input.addEventListener('change',()=>{
+      const ids=new Set(state.gmTransferIds||[]);
+      if(input.checked)ids.add(ent.id);else ids.delete(ent.id);
+      state.gmTransferIds=[...ids];
+    });
+    const name=document.createElement('span');name.textContent=(ent.icon||'🎭')+' '+ent.name;
+    const where=document.createElement('span');where.style='margin-left:auto;font-size:10px;color:var(--text-muted)';
+    where.textContent=here?'Aqui':state.scenes[ent.sceneId]?.name||'Outro';
+    label.append(input,name,where);box.append(label);
   }
 }
 function armGmRosterPlacement() {
-  const ids = [...document.querySelectorAll('.gm-pull-chk:checked')].map(c => c.value);
+  const ids = [...(state.gmTransferIds||[])];
   if (!ids.length) { logEvent('Marque pelo menos um personagem para colocar.'); return; }
   gmRosterPlacementIds = ids;
   gmPlacementTemplate = null;
   logEvent('📍 Clique no mapa aberto para colocar os '+ids.length+' personagens.');
 }
-function gmSwitchScene() {
-  const targetId = document.getElementById('sceneSelect').value;
-  if (!targetId || !state.scenes[targetId]) return;
-  state.activeSceneId = targetId;
-  state.currentFloor = 0;
-  updateFloorLabel();
-  refreshSceneSelect();
-  updateUI();
-  logEvent('👑 Mestre abriu o cenário "' + getScene().name + '".');
+function gmSwitchScene(){
+  const targetId=document.getElementById('sceneSelect').value;
+  if(!targetId||!state.scenes[targetId])return;
+  migrateModeScenes();
+  if(targetId===state.activeSceneId){logEvent('👑 Este cenário já está aberto.');return;}
+  beginEdit();
+  const selected=new Set(state.gmTransferIds||[]);
+  const floor=state.scenes[targetId].floors[0];
+  const bounds=floor.terrainBounds||floor.bounds||{x:0,y:0,w:600,h:450};
+  const moved=state.entities.filter(ent=>selected.has(ent.id));
+  moved.forEach((ent,i)=>{
+    ent.sceneId=targetId;ent.floor=0;
+    const col=i%4,row=Math.floor(i/4);
+    ent.x=bounds.x+bounds.w/2+(col-1.5)*38;
+    ent.y=bounds.y+bounds.h/2+(row-1)*38;
+  });
+  state.modeScenes.gm=targetId;
+  state.activeSceneId=targetId;
+  state.currentFloor=0;
+  if(typeof gmControlledId!=='undefined'){gmControlledId=null;gmPreviewId=null;}
+  if(typeof gmRosterPlacementIds!=='undefined')gmRosterPlacementIds=null;
+  updateFloorLabel();refreshSceneSelect();updateUI();
+  if(typeof refreshGmFocus==='function')refreshGmFocus();
+  finishEdit();
+  logEvent('👑 Mestre abriu "'+getScene().name+'" e levou '+moved.length+' personagem(ns). Os desmarcados ficaram nos cenários anteriores.');
 }
-
 function saveBank() {
   try { localStorage.setItem('rpg_vtt_aligned_v8', JSON.stringify(state)); logEvent('💾 Cenários salvos neste navegador.'); }
   catch(error) { alert('Não foi possível salvar: ' + error.message); }
@@ -318,6 +337,7 @@ function importJSON(e) {
       state = JSON.parse(ev.target.result);
       migrateFixedTerrain();
       migrateBuildStyles();
+      migrateModeScenes();
       finishEdit();
       state.currentFloor = 0;
       state.selectedWallIdx = null;
@@ -350,6 +370,7 @@ function restoreState(serialized){
   state = JSON.parse(serialized);
   migrateFixedTerrain();
   migrateBuildStyles();
+  migrateModeScenes();
   dragStart = null; previewRect = null; draggedObj = null;
   selectedMapObject = null; draggingEntity = null; isDragging = false;
   updateFloorLabel(); setMode(state.mode); refreshSceneSelect(); updateSelectedWallBar(); updateUI();
@@ -405,4 +426,12 @@ function migrateBuildStyles(){
     // O estilo do cenário antigo serve apenas para migrar os objetos.
     delete scene.style;
   }
+}
+
+function migrateModeScenes(){
+  if(!state.modeScenes)state.modeScenes={architect:state.activeSceneId,gm:state.activeSceneId};
+  for(const mode of ['architect','gm']){
+    if(!state.scenes[state.modeScenes[mode]])state.modeScenes[mode]=state.activeSceneId;
+  }
+  if(!Array.isArray(state.gmTransferIds))state.gmTransferIds=state.entities.filter(e=>e.type==='pc').map(e=>e.id);
 }
