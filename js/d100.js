@@ -53,7 +53,15 @@ function editD100Attributes(){
  const raw=prompt('Atributos FOR, CON, TAM, DES, INT, POD, CAR (separados por vírgulas):',example);
  if(raw===null)return;
  const vals=raw.split(',').map(x=>Number(x.trim()));
- if(vals.length!==7||vals.some(n=>!Number.isInteger(n)||n<1||n>100)){logEvent('São necessários 7 atributos inteiros entre 1 e 100.');return;}
+ if(vals.length!==7||vals.some((n,i)=>{
+   const key=D100_ATTRIBUTES[i];
+   const min=ent.type==='pc' && (key==='TAM'||key==='INT')?6:ent.type==='pc'?3:1;
+   const max=ent.type==='pc'?18:100;
+   return !Number.isInteger(n)||n<min||n>max;
+ })){
+   logEvent('Atributos inválidos: PJs usam 3–18 (TAM e INT: 6–18); criaturas podem ter valores especiais.');
+   return;
+ }
  beginEdit();D100_ATTRIBUTES.forEach((k,i)=>ent.attrs[k]=vals[i]);finishEdit();updateUI();
 }
 function editD100Attribute(key){
@@ -62,7 +70,9 @@ function editD100Attribute(key){
  const raw=prompt('Valor d100 de '+key+' (ficha original do Mesa Estelar):',String(ent.attrs[key]));
  if(raw===null)return;
  const value=Number(raw);
- if(!Number.isInteger(value)||value<1||value>100){logEvent('Valor de atributo inválido.');return;}
+ const min=ent.type==='pc'&&(key==='TAM'||key==='INT')?6:ent.type==='pc'?3:1;
+ const max=ent.type==='pc'?18:100;
+ if(!Number.isInteger(value)||value<min||value>max){logEvent('Valor de atributo fora dos limites da ficha.');return;}
  beginEdit();ent.attrs[key]=value;finishEdit();updateUI();
 }
 function editD100Skill(index){
