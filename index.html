@@ -128,7 +128,7 @@
       </div>
     </div>
 
-    <div id="gmTools" class="hidden">
+    <div id="gmTools" class="hidden"><div class="card"><div class="section-title">Estatísticas da sessão</div><div id="gmSessionStats" style="font-size:12px;line-height:1.8;color:var(--text-muted)"></div><div style="font-size:11px;color:var(--text-muted)">Tab: selecionar · Enter: controlar · Esc: liberar</div></div>
       <div class="card" style="margin-bottom:10px;">
         <div class="section-title">Ambiente & Horário</div>
         <div class="row" style="margin-bottom:4px;">
@@ -211,6 +211,7 @@
         <div class="library-selection" id="architectLibrarySelected">Escolha um item para colocar no mapa.</div>
       </div>
     </div>
+    <div id="gmNoCharacter" class="card hidden"><div class="section-title">Controle do Mestre</div><div id="gmControlHint" style="font-size:12px;color:var(--text-muted)">Tab escolhe · Enter controla · Esc libera</div></div>
     <div id="characterSheetPanel">
     <div class="card">
       <div class="section-title">
@@ -262,6 +263,7 @@
       <div class="section-title">Equipamento & Mochila</div>
       <div id="inventoryList"></div>
     </div>
+    <div id="rightPlayerControls" class="card hidden"><div class="section-title">Controles do personagem</div><div style="font-size:12px;line-height:1.7;color:var(--text-muted)">WASD / Setas: andar · Shift: correr · Espaço: pular · E: interagir · Tab: escolher · Enter: controlar · Esc: liberar</div></div>
     </div>
   </aside>
 </div>
@@ -269,9 +271,9 @@
 <script src="js/state.js?v=architect-library-20261122i" defer></script>
 <script src="js/editor.js?v=architect-library-20261122g" defer></script>
 <script src="js/library.js?v=architect-library-20261122i" defer></script>
-<script src="js/gameplay.js?v=architect-library-20261122h" defer></script>
-<script src="js/textures.js?v=architect-library-20261122h" defer></script>
-<script src="js/main.js?v=architect-library-20261122g" defer></script>
+<script src="js/gameplay.js?v=gm-camera-20261123a" defer></script>
+<script src="js/textures.js?v=gm-camera-20261123a" defer></script>
+<script src="js/main.js?v=gm-camera-20261123a" defer></script>
 <dialog id="lockDialog" class="lock-dialog">
   <form method="dialog" onsubmit="return false;">
     <h3 id="lockDialogTitle">Configurar tranca</h3>
