@@ -27,6 +27,7 @@ function renderArchitectLibrary(){
  grid.replaceChildren();
  for(const [id,icon,label,kind] of ARCHITECT_LIBRARY[architectCategory]){
   if(!label.toLocaleLowerCase('pt-BR').includes(query))continue;
+  if(!isItemInBuildCollection(id,architectCategory))continue;
   const button=document.createElement('button');button.type='button';button.className='library-card';
   const emoji=document.createElement('span');emoji.className='emoji';emoji.textContent=icon;
   const name=document.createElement('span');name.textContent=label;
@@ -49,4 +50,15 @@ function placeArchitectCharacter(x,y){
  const entity=instantiateTemplate(template,x,y);
  state.entities.push(entity);state.selectedEntityId=entity.id;
  logEvent('🎭 '+entity.name+' colocado pelo Arquiteto.');
+}
+
+function isItemInBuildCollection(id,category){
+ const style=state?.buildStyle||'normal';
+ // Terrenos são universais. Os itens básicos podem coexistir em todos os estilos.
+ if(category==='terrain'||category==='architecture'||category==='characters')return true;
+ const arabia=new Set(['palm','desertTree','cactus','tent','oilLamp','cushions','lowTable','urn','rug','fountain']);
+ const futurist=new Set(['console','lamp','crystal']);
+ if(style==='arabia')return !futurist.has(id);
+ if(style==='futurist')return !arabia.has(id) || id==='palm';
+ return !futurist.has(id) && !arabia.has(id);
 }
