@@ -59,6 +59,11 @@ function setMode(mode) {
 
 function onPaintedGround(floor, x, y) {
   const hit = (a) => x >= a.x && x <= a.x+a.w && y >= a.y && y <= a.y+a.h;
+  for(const stroke of [...(floor.brushStrokes||[])].reverse()){
+    for(let i=stroke.points.length-1;i>=0;i--){
+      if(brushPointInside(stroke,stroke.points[i],x,y,i))return stroke.mat!=='water'&&stroke.mat!=='void';
+    }
+  }
   const painted = [...floor.areas].reverse().find(hit);
   if (painted) return painted.mat !== 'water';
   const b = floor.terrainBounds || floor.bounds;
