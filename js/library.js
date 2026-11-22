@@ -212,7 +212,7 @@ function refreshArchitectProperties(){
  const mat=document.getElementById('constructionMaterial');
  if(mat&&kind)mat.value=kind==='wall'
     ?(Object.keys(CONSTRUCTION_WALL_MATERIALS).find(k=>CONSTRUCTION_WALL_MATERIALS[k]===(item?.material||state.wallVariant))||'masonry')
-    :(item?.material||state.stairMaterial||'wood');
+    :(item?.material||(kind==='stairs'?state.stairMaterial:state.constructionMaterial)||'wood');
  const shape=document.getElementById('stairShape');if(shape)shape.value=item?.shape||state.stairShape||'straight';
  const title=document.getElementById('constructionOptionTitle');
  if(title)title.textContent=kind==='wall'?'Parede · material e espessura':kind==='stairs'?'Escada · material e formato':'Construção · material';
