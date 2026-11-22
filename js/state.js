@@ -130,6 +130,8 @@ function createInitialState() {
     material: 'grass',
     propType: 'tree',
     buildStyle: 'normal',
+    propColor:'#a35d64',
+    wallWidth:16,
     brush: {shape:'redondo',size:32,texture:'solida',mat:'grass'},
     rotation: 0,
     selectedEntityId: 'pc_1',
@@ -418,6 +420,8 @@ function setBuildStyle(style) {
 }
 function migrateBuildStyles(){
   if(!state.buildStyle)state.buildStyle='normal';
+  if(!state.propColor)state.propColor='#a35d64';
+  if(!state.wallWidth)state.wallWidth=16;
   if(!state.brush)state.brush={shape:'redondo',size:32,texture:'solida',mat:'grass'};
   for(const scene of Object.values(state.scenes||{})){
     const oldStyle=scene.style==='futurist'?'futurist':'normal';
