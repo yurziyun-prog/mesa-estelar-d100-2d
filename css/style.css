@@ -333,3 +333,8 @@
 #brushSettings select{width:100%;}
 
 .library-thumb{width:36px;height:36px;flex-shrink:0;image-rendering:pixelated;border-radius:5px;background:#24332e;}
+
+#objectColorSettings:not(.hidden),#wallSettings:not(.hidden){display:flex;flex-direction:column;gap:8px;margin:9px 0;padding:10px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.025);}
+#objectColorPicker{width:42px;height:32px;border:1px solid var(--border);border-radius:6px;padding:1px;background:transparent;cursor:pointer;flex-shrink:0;}
+.color-swatches{display:flex;gap:6px;flex-wrap:wrap;}
+.color-swatches button{height:23px;width:23px;border:1px solid #d5dbe3;border-radius:6px;cursor:pointer;}
