@@ -153,7 +153,7 @@ function selectedArchitectItem(){
  const floor=getScene()?.floors?.[state.currentFloor];
  return floor?.[selectedMapObject.kind]?.[selectedMapObject.index]||null;
 }
-function supportsObjectColor(item){return Boolean(item && (item.type || ('material' in item && 'x1' in item)));}
+function supportsObjectColor(item){return Boolean(item && (item.type || item.mat==='carpet' || ('material' in item && 'x1' in item)));}
 let architectEyedropper=false;
 function setArchitectObjectColor(value){
  value=String(value).trim().toLowerCase();
@@ -201,7 +201,7 @@ function selectedConstructionKind(){
 }
 function refreshArchitectProperties(){
  const item=selectedArchitectItem(),kind=selectedConstructionKind();
- const furniture=Boolean(item?.type)||(!item&&['furniture','props'].includes(architectCategory));
+ const furniture=Boolean(item?.type)||item?.mat==='carpet'||(!item&&['furniture','props'].includes(architectCategory));
  const showColors=kind==='wall'?Boolean(state.wallCustomColor||item?.color):!kind&&furniture;
  document.getElementById('objectColorSettings')?.classList.toggle('hidden',!showColors);
  document.getElementById('constructionOptions')?.classList.toggle('hidden',!kind);
@@ -252,7 +252,7 @@ function sampleArchitectColorAt(wx,wy){
  if(!hit){logEvent('Nenhum objeto para copiar a cor.');return true;}
  const item=getScene().floors[state.currentFloor][hit.kind][hit.index];
  const base={wallWood:'#966a40',wallBrick:'#ae6047',wallMasonry:'#adb5b4',wallCastle:'#91918b',wallMetal:'#c3d5de',wallRust:'#917762',wallSandstone:'#d8b982'};
- const color=item.color||(item.material?base[item.material]:null)||state.propColor;
+ const color=item.color||(item.mat==='carpet'?'#8c1d28':null)||(item.material?base[item.material]:null)||(item.type==='sofa'?'#c7b5a4':null)||(item.type==='rug'?'#744b79':null)||(item.type==='bed'?'#9e6473':null)||state.propColor;
  setArchitectObjectColor(color);
  document.getElementById('architectLibrarySelected').textContent='Cor copiada: '+color;
  return true;
