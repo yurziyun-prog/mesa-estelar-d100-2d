@@ -108,7 +108,7 @@ function selectArchitectLibraryItem(id,label,kind){
 function placeArchitectCharacter(x,y){
  if(!architectCharacterTemplate)return;
  const template=GM_TEMPLATES.find(t=>t.id===architectCharacterTemplate);if(!template)return;
- const entity=instantiateTemplate(template,x,y);
+ const entity=normalizeD100Character(instantiateTemplate(template,x,y));
  state.entities.push(entity);state.selectedEntityId=entity.id;
  logEvent('🎭 '+entity.name+' colocado pelo Arquiteto.');
 }
