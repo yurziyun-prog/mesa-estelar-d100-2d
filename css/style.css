@@ -327,3 +327,7 @@
 .library-selection{font-size:12px;color:#edc878;border-top:1px solid var(--border);margin-top:12px;padding-top:9px;}
 
 #gmNoCharacter.hidden,#rightPlayerControls.hidden{display:none;}
+
+#brushSettings:not(.hidden){display:flex;flex-direction:column;gap:10px;padding:8px 0;}
+#brushSettings label{font-size:12px;color:var(--text-muted);display:flex;flex-direction:column;gap:5px;}
+#brushSettings select{width:100%;}
