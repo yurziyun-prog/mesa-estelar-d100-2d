@@ -307,15 +307,21 @@
     </div>
 
     <div class="card">
-      <div class="section-title">Atributos (Clique p/ Testar)</div>
+      <div class="section-title">Atributos d100 (FOR · CON · TAM · DES · INT · POD · CAR)</div>
       <div class="stat-grid" id="attrGrid"></div>
     </div>
 
     <div class="card">
-      <div class="section-title">Perícias & Poderes</div>
+      <div class="section-title">Perícias d100 · Base + Treino = Total</div>
       <div id="skillsList"></div>
     </div>
 
+    <div id="skeletonAIControl" class="card hidden">
+      <div class="section-title">💀 Esqueleto autônomo (preparação)</div>
+      <p id="skeletonAIStatus" style="font-size:12px;color:var(--text-muted)">Vigiar</p>
+      <button class="btn" onclick="toggleSelectedSkeletonAI()">Ativar / Desativar IA</button>
+      <p style="font-size:11px;color:var(--text-muted)">Detecta e se aproxima de PJs. Ainda não ataca nem calcula dano.</p>
+    </div>
     <div class="card">
       <div class="section-title">Equipamento & Mochila</div>
       <div id="inventoryList"></div>
@@ -325,15 +331,16 @@
   </aside>
 </div>
 
-<script src="js/state.js?v=asset-colors-walls-20261123b" defer></script>
-<script src="js/editor.js?v=asset-colors-walls-20261123b" defer></script>
-<script src="js/library.js?v=asset-colors-walls-20261123b" defer></script>
-<script src="js/gameplay.js?v=asset-colors-walls-20261123b" defer></script>
-<script src="js/download-assets.js?v=asset-colors-walls-20261123b" defer></script>
-<script src="js/download-objects.js?v=asset-colors-walls-20261123b" defer></script>
-<script src="js/download-roguelike-objects.js?v=asset-colors-walls-20261123b" defer></script>
-<script src="js/textures.js?v=asset-colors-walls-20261123b" defer></script>
-<script src="js/main.js?v=asset-colors-walls-20261123b" defer></script>
+<script src="js/d100.js?v=d100-sheet-20261123a" defer></script>
+<script src="js/state.js?v=d100-sheet-20261123a" defer></script>
+<script src="js/editor.js?v=d100-sheet-20261123a" defer></script>
+<script src="js/library.js?v=d100-sheet-20261123a" defer></script>
+<script src="js/gameplay.js?v=d100-sheet-20261123a" defer></script>
+<script src="js/download-assets.js?v=d100-sheet-20261123a" defer></script>
+<script src="js/download-objects.js?v=d100-sheet-20261123a" defer></script>
+<script src="js/download-roguelike-objects.js?v=d100-sheet-20261123a" defer></script>
+<script src="js/textures.js?v=d100-sheet-20261123a" defer></script>
+<script src="js/main.js?v=d100-sheet-20261123a" defer></script>
 <dialog id="lockDialog" class="lock-dialog">
   <form method="dialog" onsubmit="return false;">
     <h3 id="lockDialogTitle">Configurar tranca</h3>
