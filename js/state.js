@@ -1,6 +1,7 @@
 function createEmptyFloor(baseTerrain = null) {
   return {
     baseTerrain,
+    terrainBounds: { x: 80, y: 60, w: 680, h: 480 },
     bounds: { x: 80, y: 60, w: 680, h: 480 }, // Mapa inicial compacto e expansível
     areas: [],
     walls: [],
@@ -17,9 +18,11 @@ function createEmptyFloor(baseTerrain = null) {
 function buildHouseScene(name = 'Casa de 2 Andares') {
   const f0 = createEmptyFloor('grass');
   f0.bounds = { x: 70, y: 50, w: 860, h: 640 };
+  f0.terrainBounds = {...f0.bounds};
 
   const f1 = createEmptyFloor(null);
   f1.bounds = { x: 140, y: 150, w: 510, h: 410 };
+  f1.terrainBounds = {...f1.bounds};
 
   // Trilha de terra e rio vertical com ponte alinhada
   f0.areas.push(
@@ -95,6 +98,7 @@ function buildHouseScene(name = 'Casa de 2 Andares') {
 function buildDesertRuinsScene(name = 'Ruínas do Deserto') {
   const f0 = createEmptyFloor('sand');
   f0.bounds = { x: 120, y: 120, w: 680, h: 460 };
+  f0.terrainBounds = {...f0.bounds};
   const f1 = createEmptyFloor(null);
 
   f0.areas.push({ x: 260, y: 180, w: 420, h: 320, mat: 'checker' });
@@ -175,6 +179,7 @@ function getScene() {
 function init() {
   const saved = localStorage.getItem('rpg_vtt_aligned_v8');
   state = saved ? JSON.parse(saved) : createInitialState();
+  migrateFixedTerrain();
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
   setupInputs();
@@ -214,6 +219,7 @@ function createNewSceneAsArchitect() {
   const id = 'scene_' + Date.now();
   const f0 = createEmptyFloor('grass');
   f0.bounds = { x: 120, y: 100, w: 540, h: 400 };
+  f0.terrainBounds = {...f0.bounds};
   state.scenes[id] = { name, floors: [f0, createEmptyFloor(null)] };
   state.activeSceneId = id;
   state.currentFloor = 0;
@@ -310,6 +316,7 @@ function importJSON(e) {
     try {
       beginEdit();
       state = JSON.parse(ev.target.result);
+      migrateFixedTerrain();
       finishEdit();
       state.currentFloor = 0;
       state.selectedWallIdx = null;
@@ -340,6 +347,7 @@ function finishEdit(){
 }
 function restoreState(serialized){
   state = JSON.parse(serialized);
+  migrateFixedTerrain();
   dragStart = null; previewRect = null; draggedObj = null;
   selectedMapObject = null; draggingEntity = null; isDragging = false;
   updateFloorLabel(); setMode(state.mode); refreshSceneSelect(); updateSelectedWallBar(); updateUI();
@@ -356,4 +364,21 @@ function redoEdit(){
   undoHistory.push(snapshotState());
   restoreState(redoHistory.pop());
   logEvent('↷ Alteração refeita.');
+}
+
+// O tamanho do terreno pintado não depende dos limites de edição.
+function migrateFixedTerrain() {
+  for (const [sceneId, scene] of Object.entries(state.scenes || {})) {
+    for (let i = 0; i < (scene.floors || []).length; i++) {
+      const floor = scene.floors[i];
+      if (!floor || floor.terrainBounds) continue;
+      if (sceneId === 'scene_1' && i === 0) {
+        floor.terrainBounds = {x:70,y:50,w:860,h:640};
+      } else if (sceneId === 'scene_2' && i === 0) {
+        floor.terrainBounds = {x:120,y:120,w:680,h:460};
+      } else {
+        floor.terrainBounds = floor.bounds ? {...floor.bounds} : {x:80,y:60,w:680,h:480};
+      }
+    }
+  }
 }
