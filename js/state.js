@@ -132,6 +132,9 @@ function createInitialState() {
     buildStyle: 'normal',
     propColor:'#a35d64',
     wallWidth:16,
+    stairShape:'straight',
+    stairMaterial:'wood',
+    wallCustomColor:false,
     brush: {shape:'redondo',size:32,texture:'solida',mat:'grass'},
     rotation: 0,
     selectedEntityId: 'pc_1',
@@ -424,6 +427,8 @@ function migrateBuildStyles(){
   if(!state.buildStyle || state.buildStyle==='downloads')state.buildStyle='normal';
   if(!state.propColor)state.propColor='#a35d64';
   if(!state.wallWidth)state.wallWidth=16;
+  if(!state.stairShape)state.stairShape='straight';
+  if(!state.stairMaterial)state.stairMaterial='wood';
   if(!state.brush)state.brush={shape:'redondo',size:32,texture:'solida',mat:'grass'};
   for(const scene of Object.values(state.scenes||{})){
     const oldStyle=scene.style==='futurist'?'futurist':'normal';
