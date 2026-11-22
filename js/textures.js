@@ -37,6 +37,8 @@ function drawFutureArea(x,y,w,h,mat) {
 }
 
 function drawTexturedArea(x, y, w, h, mat) {
+  if(mat==='kenney_water')mat='water';
+  if(mat==='kenney_wood')mat='wood';
   if(isDownloadedMaterial(mat)){drawDownloadedMaterial(x,y,w,h,mat);return;}
   ctx.save();
   ctx.beginPath();
@@ -56,18 +58,23 @@ function drawTexturedArea(x, y, w, h, mat) {
       ctx.moveTo(xx,yy+4);ctx.lineTo(xx+3,yy-1-f*2);ctx.stroke();
     }
   } else if (mat === 'wood') {
-    ctx.fillStyle = '#8f582c';
-    ctx.fillRect(x, y, w, h);
-    const plankH = 22, plankW = 68;
-    for (let py = y; py < y + h; py += plankH) {
-      const rowIdx = Math.floor((py - y) / plankH);
-      const offset = (rowIdx % 2) * (plankW / 2);
-      for (let px = x - plankW; px < x + w + plankW; px += plankW) {
-        ctx.fillStyle = ((rowIdx + Math.floor(px / plankW)) % 2 === 0) ? 'rgba(255,220,175,0.05)' : 'rgba(40,18,5,0.08)';
-        ctx.fillRect(px + offset, py, plankW, plankH);
-        ctx.strokeStyle = 'rgba(42, 20, 6, 0.45)';
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(px + offset, py, plankW, plankH);
+    // Tábuas contínuas com veios e pregos; malha fixa no mundo, sem emendas entre áreas.
+    ctx.fillStyle='#744b2d';ctx.fillRect(x,y,w,h);
+    const pw=102,ph=29;
+    for(let row=Math.floor(y/ph)-1;row<Math.ceil((y+h)/ph)+1;row++){
+      const py=row*ph,offset=(row%2)*pw/2;
+      for(let col=Math.floor((x-offset)/pw)-1;col<Math.ceil((x+w-offset)/pw)+1;col++){
+        const px=col*pw+offset;
+        const n=Math.abs(Math.sin(col*12.18+row*44.67));
+        ctx.fillStyle=n>.66?'#996a40':n>.33?'#855934':'#7b502d';
+        ctx.fillRect(px+1,py+1,pw-2,ph-2);
+        ctx.strokeStyle='#3f281c';ctx.lineWidth=2;ctx.strokeRect(px+.5,py+.5,pw-1,ph-1);
+        ctx.strokeStyle='rgba(48,27,15,.27)';ctx.lineWidth=1;
+        for(let k=0;k<3;k++){
+          let fy=py+6+k*8+n*3;
+          ctx.beginPath();ctx.moveTo(px+9,fy);ctx.bezierCurveTo(px+30,fy+3,px+60,fy-2,px+pw-8,fy+1);ctx.stroke();
+        }
+        ctx.fillStyle='#4a3324';ctx.beginPath();ctx.arc(px+7,py+7,1.4,0,Math.PI*2);ctx.arc(px+pw-8,py+ph-7,1.4,0,Math.PI*2);ctx.fill();
       }
     }
   } else if (mat === 'checker') {
@@ -97,20 +104,18 @@ function drawTexturedArea(x, y, w, h, mat) {
     ctx.lineWidth = 3;
     ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
   } else if (mat === 'water') {
-    ctx.fillStyle = '#1877c9';
-    ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = 'rgba(190, 235, 255, 0.35)';
-    ctx.lineWidth = 2;
-    for (let wy = y + 24; wy < y + h; wy += 48) {
-      const wave = Math.sin(animTick + wy * 0.025) * 6;
-      ctx.beginPath();
-      ctx.moveTo(x + 18 + wave, wy);
-      ctx.quadraticCurveTo(x + w / 2 + wave, wy - 5, x + w - 18 + wave, wy);
-      ctx.stroke();
+    // Água contínua, sem padrões amarelos vindos dos cantos de tiles externos.
+    ctx.fillStyle='#218fbd';ctx.fillRect(x,y,w,h);
+    const sw=58,sh=39;
+    for(let gy=Math.floor(y/sh)*sh;gy<y+h;gy+=sh){
+      for(let gx=Math.floor(x/sw)*sw;gx<x+w;gx+=sw){
+        const shift=Math.sin(animTick*.7+gx*.021+gy*.034)*6;
+        ctx.strokeStyle='rgba(169,234,238,.20)';ctx.lineWidth=1.8;
+        ctx.beginPath();ctx.moveTo(gx+6+shift,gy+14);ctx.quadraticCurveTo(gx+sw*.48,gy+8+shift*.2,gx+sw-7+shift,gy+14);ctx.stroke();
+        ctx.strokeStyle='rgba(10,90,131,.15)';ctx.lineWidth=3;
+        ctx.beginPath();ctx.moveTo(gx+14-shift*.4,gy+24);ctx.quadraticCurveTo(gx+31,gy+29,gx+sw-4,gy+24);ctx.stroke();
+      }
     }
-    ctx.strokeStyle = '#0e4c85';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(x, y, w, h);
   } else if (mat === 'bridge') {
     ctx.fillStyle = '#824d24';
     ctx.fillRect(x, y, w, h);
@@ -570,7 +575,7 @@ function drawExpandedProp(p){
  if(['bench','desk','sofa','sofaBlue','sofaRed','sofaGreen','lowTable','console'].includes(t)){
    const widths={bench:60,desk:62,sofa:67,sofaBlue:67,sofaRed:67,sofaGreen:67,lowTable:48,console:54},w=widths[t];
    ctx.fillStyle=edge;ctx.fillRect(-w/2-2,-19,w+4,38);
-   ctx.fillStyle=({sofa:'#c7b5a4',sofaBlue:'#477cad',sofaRed:'#ae4e55',sofaGreen:'#538b69'}[t])||wood;ctx.fillRect(-w/2,-16,w,32);
+   ctx.fillStyle=p.color||({sofa:'#c7b5a4',sofaBlue:'#477cad',sofaRed:'#ae4e55',sofaGreen:'#538b69'}[t])||wood;ctx.fillRect(-w/2,-16,w,32);
    ctx.strokeStyle=future?'#45bfc9':'#d7b079';ctx.lineWidth=2;ctx.strokeRect(-w/2+3,-13,w-6,26);
    if(t==='console'){ctx.fillStyle='#75e9e1';ctx.fillRect(-18,-10,36,16);}
    if(t.startsWith('sofa')){ctx.fillStyle='rgba(255,255,255,.22)';ctx.fillRect(-w/2,-16,w,9);}
@@ -612,7 +617,7 @@ function drawSleepingFurniture(p){
   ctx.save();ctx.translate(x,y);ctx.rotate(((p.rot||0)%4)*Math.PI/2);
   ctx.fillStyle='rgba(0,0,0,.30)';ctx.fillRect(-w/2+4,-h/2+5,w,h);
   if(type==='sleepingBag'){
-    ctx.fillStyle=future?'#b7d1d2':'#637d4c';
+    ctx.fillStyle=p.color||(future?'#b7d1d2':'#637d4c');
     ctx.beginPath();ctx.roundRect(-w/2,-h/2,w,h,14);ctx.fill();
     ctx.strokeStyle=future?'#6bbfc2':'#354e37';ctx.lineWidth=3;ctx.stroke();
     ctx.fillStyle='#ddd0b3';ctx.beginPath();ctx.ellipse(0,-h/2+15,13,10,0,0,Math.PI*2);ctx.fill();
@@ -630,7 +635,7 @@ function drawSleepingFurniture(p){
     const frame=future?'#c3d4df':isArabia(p)?'#c69d69':'#765236';
     ctx.fillStyle=frame;ctx.fillRect(-w/2,-h/2,w,h);
     ctx.strokeStyle=future?'#6e9eae':'#443221';ctx.lineWidth=3;ctx.strokeRect(-w/2,-h/2,w,h);
-    ctx.fillStyle=future?'#f0efec':isArabia(p)?'#cb7067':'#9e6473';
+    ctx.fillStyle=p.color||(future?'#f0efec':isArabia(p)?'#cb7067':type==='bedDouble'?'#677d9c':'#9e6473');
     ctx.fillRect(-w/2+5,-h/2+5,w-10,h-10);
     ctx.fillStyle='#eee7d8';ctx.fillRect(-w/2+6,-h/2+7,w-12,21);
     ctx.fillStyle=type==='bedDouble'?'#e7d4be':'#d6b98f';
