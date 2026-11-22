@@ -347,7 +347,7 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
     const y = Math.min(dragStart.y, ey);
     const w = Math.max(32, Math.abs(ex - dragStart.x));
     const h = Math.max(32, Math.abs(ey - dragStart.y));
-    floor.areas.push({ x, y, w, h, mat: state.material });
+    floor.areas.push({ x, y, w, h, mat: state.material, ...(state.material==='carpet'?{color:state.propColor}:{}) });
     selectedMapObject = {kind:'areas', index:floor.areas.length - 1};
   } else if (state.tool === 'wall' && dragStart && Math.hypot(wx - dragStart.x, wy - dragStart.y) > 12) {
     const seg = makeOrthoSegment(dragStart.x, dragStart.y, wx, wy);
