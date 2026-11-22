@@ -197,6 +197,7 @@ function refreshSceneSelect() {
 function onSceneSelectChange(id) {
   if (state.mode === 'architect') {
     state.activeSceneId = id;
+    if (typeof selectedMapObject !== 'undefined') selectedMapObject = null;
     state.currentFloor = 0;
     state.selectedWallIdx = null;
     updateFloorLabel();
@@ -209,6 +210,7 @@ function onSceneSelectChange(id) {
 function createNewSceneAsArchitect() {
   const input = document.getElementById('newSceneName');
   const name = input.value.trim() || `Cenário ${Object.keys(state.scenes).length + 1}`;
+  beginEdit();
   const id = 'scene_' + Date.now();
   const f0 = createEmptyFloor('grass');
   f0.bounds = { x: 120, y: 100, w: 540, h: 400 };
@@ -219,6 +221,7 @@ function createNewSceneAsArchitect() {
   input.value = '';
   updateFloorLabel();
   refreshSceneSelect();
+  finishEdit();
   saveBank();
   logEvent(`🏛️ Novo cenário criado: "${name}".`);
 }
@@ -229,6 +232,7 @@ function saveCurrentSceneToBank() {
 }
 
 function duplicateCurrentScene() {
+  beginEdit();
   const cur = getScene();
   const id = 'scene_' + Date.now();
   const copy = JSON.parse(JSON.stringify(cur));
@@ -236,6 +240,7 @@ function duplicateCurrentScene() {
   state.scenes[id] = copy;
   state.activeSceneId = id;
   refreshSceneSelect();
+  finishEdit();
   saveBank();
 }
 
@@ -259,6 +264,7 @@ function renderGmPullList() {
 }
 
 function gmSwitchScene(pullChecked) {
+  beginEdit();
   const targetId = document.getElementById('sceneSelect').value;
   if (!targetId || !state.scenes[targetId]) return;
 
@@ -279,6 +285,7 @@ function gmSwitchScene(pullChecked) {
   updateFloorLabel();
   refreshSceneSelect();
   updateUI();
+  finishEdit();
   logEvent(`👑 Mestre mudou para "${getScene().name}"${pullChecked ? ' e puxou selecionados' : ''}.`);
 }
 
