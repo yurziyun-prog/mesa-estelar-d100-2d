@@ -188,6 +188,7 @@ function init() {
   migrateFixedTerrain();
   migrateBuildStyles();
   migrateModeScenes();
+  migrateD100Characters();
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
   setupInputs();
@@ -340,6 +341,7 @@ function importJSON(e) {
       migrateFixedTerrain();
       migrateBuildStyles();
       migrateModeScenes();
+      migrateD100Characters();
       finishEdit();
       state.currentFloor = 0;
       state.selectedWallIdx = null;
@@ -373,6 +375,7 @@ function restoreState(serialized){
   migrateFixedTerrain();
   migrateBuildStyles();
   migrateModeScenes();
+  migrateD100Characters();
   dragStart = null; previewRect = null; draggedObj = null;
   selectedMapObject = null; draggingEntity = null; isDragging = false;
   updateFloorLabel(); setMode(state.mode); refreshSceneSelect(); updateSelectedWallBar(); updateUI();
