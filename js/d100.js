@@ -47,6 +47,15 @@ function testD100Attribute(key){
  const roll=d100Roll();
  logEvent('🎲 '+ent.name+' • '+key+' '+ent.attrs[key]+' • d100: '+roll+' (sem fórmula-base importada, avaliação pendente do Mestre)');
 }
+function editD100Attributes(){
+ const ent=getSelectedEntity();if(!ent||state.mode!=='gm')return;
+ const example=D100_ATTRIBUTES.map(k=>ent.attrs[k]).join(', ');
+ const raw=prompt('Atributos FOR, CON, TAM, DES, INT, POD, CAR (separados por vírgulas):',example);
+ if(raw===null)return;
+ const vals=raw.split(',').map(x=>Number(x.trim()));
+ if(vals.length!==7||vals.some(n=>!Number.isInteger(n)||n<1||n>100)){logEvent('São necessários 7 atributos inteiros entre 1 e 100.');return;}
+ beginEdit();D100_ATTRIBUTES.forEach((k,i)=>ent.attrs[k]=vals[i]);finishEdit();updateUI();
+}
 function editD100Attribute(key){
  const ent=getSelectedEntity();
  if(!ent||!D100_ATTRIBUTES.includes(key)||state.mode!=='gm')return;
