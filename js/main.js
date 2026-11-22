@@ -71,6 +71,7 @@ function setupInputs() {
     const { wx, wy } = screenToWorld(sx, sy);
 
     if (state.mode === 'architect') {
+      if(placePendingKey(wx,wy)) return;
       beginEdit();
       isDragging = true;
       dragStart = null;
