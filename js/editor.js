@@ -282,12 +282,12 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   } else if (state.tool === 'window') {
     if (!isDrag) {
       const carved = carveOpeningOnWalls(floor, wx, wy, 22);
-      floor.windows.push({ x: carved.x, y: carved.y, orient: carved.orient, style: state.buildStyle });
+      floor.windows.push({ x: carved.x, y: carved.y, orient: carved.orient, style: state.buildStyle,material:state.constructionMaterial||'wood' });
     }
   } else if (state.tool === 'door') {
     if (!isDrag) {
       const carved = carveOpeningOnWalls(floor, wx, wy, 34);
-      const door = { x: carved.x, y: carved.y, open: false, keyId: '', orient: carved.orient, style: state.doorVariant==='doorFuture'?'futurist':state.doorVariant==='doorArabia'?'arabia':state.buildStyle };
+      const door = { x: carved.x, y: carved.y, open: false, keyId: '', orient: carved.orient, material:state.constructionMaterial||'wood', style: state.doorVariant==='doorFuture'?'futurist':state.doorVariant==='doorArabia'?'arabia':state.buildStyle };
       floor.doors.push(door);
       openLockDialog(door, 'door');
     }
@@ -310,7 +310,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   } else if (state.tool === 'chest') {
     if (!isDrag) {
       const loot = document.getElementById('chestLootInput').value.split(',').map(s => s.trim()).filter(Boolean);
-      const chest={ x: wx, y: wy, opened: false, keyId:'', loot, style: state.chestVariant==='chestFuture'?'futurist':state.buildStyle };
+      const chest={ x: wx, y: wy, opened: false, keyId:'', loot, material:state.constructionMaterial||'wood', style: state.chestVariant==='chestFuture'?'futurist':state.buildStyle };
       floor.chests.push(chest);
       openLockDialog(chest, 'chest');
     }
