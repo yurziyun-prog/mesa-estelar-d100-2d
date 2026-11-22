@@ -61,7 +61,11 @@ function renderArchitectLibrary(){
   const button=document.createElement('button');button.type='button';button.className='library-card';
   const emoji=document.createElement('span');emoji.className='emoji';emoji.textContent=icon;
   const name=document.createElement('span');name.textContent=label;
-  button.append(emoji,name);button.onclick=()=>selectArchitectLibraryItem(id,label,kind);
+  if(architectCategory==='downloads'){
+    const preview=createDownloadThumbnail(id);
+    button.append(preview||emoji,name);
+  }else button.append(emoji,name);
+  button.onclick=()=>selectArchitectLibraryItem(id,label,kind);
   grid.append(button);
  }
 }
@@ -117,4 +121,21 @@ function syncArchitectBrushUI(){
   const el=document.getElementById(id);if(el)el.value=b[key];
  }
  document.getElementById('brushSizeLabel').textContent=b.size;
+}
+
+function createDownloadThumbnail(id){
+ let image=null,col=0,row=0;
+ if(typeof KENNEY_DOWNLOAD_TILES!=='undefined'&&KENNEY_DOWNLOAD_TILES[id]){
+   const t=KENNEY_DOWNLOAD_TILES[id];image=KENNEY_DOWNLOAD_IMAGE;col=t.col;row=t.row;
+ }else if(typeof KENNEY_OBJECTS!=='undefined'&&KENNEY_OBJECTS[id]){
+   const t=KENNEY_OBJECTS[id];image=KENNEY_OBJECT_IMAGE;col=t.col;row=t.row;
+ }else if(typeof KENNEY_ROGUELIKE_OBJECTS!=='undefined'&&KENNEY_ROGUELIKE_OBJECTS[id]){
+   const t=KENNEY_ROGUELIKE_OBJECTS[id];image=KENNEY_ROGUELIKE_IMAGE;col=t.col;row=t.row;
+ }else return null;
+ const thumb=document.createElement('canvas');thumb.width=36;thumb.height=36;thumb.className='library-thumb';
+ const context=thumb.getContext('2d');context.imageSmoothingEnabled=false;
+ context.fillStyle='#29352f';context.fillRect(0,0,36,36);
+ if(image.complete&&image.naturalWidth)context.drawImage(image,col*32,row*32,32,32,2,2,32,32);
+ else if(!image.complete)image.addEventListener('load',()=>{if(architectCategory==='downloads')renderArchitectLibrary();},{once:true});
+ return thumb;
 }
