@@ -11,7 +11,7 @@ const ARCHITECT_LIBRARY = {
 ],
  characters:[['warrior','⚔️','Guerreiro','character'],['mage','🪄','Maga','character'],['ranger','🏹','Arqueira','character'],['villager','🧑','Aldeão','character'],['guard','🛡️','Guarda','character'],['merchant','🧳','Mercadora','character'],['goblin','👺','Goblin','character'],['skeleton','💀','Esqueleto','character'],['wolf','🐺','Lobo','character'],['dragon','🐉','Dragão','character']]
 };
-const LIBRARY_LABELS={terrain:'Terrenos e texturas',furniture:'Móveis',nature:'Árvores e natureza',props:'Objetos e decoração',architecture:'Construção',characters:'Personagens e NPCs'};
+const LIBRARY_LABELS={terrain:'Terrenos e texturas',furniture:'Móveis',nature:'Árvores e natureza',props:'Objetos e decoração',architecture:'Elementos de construção',characters:'Personagens e NPCs'};
 let architectCategory='furniture';
 let architectCharacterTemplate=null;
 function openArchitectLibrary(category){
@@ -43,9 +43,15 @@ function selectArchitectLibraryItem(id,label,kind){
  architectCharacterTemplate=null;
  if(kind==='mat')selectMaterial(id);
  else if(kind==='prop')selectProp(id);
- else if(kind==='tool')selectTool(id);
+ else if(kind==='tool'){
+   if(id==='wall')state.wallVariant=null;
+   if(id==='door')state.doorVariant=null;
+   if(id==='chest')state.chestVariant=null;
+   if(id==='stairs')state.stairVariant=null;
+   selectTool(id);
+ }
  else if(kind==='wallVariant'){state.wallVariant=id;selectTool('wall');}
- else if(kind==='doorVariant'){state.buildStyle=id==='doorFuture'?'futurist':id==='doorArabia'?'arabia':state.buildStyle;document.getElementById('sceneStyleSelect').value=state.buildStyle;selectTool('door');}
+ else if(kind==='doorVariant'){state.doorVariant=id;selectTool('door');}
  else if(kind==='stairVariant'){state.stairVariant=id;selectTool('stairs');}
  else if(kind==='chestVariant'){state.chestVariant=id;selectTool('chest');}
  else if(kind==='bridgeVariant'){selectMaterial('bridge');}
