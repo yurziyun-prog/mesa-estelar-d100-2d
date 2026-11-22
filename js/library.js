@@ -201,7 +201,7 @@ function selectedConstructionKind(){
 }
 function refreshArchitectProperties(){
  const item=selectedArchitectItem(),kind=selectedConstructionKind();
- const furniture=Boolean(item?.type)||item?.mat==='carpet'||(!item&&['furniture','props'].includes(architectCategory));
+ const furniture=Boolean(item?.type)||item?.mat==='carpet'||(!item&&(['furniture','props'].includes(architectCategory)||(architectCategory==='terrain'&&state.material==='carpet')));
  const showColors=kind==='wall'?Boolean(state.wallCustomColor||item?.color):!kind&&furniture;
  document.getElementById('objectColorSettings')?.classList.toggle('hidden',!showColors);
  document.getElementById('constructionOptions')?.classList.toggle('hidden',!kind);
