@@ -5,6 +5,9 @@ function setMode(mode) {
   document.getElementById('gmTools').classList.toggle('hidden', mode !== 'gm');
   document.getElementById('playerTools').classList.toggle('hidden', mode !== 'player');
   document.getElementById('gmEntityControls').classList.toggle('hidden', mode !== 'gm');
+  document.getElementById('characterSheetPanel').classList.toggle('hidden', mode === 'architect');
+  document.getElementById('architectLibraryPanel').classList.toggle('hidden', mode !== 'architect');
+  if(mode==='architect')renderArchitectLibrary();
 
   document.getElementById('sceneBankCard').classList.toggle('hidden', mode === 'player');
   document.getElementById('architectSceneControls').classList.toggle('hidden', mode !== 'architect');
