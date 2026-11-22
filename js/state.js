@@ -92,7 +92,7 @@ function buildHouseScene(name = 'Casa de 2 Andares') {
   f0.chests.push({ x: 598, y: 396, opened: false, keyId: '', loot: ['Elixir Estelar', '120 Moedas'] });
   f1.chests.push({ x: 585, y: 310, opened: false, keyId: '', loot: ['chave_dourada', 'Diário Antigo'] });
 
-  return { name, floors: [f0, f1] };
+  return { name, style: 'normal', floors: [f0, f1] };
 }
 
 function buildDesertRuinsScene(name = 'Ruínas do Deserto') {
@@ -118,7 +118,7 @@ function buildDesertRuinsScene(name = 'Ruínas do Deserto') {
   );
   f0.chests.push({ x: 590, y: 280, opened: false, keyId: '', loot: ['Relíquia Solar', '80 Moedas'] });
 
-  return { name, floors: [f0, f1] };
+  return { name, style: 'normal', floors: [f0, f1] };
 }
 
 function createInitialState() {
@@ -195,6 +195,8 @@ function refreshSceneSelect() {
     `<option value="${id}" ${id === state.activeSceneId ? 'selected' : ''}>${sc.name}</option>`
   ).join('');
   document.getElementById('activeSceneTag').textContent = getScene().name;
+  const styleSelect = document.getElementById('sceneStyleSelect');
+  if(styleSelect) styleSelect.value = getScene().style === 'futurist' ? 'futurist' : 'normal';
   renderGmPullList();
   if (typeof refreshGmSpawnList === 'function') refreshGmSpawnList();
 }
@@ -220,7 +222,7 @@ function createNewSceneAsArchitect() {
   const f0 = createEmptyFloor('grass');
   f0.bounds = { x: 120, y: 100, w: 540, h: 400 };
   f0.terrainBounds = {...f0.bounds};
-  state.scenes[id] = { name, floors: [f0, createEmptyFloor(null)] };
+  state.scenes[id] = { name, style: getScene()?.style || 'normal', floors: [f0, createEmptyFloor(null)] };
   state.activeSceneId = id;
   state.currentFloor = 0;
   state.selectedWallIdx = null;
@@ -377,4 +379,16 @@ function migrateFixedTerrain() {
       }
     }
   }
+}
+
+function setSceneStyle(style) {
+  if(state.mode !== 'architect' || !['normal','futurist'].includes(style)) return;
+  const scene = getScene();
+  if(scene.style === style) return;
+  beginEdit();
+  scene.style = style;
+  finishEdit();
+  const select = document.getElementById('sceneStyleSelect');
+  if(select) select.value = style;
+  logEvent('🎨 Estilo do cenário: ' + (style === 'futurist' ? 'Retro-futurista' : 'Normal') + '.');
 }
