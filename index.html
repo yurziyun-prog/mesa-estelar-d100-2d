@@ -284,7 +284,24 @@
             <button style="background:#8b73ad" onclick="setArchitectObjectColor('#8b73ad')" title="Violeta"></button>
             <button style="background:#c9d9e5" onclick="setArchitectObjectColor('#c9d9e5')" title="Branco"></button>
           </div>
-          <details class="color-expanded"><summary>Mais cores</summary><p class="library-hint">Abra a paleta completa no quadrado de cor ou insira #RRGGBB acima.</p></details>
+          <details class="color-expanded"><summary>Mais cores</summary>
+            <div class="color-swatches" style="margin:8px 0"><button style="background:#ffffff" onclick="setArchitectObjectColor('#ffffff')" title="Branco" aria-label="Branco"></button>
+              <button style="background:#252a35" onclick="setArchitectObjectColor('#252a35')" title="Grafite" aria-label="Grafite"></button>
+              <button style="background:#6a442b" onclick="setArchitectObjectColor('#6a442b')" title="Marrom" aria-label="Marrom"></button>
+              <button style="background:#d19a59" onclick="setArchitectObjectColor('#d19a59')" title="Ocre" aria-label="Ocre"></button>
+              <button style="background:#f0cc4e" onclick="setArchitectObjectColor('#f0cc4e')" title="Amarelo" aria-label="Amarelo"></button>
+              <button style="background:#e67e39" onclick="setArchitectObjectColor('#e67e39')" title="Laranja" aria-label="Laranja"></button>
+              <button style="background:#b63845" onclick="setArchitectObjectColor('#b63845')" title="Vermelho" aria-label="Vermelho"></button>
+              <button style="background:#de77a6" onclick="setArchitectObjectColor('#de77a6')" title="Rosa" aria-label="Rosa"></button>
+              <button style="background:#735db6" onclick="setArchitectObjectColor('#735db6')" title="Roxo" aria-label="Roxo"></button>
+              <button style="background:#3c9ec7" onclick="setArchitectObjectColor('#3c9ec7')" title="Azul claro" aria-label="Azul claro"></button>
+              <button style="background:#1b537d" onclick="setArchitectObjectColor('#1b537d')" title="Azul escuro" aria-label="Azul escuro"></button>
+              <button style="background:#3b7461" onclick="setArchitectObjectColor('#3b7461')" title="Verde escuro" aria-label="Verde escuro"></button></div>
+            <label class="library-hint">Cor personalizada
+              <input type="color" value="#a35d64" oninput="setArchitectObjectColor(this.value)" style="width:90px;height:35px;cursor:pointer"/>
+            </label>
+            <p class="library-hint">Também pode digitar qualquer código #RRGGBB acima.</p>
+          </details>
         </div>
         <div id="createSettings" class="hidden">
           <p class="library-hint">Área reservada à futura criação de móveis, personagens, NPCs e monstros. Por enquanto, use os itens existentes da biblioteca.</p>
