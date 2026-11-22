@@ -410,7 +410,10 @@ function setBuildStyle(style) {
   if(state.mode!=='architect' || !['normal','futurist','arabia','downloads'].includes(style))return;
   state.buildStyle=style;
   document.getElementById('sceneStyleSelect').value=style;
-  if(typeof renderArchitectLibrary==='function')renderArchitectLibrary();
+  if(typeof renderArchitectLibrary==='function'){
+    if(style==='downloads' && typeof openArchitectLibrary==='function')openArchitectLibrary('downloads');
+    else renderArchitectLibrary();
+  }
   logEvent('🧱 Coleção de construção: '+(style==='arabia'?'Arábia':style==='futurist'?'Retro-futurista':style==='downloads'?'Downloads':'Normal'));
 }
 function migrateBuildStyles(){
