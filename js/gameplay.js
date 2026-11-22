@@ -242,17 +242,23 @@ function updateUI() {
   document.getElementById('hungerBar').style.width = `${ent.hunger}%`;
   document.getElementById('attitudeSelect').value = ent.attitude;
 
-  document.getElementById('attrGrid').innerHTML = Object.entries(ent.attrs).map(([k, v]) => `
-    <div class="stat-box" onclick="testAttribute('${k}', ${v})" title="Clique para rolar teste de ${k}">
-      <div class="lbl">${k}</div>
-      <div class="val">${v}</div>
-    </div>
-  `).join('');
+  const attrsRoot=document.getElementById('attrGrid');
+  attrsRoot.replaceChildren();
+  for(const key of D100_ATTRIBUTES){
+    const node=document.createElement('button');node.type='button';node.className='stat-box d100-attr';
+    node.title='Rolar d100 para '+key+' (fórmula-base ainda não importada)';
+    const name=document.createElement('div');name.className='lbl';name.textContent=key;
+    const value=document.createElement('div');value.className='val';value.textContent=ent.attrs[key];
+    node.append(name,value);node.onclick=()=>testD100Attribute(key);attrsRoot.append(node);
+  }
 
-  document.getElementById('skillsList').innerHTML = [
-    ...ent.skills.map(s => `<div class="list-item"><span>🎯 ${s}</span></div>`),
-    ...ent.powers.map(p => `<div class="list-item" style="border-color:#4f8cff55;"><span>✨ ${p}</span></div>`)
-  ].join('');
+  displayD100Skills(ent);
+  const ai=document.getElementById('skeletonAIControl');
+  if(ai){
+    ai.classList.toggle('hidden',ent.ai?.kind!=='skeleton'||state.mode!=='gm');
+    const label=document.getElementById('skeletonAIStatus');
+    if(label)label.textContent=ent.ai?.enabled?'Autonomia ativa · '+(ent.ai.state||'vigiar'):'Autonomia desligada';
+  }
 
   document.getElementById('inventoryList').innerHTML = ent.inventory.length
     ? ent.inventory.map(item => `<div class="list-item"><span>🎒 ${item}</span></div>`).join('')
@@ -312,12 +318,7 @@ function rollDice(sides) {
   logEvent(`🎲 d${sides}: ${res}`);
 }
 
-function testAttribute(attr, val) {
-  const mod = Math.floor((val - 10) / 2);
-  const roll = Math.floor(Math.random() * 20) + 1;
-  const ent = getSelectedEntity();
-  logEvent(`🎲 ${ent.name} (${attr}): d20(${roll}) ${mod >= 0 ? '+' : ''}${mod} = ${roll + mod}`);
-}
+function testAttribute(attr) { testD100Attribute(attr); }
 
 function logEvent(msg) {
   const box = document.getElementById('eventLog');
@@ -363,14 +364,16 @@ function armGmPlacement(){
   logEvent('📍 Clique no mapa para colocar '+gmPlacementTemplate.name+'.');
 }
 function instantiateTemplate(template, wx, wy) {
-  const attrs = {FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10,...template.attrs};
+  const attrs = {FOR:10,CON:10,TAM:10,DES:10,INT:10,POD:10,CAR:10,...template.attrs};
+  delete attrs.SAB;
   return {
     id:'entity_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
     type:template.type,name:template.name,role:template.role,icon:template.icon,color:template.color,
     sceneId:state.activeSceneId,floor:state.currentFloor,x:wx,y:wy,
     hp:template.hp,maxHp:template.hp,hunger:100,attitude:template.attitude || 'Neutro',
     speech:'',speechTimer:0,attrs,skills:[...(template.skills||[])],
-    powers:[...(template.powers||[])],inventory:[...(template.inventory||[])]
+    powers:[...(template.powers||[])],inventory:[...(template.inventory||[])],
+    ai:template.id==='skeleton'?{kind:'skeleton',enabled:true,state:'vigiar',detection:180,reach:34}:null
   };
 }
 function placeGmEntityAt(wx, wy){
@@ -393,7 +396,7 @@ function placeGmEntityAt(wx, wy){
   }
   if (!gmPlacementTemplate) return false;
   beginEdit();
-  const entity=instantiateTemplate(gmPlacementTemplate,wx,wy);
+  const entity=normalizeD100Character(instantiateTemplate(gmPlacementTemplate,wx,wy));
   state.entities.push(entity);
   state.selectedEntityId=entity.id;
   finishEdit();
@@ -408,7 +411,7 @@ function createGmNpc(){
   if(!name) return;
   beginEdit();
   const template={...GM_TEMPLATES.find(t=>t.id==='villager'),name,role:'NPC'};
-  const npc=instantiateTemplate(template,340,380);
+  const npc=normalizeD100Character(instantiateTemplate(template,340,380));
   state.entities.push(npc);
   state.selectedEntityId=npc.id;
   finishEdit();
