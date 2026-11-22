@@ -269,11 +269,11 @@ function applyArchitectAction(wx, wy, isDrag = false) {
     }
   } else if (state.tool === 'stairs') {
     if (!isDrag) {
-      floor.stairs.push({ x: wx, y: wy, dir: 'up', label: `→ ${state.currentFloor + 2}º`, style: state.buildStyle });
+      floor.stairs.push({ x: wx, y: wy, dir: 'up', label: `→ ${state.currentFloor + 2}º`, style: state.buildStyle, material:state.stairVariant==='stairsStone'?'stone':'wood' });
       const upperIdx = state.currentFloor + 1;
       while (getScene().floors.length <= upperIdx) getScene().floors.push(createEmptyFloor(null));
       const upper = getScene().floors[upperIdx];
-      upper.stairs.push({ x: wx, y: wy, dir: 'down', label: `→ ${state.currentFloor + 1}º`, style: state.buildStyle });
+      upper.stairs.push({ x: wx, y: wy, dir: 'down', label: `→ ${state.currentFloor + 1}º`, style: state.buildStyle, material:state.stairVariant==='stairsStone'?'stone':'wood' });
       upper.openings.push({ x: wx - 36, y: wy - 52, w: 72, h: 104 });
     }
   } else if (state.tool === 'character') {
@@ -283,7 +283,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   } else if (state.tool === 'chest') {
     if (!isDrag) {
       const loot = document.getElementById('chestLootInput').value.split(',').map(s => s.trim()).filter(Boolean);
-      const chest={ x: wx, y: wy, opened: false, keyId:'', loot, style: state.buildStyle };
+      const chest={ x: wx, y: wy, opened: false, keyId:'', loot, style: state.chestVariant==='chestFuture'?'futurist':state.buildStyle };
       floor.chests.push(chest);
       openLockDialog(chest, 'chest');
     }
@@ -323,7 +323,7 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
     selectedMapObject = {kind:'areas', index:floor.areas.length - 1};
   } else if (state.tool === 'wall' && dragStart && Math.hypot(wx - dragStart.x, wy - dragStart.y) > 12) {
     const seg = makeOrthoSegment(dragStart.x, dragStart.y, wx, wy);
-    floor.walls.push({...seg, style:state.buildStyle});
+    floor.walls.push({...seg, style:state.buildStyle, material:state.wallVariant||'wallMasonry'});
     selectedMapObject = {kind:'walls', index:floor.walls.length - 1};
   }
   dragStart = null;
