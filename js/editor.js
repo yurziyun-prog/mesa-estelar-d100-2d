@@ -93,8 +93,8 @@ function carveOpeningOnWalls(floor, ox, oy, gapHalf = 34) {
         orient = 'h';
         oy = w.y1;
         ox = Math.max(minX + gapHalf + 8, Math.min(maxX - gapHalf - 8, ox));
-        if (ox - gapHalf > minX) nextWalls.push({ x1: minX, y1: w.y1, x2: ox - gapHalf, y2: w.y1 });
-        if (ox + gapHalf < maxX) nextWalls.push({ x1: ox + gapHalf, y1: w.y1, x2: maxX, y2: w.y1 });
+        if (ox - gapHalf > minX) nextWalls.push({ ...w, x1: minX, y1: w.y1, x2: ox - gapHalf, y2: w.y1 });
+        if (ox + gapHalf < maxX) nextWalls.push({ ...w, x1: ox + gapHalf, y1: w.y1, x2: maxX, y2: w.y1 });
         return;
       }
     }
@@ -105,8 +105,8 @@ function carveOpeningOnWalls(floor, ox, oy, gapHalf = 34) {
         orient = 'v';
         ox = w.x1;
         oy = Math.max(minY + gapHalf + 8, Math.min(maxY - gapHalf - 8, oy));
-        if (oy - gapHalf > minY) nextWalls.push({ x1: w.x1, y1: minY, x2: w.x1, y2: oy - gapHalf });
-        if (oy + gapHalf < maxY) nextWalls.push({ x1: w.x1, y1: oy + gapHalf, x2: w.x1, y2: maxY });
+        if (oy - gapHalf > minY) nextWalls.push({ ...w, x1: w.x1, y1: minY, x2: w.x1, y2: oy - gapHalf });
+        if (oy + gapHalf < maxY) nextWalls.push({ ...w, x1: w.x1, y1: oy + gapHalf, x2: w.x1, y2: maxY });
         return;
       }
     }
@@ -336,8 +336,9 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
     selectedMapObject = {kind:'areas', index:floor.areas.length - 1};
   } else if (state.tool === 'wall' && dragStart && Math.hypot(wx - dragStart.x, wy - dragStart.y) > 12) {
     const seg = makeOrthoSegment(dragStart.x, dragStart.y, wx, wy);
-    floor.walls.push({...seg, style:state.buildStyle, material:state.wallVariant||'wallMasonry'});
-    selectedMapObject = {kind:'walls', index:floor.walls.length - 1};
+    floor.walls.push({...seg, style:state.buildStyle==='downloads'?'normal':state.buildStyle, material:state.wallVariant||'wallMasonry'});
+    mergeCollinearWalls(floor);
+    selectedMapObject=null;state.selectedWallIdx=null;updateSelectedWallBar();
   }
   dragStart = null;
   previewRect = null;
@@ -437,4 +438,28 @@ function placePendingKey(wx,wy){
   finishEdit();
   logEvent('🔑 Chave colocada no mapa.');
   return true;
+}
+
+function mergeCollinearWalls(floor){
+ const walls=floor.walls;let changed=true,passes=0;
+ while(changed&&passes++<Math.max(2,walls.length*2)){
+  changed=false;
+  for(let i=0;i<walls.length&&!changed;i++){
+   const a=walls[i],ah=Math.abs(a.y1-a.y2)<1,av=Math.abs(a.x1-a.x2)<1;
+   for(let j=i+1;j<walls.length;j++){
+    const b=walls[j];if((a.style||'normal')!==(b.style||'normal')||(a.material||'')!==(b.material||''))continue;
+    const bh=Math.abs(b.y1-b.y2)<1,bv=Math.abs(b.x1-b.x2)<1;
+    if(ah&&bh&&Math.abs(a.y1-b.y1)<1){
+     const lo=Math.min(a.x1,a.x2,b.x1,b.x2),hi=Math.max(a.x1,a.x2,b.x1,b.x2);
+     if(Math.max(Math.min(a.x1,a.x2),Math.min(b.x1,b.x2))>Math.min(Math.max(a.x1,a.x2),Math.max(b.x1,b.x2))+1)continue;
+     a.x1=lo;a.x2=hi;a.y2=a.y1;
+    }else if(av&&bv&&Math.abs(a.x1-b.x1)<1){
+     const lo=Math.min(a.y1,a.y2,b.y1,b.y2),hi=Math.max(a.y1,a.y2,b.y1,b.y2);
+     if(Math.max(Math.min(a.y1,a.y2),Math.min(b.y1,b.y2))>Math.min(Math.max(a.y1,a.y2),Math.max(b.y1,b.y2))+1)continue;
+     a.y1=lo;a.y2=hi;a.x2=a.x1;
+    }else continue;
+    walls.splice(j,1);changed=true;break;
+   }
+  }
+ }
 }
