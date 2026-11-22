@@ -308,3 +308,10 @@
     }
 
     .hidden { display: none !important; }
+
+.lock-dialog{max-width:min(440px,92vw);width:100%;border:1px solid #61768e;background:#1e2635;color:#edf2f9;border-radius:12px;padding:20px;box-shadow:0 20px 70px #0009;}
+.lock-dialog::backdrop{background:#060c18a8;}
+.lock-dialog h3{font-size:17px;margin-bottom:7px;color:#f3c677;}
+.lock-dialog p{font-size:12px;color:#aebed1;line-height:1.5;margin-bottom:10px;}
+.lock-dialog label{font-size:12px;}
+.lock-dialog input.ctrl,.lock-dialog select.ctrl{background:#101926;color:#f4f7ff;}
