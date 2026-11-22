@@ -33,6 +33,7 @@ function expandCurrentMap() {
 
 function selectTool(tool) {
   state.tool = tool;
+  if(typeof refreshArchitectProperties==='function')refreshArchitectProperties();
   document.querySelectorAll('#architectTools [data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === tool));
 }
 
@@ -184,6 +185,15 @@ function applyArchitectAction(wx, wy, isDrag = false) {
     if(!last||Math.hypot(last.x-wx,last.y-wy)>=Math.max(3,stroke.size/6))stroke.points.push({x:wx,y:wy});
     return;
   }
+  if(state.tool==='select'){
+    if(isDrag)return;
+    selectedMapObject=hitArchitectObjectAt(wx,wy);
+    state.selectedWallIdx=selectedMapObject?.kind==='walls'?selectedMapObject.index:null;
+    updateSelectedWallBar();onArchitectSelectionChange();
+    document.getElementById('architectLibrarySelected').textContent=selectedMapObject?
+      'Selecionado: '+selectedMapObject.kind+'. Edite suas propriedades acima.':'Nenhum objeto selecionado.';
+    return;
+  }
   if (state.tool === 'move') {
     if (!isDrag) {
       selectedMapObject = null;
@@ -283,11 +293,11 @@ function applyArchitectAction(wx, wy, isDrag = false) {
     }
   } else if (state.tool === 'stairs') {
     if (!isDrag) {
-      floor.stairs.push({ x: wx, y: wy, dir: 'up', label: `→ ${state.currentFloor + 2}º`, style: state.buildStyle, material:state.stairVariant==='stairsStone'?'stone':'wood' });
+      floor.stairs.push({ x: wx, y: wy, dir: 'up', label: `→ ${state.currentFloor + 2}º`, style: state.buildStyle, material:state.stairMaterial||'wood',shape:state.stairShape||'straight' });
       const upperIdx = state.currentFloor + 1;
       while (getScene().floors.length <= upperIdx) getScene().floors.push(createEmptyFloor(null));
       const upper = getScene().floors[upperIdx];
-      upper.stairs.push({ x: wx, y: wy, dir: 'down', label: `→ ${state.currentFloor + 1}º`, style: state.buildStyle, material:state.stairVariant==='stairsStone'?'stone':'wood' });
+      upper.stairs.push({ x: wx, y: wy, dir: 'down', label: `→ ${state.currentFloor + 1}º`, style: state.buildStyle, material:state.stairMaterial||'wood',shape:state.stairShape||'straight' });
       upper.openings.push({ x: wx - 36, y: wy - 52, w: 72, h: 104 });
     }
   } else if (state.tool === 'character') {
@@ -341,7 +351,7 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
     selectedMapObject = {kind:'areas', index:floor.areas.length - 1};
   } else if (state.tool === 'wall' && dragStart && Math.hypot(wx - dragStart.x, wy - dragStart.y) > 12) {
     const seg = makeOrthoSegment(dragStart.x, dragStart.y, wx, wy);
-    floor.walls.push({...seg, style:state.buildStyle, material:state.wallVariant||'wallMasonry',width:state.wallWidth||16});
+    floor.walls.push({...seg, style:state.buildStyle, material:state.wallVariant||'wallMasonry',width:state.wallWidth||16,...(state.wallCustomColor?{color:state.propColor}:{})});
     mergeCollinearWalls(floor);
     selectedMapObject=null;state.selectedWallIdx=null;updateSelectedWallBar();
   }
@@ -467,4 +477,24 @@ function mergeCollinearWalls(floor){
    }
   }
  }
+}
+
+function hitArchitectObjectAt(wx,wy){
+ const floor=getScene().floors[state.currentFloor];
+ for(const kind of ['props','stairs','chests','doors','windows']){
+   const items=floor[kind]||[];
+   for(let i=items.length-1;i>=0;i--){
+     const item=items[i],radius=kind==='stairs'?50:kind==='props'&&['bed','bedDouble','capsuleBed'].includes(item.type)?50:30;
+     if(Math.hypot(item.x-wx,item.y-wy)<=radius)return {kind,index:i};
+   }
+ }
+ for(let i=floor.walls.length-1;i>=0;i--){
+   const w=floor.walls[i];
+   if(distToSegment(wx,wy,w.x1,w.y1,w.x2,w.y2)<Math.max(12,(w.width||16)/2+6))return {kind:'walls',index:i};
+ }
+ for(let i=floor.areas.length-1;i>=0;i--){
+   const a=floor.areas[i];
+   if(wx>=a.x&&wx<=a.x+a.w&&wy>=a.y&&wy<=a.y+a.h)return {kind:'areas',index:i};
+ }
+ return null;
 }
