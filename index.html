@@ -86,13 +86,13 @@
         </div>
         <div class="tool-grid">
           <button class="tool-btn" data-tool="move" onclick="selectTool('move')">✋ Arrastar / Alinhar</button>
-          <button class="tool-btn active" data-tool="floor" onclick="selectTool('floor')">🖌️ Área / Chão</button>
+          <button class="tool-btn active" data-tool="floor" onclick="openArchitectLibrary('terrain')">🖌️ Área / Chão</button>
           <button class="tool-btn" data-tool="wall" onclick="selectTool('wall')">🧱 Parede Reta</button>
           <button class="tool-btn" data-tool="window" onclick="selectTool('window')">🪟 Janela (Abre Vão)</button>
           <button class="tool-btn" data-tool="door" onclick="selectTool('door')">🚪 Porta (Abre Vão)</button>
           <button class="tool-btn" data-tool="stairs" onclick="selectTool('stairs')">🪜 Escada</button>
-          <button class="tool-btn" data-tool="furnitureMenu" onclick="openCategoryMenu('furniture')">🪑 Móveis...</button>
-          <button class="tool-btn" data-tool="treeMenu" onclick="openCategoryMenu('trees')">🌳 Árvores...</button>
+          <button class="tool-btn" data-tool="furnitureMenu" onclick="openArchitectLibrary('furniture')">🪑 Móveis...</button>
+          <button class="tool-btn" data-tool="treeMenu" onclick="openArchitectLibrary('nature')">🌳 Árvores...</button>
           <button class="tool-btn" data-tool="chest" onclick="selectTool('chest')">🧰 Baú</button>
           <button class="tool-btn" data-prop="log" onclick="selectProp('log')">🪵 Tronco / Ponte</button>
           <button class="tool-btn" data-tool="erase" onclick="selectTool('erase')">🧹 Apagar</button>
@@ -107,52 +107,17 @@
         </div>
       </div>
 
-      <div class="card" id="floorOptions" style="margin-bottom:10px;">
-        <div class="section-title">Terrenos & Pisos Texturizados</div>
+      <div class="card" style="margin-bottom:10px;">
+        <div class="section-title">Biblioteca de construção</div>
         <div class="tool-grid">
-          <button class="tool-btn active" data-mat="grass" onclick="selectMaterial('grass')"><span class="swatch" style="background:#365c29"></span>Grama</button>
-          <button class="tool-btn" data-mat="sand" onclick="selectMaterial('sand')"><span class="swatch" style="background:#c9a966"></span>Deserto</button>
-          <button class="tool-btn" data-mat="dirt" onclick="selectMaterial('dirt')"><span class="swatch" style="background:#6e4e35"></span>Terra</button>
-          <button class="tool-btn" data-mat="snow" onclick="selectMaterial('snow')"><span class="swatch" style="background:#dce6f0"></span>Neve</button>
-          <button class="tool-btn" data-mat="water" onclick="selectMaterial('water')"><span class="swatch" style="background:#1c75bc"></span>Rio</button>
-          <button class="tool-btn" data-mat="bridge" onclick="selectMaterial('bridge')"><span class="swatch" style="background:#875329"></span>Ponte</button>
-          <button class="tool-btn" data-mat="wood" onclick="selectMaterial('wood')"><span class="swatch" style="background:#8f582c"></span>Madeira</button>
-          <button class="tool-btn" data-mat="checker" onclick="selectMaterial('checker')"><span class="swatch" style="background:#566073"></span>Quadriculado</button>
-          <button class="tool-btn" data-mat="marble" onclick="selectMaterial('marble')"><span class="swatch" style="background:#c2c9d4"></span>Mármore</button>
-          <button class="tool-btn" data-mat="carpet" onclick="selectMaterial('carpet')"><span class="swatch" style="background:#8c1d28"></span>Tapete</button>
+          <button class="tool-btn" onclick="openArchitectLibrary('terrain')">🌱 Terrenos e pisos</button>
+          <button class="tool-btn" onclick="openArchitectLibrary('furniture')">🪑 Móveis</button>
+          <button class="tool-btn" onclick="openArchitectLibrary('nature')">🌴 Árvores e natureza</button>
+          <button class="tool-btn" onclick="openArchitectLibrary('architecture')">🏛️ Arquitetura</button>
+          <button class="tool-btn" onclick="openArchitectLibrary('characters')">🎭 Personagens e NPCs</button>
+          <button class="tool-btn" onclick="openArchitectLibrary('props')">🏺 Decoração e objetos</button>
         </div>
       </div>
-
-      <!-- MENU DE OPÇÕES DE MÓVEIS -->
-      <div class="card" id="furnitureOptions">
-        <div class="section-title">Opções de Móveis</div>
-        <div class="tool-grid">
-          <button class="tool-btn" data-prop="table" onclick="selectProp('table')">🪵 Mesa</button>
-          <button class="tool-btn" data-prop="chair" onclick="selectProp('chair')">🪑 Cadeira</button>
-          <button class="tool-btn" data-prop="bed" onclick="selectProp('bed')">🛏️ Cama</button>
-          <button class="tool-btn" data-prop="bookshelf" onclick="selectProp('bookshelf')">📚 Estante</button>
-          <button class="tool-btn" data-prop="hearth" onclick="selectProp('hearth')">🔥 Lareira</button>
-          <button class="tool-btn" data-prop="barrel" onclick="selectProp('barrel')">🛢️ Barril</button>
-        </div>
-      </div>
-
-      <!-- MENU DE OPÇÕES DE ÁRVORES & VEGETAÇÃO -->
-      <div class="card" id="treeOptions">
-        <div class="section-title">Opções de Árvores & Natureza</div>
-        <div class="tool-grid">
-          <button class="tool-btn active" data-prop="tree" onclick="selectProp('tree')">🌳 Carvalho</button>
-          <button class="tool-btn" data-prop="pine" onclick="selectProp('pine')">🌲 Pinheiro</button>
-          <button class="tool-btn" data-prop="fruitTree" onclick="selectProp('fruitTree')">🍎 Árvore Frutífera</button>
-          <button class="tool-btn" data-prop="bush" onclick="selectProp('bush')">🌿 Arbusto</button>
-          <button class="tool-btn" data-prop="rock" onclick="selectProp('rock')">🪨 Rocha</button>
-          <button class="tool-btn" data-prop="palm" onclick="selectProp('palm')">🌴 Palmeira</button>
-          <button class="tool-btn" data-prop="desertTree" onclick="selectProp('desertTree')">🌳 Árvore do deserto</button>
-          <button class="tool-btn" data-prop="tent" onclick="selectProp('tent')">⛺ Tenda</button>
-          <button class="tool-btn" data-prop="oilLamp" onclick="selectProp('oilLamp')">🪔 Lâmpada</button>
-          <button class="tool-btn" data-prop="cushions" onclick="selectProp('cushions')">🧵 Almofadas</button>
-        </div>
-      </div>
-
       <div class="card" id="doorChestOptions">
         <div class="section-title">Porta / Baú</div>
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:5px;">Ao colocar uma porta ou baú, você pode escolher tranca e destino da chave.</div>
@@ -245,6 +210,16 @@
 
   <!-- FICHA LATERAL DIREITA -->
   <aside class="right-panel" id="rightSidebar">
+    <div id="architectLibraryPanel" class="hidden">
+      <div class="card">
+        <div class="section-title" id="architectLibraryTitle">Biblioteca de construção</div>
+        <div class="library-hint" id="architectLibraryDescription">Selecione uma categoria.</div>
+        <input class="ctrl" id="architectLibrarySearch" placeholder="Pesquisar..." oninput="renderArchitectLibrary()" style="width:100%;margin:9px 0;" />
+        <div class="library-grid" id="architectLibraryGrid"></div>
+        <div class="library-selection" id="architectLibrarySelected">Escolha um item para colocar no mapa.</div>
+      </div>
+    </div>
+    <div id="characterSheetPanel">
     <div class="card">
       <div class="section-title">
         <span>Ficha do Selecionado</span>
@@ -295,14 +270,16 @@
       <div class="section-title">Equipamento & Mochila</div>
       <div id="inventoryList"></div>
     </div>
+    </div>
   </aside>
 </div>
 
-<script src="js/state.js?v=hybrid-locks-20261122f" defer></script>
-<script src="js/editor.js?v=hybrid-locks-20261122f" defer></script>
-<script src="js/gameplay.js?v=hybrid-locks-20261122f" defer></script>
-<script src="js/textures.js?v=hybrid-locks-20261122f" defer></script>
-<script src="js/main.js?v=hybrid-locks-20261122f" defer></script>
+<script src="js/state.js?v=architect-library-20261122g" defer></script>
+<script src="js/editor.js?v=architect-library-20261122g" defer></script>
+<script src="js/library.js?v=architect-library-20261122g" defer></script>
+<script src="js/gameplay.js?v=architect-library-20261122g" defer></script>
+<script src="js/textures.js?v=architect-library-20261122g" defer></script>
+<script src="js/main.js?v=architect-library-20261122g" defer></script>
 <dialog id="lockDialog" class="lock-dialog">
   <form method="dialog" onsubmit="return false;">
     <h3 id="lockDialogTitle">Configurar tranca</h3>
