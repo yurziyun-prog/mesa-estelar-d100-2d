@@ -44,6 +44,7 @@ function setupInputs() {
       e.preventDefault();
       const ent=activeActor();
       if(ent && ent.sceneId===state.activeSceneId) {
+        if(ent.sleepPose)return;
         let dx=(keys['d']||keys['arrowright']?1:0)-(keys['a']||keys['arrowleft']?1:0);
         let dy=(keys['s']||keys['arrowdown']?1:0)-(keys['w']||keys['arrowup']?1:0);
         if(!dx&&!dy) {dx=ent.facingX||0;dy=ent.facingY||1;}
@@ -183,6 +184,7 @@ function updateSimulation() {
       if (keys['d'] || keys['arrowright']) dx += 1;
 
       if (dx !== 0 || dy !== 0) {
+        if(ent.sleepPose){awakenEntity(ent);return;}
         const len = Math.hypot(dx, dy);
         ent.facingX=dx/len; ent.facingY=dy/len;
         const speed = keys['shift'] ? 6.2 : 3.1;
