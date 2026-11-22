@@ -30,16 +30,14 @@ const ARCHITECT_LIBRARY = {
  furniture:[['table','🪵','Mesa','prop'],['chair','🪑','Cadeira','prop'],['bed','🛏️','Cama de solteiro','prop'],['bedDouble','🛏️','Cama de casal','prop'],['sleepingBag','⛺','Saco de dormir','prop'],['capsuleBed','🛸','Cápsula de sono','prop'],['bookshelf','📚','Estante','prop'],['hearth','🔥','Lareira','prop'],['barrel','🛢️','Barril','prop'],['bench','🪑','Banco','prop'],['cabinet','🚪','Armário','prop'],['desk','🗄️','Escrivaninha','prop'],['sofa','🛋️','Sofá (cor personalizável)','prop'],['lowTable','🫖','Mesa baixa','prop'],['console','🖥️','Console','prop'],['lamp','💡','Luminária','prop']],
  nature:[['tree','🌳','Carvalho','prop'],['pine','🌲','Pinheiro','prop'],['fruitTree','🍎','Frutífera','prop'],['bush','🌿','Arbusto','prop'],['rock','🪨','Rocha','prop'],['palm','🌴','Palmeira','prop'],['desertTree','🌳','Árvore de deserto','prop'],['cactus','🌵','Cacto','prop'],['flowers','🌸','Flores','prop'],['reeds','🌾','Juncos','prop'],['crystal','💎','Cristal','prop']],
  props:[['tent','⛺','Tenda','prop'],['oilLamp','🪔','Lâmpada de óleo','prop'],['cushions','🧵','Almofadas','prop'],['log','🪵','Tronco móvel','prop'],['urn','🏺','Ânfora','prop'],['crate','📦','Caixote','prop'],['rug','🧶','Tapete decorativo','prop'],['screen','🪟','Biombo','prop'],['fountain','⛲','Fonte','prop'],['torch','🔥','Tocha','prop']],
- walls:[
-  ['wallWood','🪵','Tábuas de madeira','wallVariant'],['wallBrick','🧱','Tijolos vermelhos','wallVariant'],['wallMasonry','🏛️','Alvenaria','wallVariant'],['wallCastle','🏰','Pedras de castelo','wallVariant'],['wallMetal','🔩','Metal claro','wallVariant'],['wallRust','⚙️','Metal enferrujado','wallVariant'],['wallSandstone','🕌','Arenito','wallVariant']
- ],
  architecture:[
- ['window','🪟','Janela','tool'],['door','🚪','Porta padrão','tool'],['doorFuture','🚀','Porta retrátil','doorVariant'],['doorArabia','🕌','Porta árabe','doorVariant'],
- ['stairs','🪜','Escada','tool'],['stairsStone','🏛️','Escada de pedra','stairVariant'],['bridgeWood','🌉','Ponte','bridgeVariant'],['chest','🧰','Baú','tool'],['chestFuture','🧰','Baú futurista','chestVariant']
-],
+  ['wall','🧱','Parede','tool'],['door','🚪','Porta','tool'],['window','🪟','Janela','tool'],
+  ['stairs','🪜','Escada','tool'],['bridgeWood','🌉','Ponte','bridgeVariant'],
+  ['chest','🧰','Baú','tool'],['chestFuture','🧰','Baú futurista','chestVariant']
+ ],
  characters:[['warrior','⚔️','Guerreiro','character'],['mage','🪄','Maga','character'],['ranger','🏹','Arqueira','character'],['villager','🧑','Aldeão','character'],['guard','🛡️','Guarda','character'],['merchant','🧳','Mercadora','character'],['goblin','👺','Goblin','character'],['skeleton','💀','Esqueleto','character'],['wolf','🐺','Lobo','character'],['dragon','🐉','Dragão','character']]
 };
-const LIBRARY_LABELS={walls:'Paredes: material e espessura',brush:'Pincel e texturas',create:'Criar (futuro)',downloads:'Packs baixados',terrain:'Terrenos e texturas',furniture:'Móveis',nature:'Árvores e natureza',props:'Objetos e decoração',architecture:'Elementos de construção',characters:'Personagens e NPCs'};
+const LIBRARY_LABELS={brush:'Pincel e texturas',create:'Criar (futuro)',downloads:'Packs baixados',terrain:'Terrenos e texturas',furniture:'Móveis',nature:'Árvores e natureza',props:'Objetos e decoração',architecture:'Elementos de construção',characters:'Personagens e NPCs'};
 let architectCategory='furniture';
 let architectCharacterTemplate=null;
 function openArchitectLibrary(category){
@@ -52,11 +50,7 @@ function openArchitectLibrary(category){
 function renderArchitectLibrary(){
  const grid=document.getElementById('architectLibraryGrid');if(!grid)return;
  const brush=document.getElementById('brushSettings'),create=document.getElementById('createSettings'),search=document.getElementById('architectLibrarySearch');
- const walls=document.getElementById('wallSettings'),colorPanel=document.getElementById('objectColorSettings');
- if(walls)walls.classList.toggle('hidden',architectCategory!=='walls');
- if(colorPanel)colorPanel.classList.toggle('hidden',!['furniture','props','nature','walls'].includes(architectCategory)&&!selectedMapObject);
- if(architectCategory==='walls')syncWallThicknessUI();
- syncArchitectColorUI();
+ refreshArchitectProperties();
  if(brush)brush.classList.toggle('hidden',architectCategory!=='brush');
  if(create)create.classList.toggle('hidden',architectCategory!=='create');
  if(search)search.classList.toggle('hidden',['brush','create'].includes(architectCategory));
@@ -95,14 +89,12 @@ function selectArchitectLibraryItem(id,label,kind){
    if(id==='stairs')state.stairVariant=null;
    selectTool(id);
  }
- else if(kind==='wallVariant'){state.wallVariant=id;selectTool('wall');}
  else if(kind==='doorVariant'){state.doorVariant=id;selectTool('door');}
- else if(kind==='stairVariant'){state.stairVariant=id;selectTool('stairs');}
  else if(kind==='chestVariant'){state.chestVariant=id;selectTool('chest');}
  else if(kind==='bridgeVariant'){selectMaterial('bridge');}
  else if(kind==='character'){architectCharacterTemplate=id;selectTool('character');}
  document.getElementById('architectLibrarySelected').textContent='Selecionado: '+label+' • Clique no mapa para colocar.';
- syncArchitectColorUI();
+ refreshArchitectProperties();
  for(const card of document.querySelectorAll('.library-card'))card.classList.toggle('active',card.textContent.trim().endsWith(label));
 }
 function placeArchitectCharacter(x,y){
@@ -116,7 +108,7 @@ function placeArchitectCharacter(x,y){
 function isItemInBuildCollection(id,category){
  const style=state?.buildStyle||'normal';
  // Terrenos são universais. Os itens básicos podem coexistir em todos os estilos.
- if(category==='terrain'||category==='architecture'||category==='characters'||category==='downloads'||category==='walls')return true;
+ if(category==='terrain'||category==='architecture'||category==='characters'||category==='downloads')return true;
  if(id==='capsuleBed')return style==='futurist';
  const arabia=new Set(['palm','desertTree','cactus','tent','oilLamp','cushions','lowTable','urn','rug','fountain']);
  const futurist=new Set(['console','lamp','crystal','capsuleBed']);
@@ -162,8 +154,11 @@ function selectedArchitectItem(){
  return floor?.[selectedMapObject.kind]?.[selectedMapObject.index]||null;
 }
 function supportsObjectColor(item){return Boolean(item && (item.type || ('material' in item && 'x1' in item)));}
+let architectEyedropper=false;
 function setArchitectObjectColor(value){
- if(!/^#[0-9a-f]{6}$/i.test(value))return;
+ value=String(value).trim().toLowerCase();
+ if(/^#[0-9a-f]{3}$/.test(value))value='#'+[...value.slice(1)].map(c=>c+c).join('');
+ if(!/^#[0-9a-f]{6}$/.test(value)){logEvent('Use uma cor hexadecimal #RRGGBB.');return;}
  const selected=selectedArchitectItem();
  beginEdit();
  if(selected && supportsObjectColor(selected))selected.color=value;
@@ -173,7 +168,10 @@ function setArchitectObjectColor(value){
 function syncArchitectColorUI(){
  const el=document.getElementById('objectColorPicker');if(!el)return;
  const selected=selectedArchitectItem();
- el.value=selected?.color||state.propColor||'#a35d64';
+ const value=selected?.color||state.propColor||'#a35d64';
+ el.value=value;
+ const hex=document.getElementById('objectColorHex');
+ if(hex&&document.activeElement!==hex)hex.value=value;
  const hint=document.getElementById('objectColorHint');
  if(hint)hint.textContent=selected&&supportsObjectColor(selected)?'Editando objeto selecionado':'Cor dos próximos objetos';
 }
@@ -190,8 +188,72 @@ function syncWallThicknessUI(){
  const slider=document.getElementById('wallThickness'),label=document.getElementById('wallThicknessLabel');
  if(slider)slider.value=value;if(label)label.textContent=value;
 }
-function onArchitectSelectionChange(){
- syncArchitectColorUI();syncWallThicknessUI();
- const color=document.getElementById('objectColorSettings');
- if(color)color.classList.toggle('hidden',!selectedMapObject&&!['furniture','props','nature','walls'].includes(architectCategory));
+
+function onArchitectSelectionChange(){refreshArchitectProperties();}
+const CONSTRUCTION_WALL_MATERIALS={wood:'wallWood',stone:'wallCastle',brick:'wallBrick',castle:'wallCastle',masonry:'wallMasonry',metal:'wallMetal',rust:'wallRust',sandstone:'wallSandstone'};
+function selectedConstructionKind(){
+ const kind=selectedMapObject?.kind;
+ if(kind==='walls')return 'wall';
+ if(kind==='stairs')return 'stairs';
+ if(['doors','chests','windows'].includes(kind))return kind;
+ if(architectCategory==='architecture'&&['wall','stairs','door','chest','window'].includes(state.tool))return state.tool;
+ return null;
+}
+function refreshArchitectProperties(){
+ const item=selectedArchitectItem(),kind=selectedConstructionKind();
+ const furniture=Boolean(item?.type)||(!item&&['furniture','props'].includes(architectCategory));
+ const showColors=kind==='wall'?Boolean(state.wallCustomColor||item?.color):!kind&&furniture;
+ document.getElementById('objectColorSettings')?.classList.toggle('hidden',!showColors);
+ document.getElementById('constructionOptions')?.classList.toggle('hidden',!kind);
+ document.getElementById('wallThicknessOptions')?.classList.toggle('hidden',kind!=='wall');
+ document.getElementById('stairShapeOptions')?.classList.toggle('hidden',kind!=='stairs');
+ const checkbox=document.getElementById('wallColorException');if(checkbox)checkbox.style.display=kind==='wall'?'flex':'none';
+ const check=document.getElementById('wallColorEnabled');if(check)check.checked=Boolean(state.wallCustomColor||item?.color);
+ const mat=document.getElementById('constructionMaterial');
+ if(mat&&kind)mat.value=kind==='wall'
+    ?(Object.keys(CONSTRUCTION_WALL_MATERIALS).find(k=>CONSTRUCTION_WALL_MATERIALS[k]===(item?.material||state.wallVariant))||'masonry')
+    :(item?.material||state.stairMaterial||'wood');
+ const shape=document.getElementById('stairShape');if(shape)shape.value=item?.shape||state.stairShape||'straight';
+ const title=document.getElementById('constructionOptionTitle');
+ if(title)title.textContent=kind==='wall'?'Parede · material e espessura':kind==='stairs'?'Escada · material e formato':'Construção · material';
+ syncWallThicknessUI();syncArchitectColorUI();
+}
+function changeConstructionMaterial(material){
+ if(!CONSTRUCTION_WALL_MATERIALS[material])return;
+ const kind=selectedConstructionKind(),item=selectedArchitectItem();
+ beginEdit();
+ if(kind==='wall'){if(item)item.material=CONSTRUCTION_WALL_MATERIALS[material];else state.wallVariant=CONSTRUCTION_WALL_MATERIALS[material];}
+ else if(kind==='stairs'){if(item)item.material=material;else state.stairMaterial=material;}
+ else if(item)item.material=material;
+ else state.constructionMaterial=material;
+ finishEdit();refreshArchitectProperties();
+}
+function changeStairShape(shape){
+ if(!['straight','spiral','ladder'].includes(shape))return;
+ const item=selectedArchitectItem();
+ beginEdit();
+ if(item&&selectedMapObject?.kind==='stairs')item.shape=shape;else state.stairShape=shape;
+ finishEdit();refreshArchitectProperties();
+}
+function toggleWallColorEditor(on){
+ state.wallCustomColor=Boolean(on);
+ const item=selectedArchitectItem();
+ if(!on&&item&&selectedMapObject?.kind==='walls'){beginEdit();delete item.color;finishEdit();}
+ refreshArchitectProperties();
+}
+function startArchitectEyedropper(){
+ architectEyedropper=true;
+ document.getElementById('architectLibrarySelected').textContent='🎯 Clique em um objeto colorido no mapa. Esc cancela.';
+}
+function sampleArchitectColorAt(wx,wy){
+ if(!architectEyedropper)return false;
+ architectEyedropper=false;
+ const hit=hitArchitectObjectAt(wx,wy);
+ if(!hit){logEvent('Nenhum objeto para copiar a cor.');return true;}
+ const item=getScene().floors[state.currentFloor][hit.kind][hit.index];
+ const base={wallWood:'#966a40',wallBrick:'#ae6047',wallMasonry:'#adb5b4',wallCastle:'#91918b',wallMetal:'#c3d5de',wallRust:'#917762',wallSandstone:'#d8b982'};
+ const color=item.color||(item.material?base[item.material]:null)||state.propColor;
+ setArchitectObjectColor(color);
+ document.getElementById('architectLibrarySelected').textContent='Cor copiada: '+color;
+ return true;
 }
