@@ -60,9 +60,9 @@
       <div id="gmSceneControls" class="hidden">
         <div class="row">
           <button class="btn btn-primary" style="flex:1;" onclick="gmSwitchScene(false)">🔄 Trocar Cenário</button>
-          <button class="btn btn-gold" style="flex:1;" onclick="gmSwitchScene(true)">🧲 Trocar & Puxar</button>
+          <button class="btn btn-gold" style="flex:1;" onclick="armGmRosterPlacement()">📍 Colocar</button>
         </div>
-        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Arrastar para o cenário escolhido:</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Personagens disponíveis (marque e clique em Colocar):</div>
         <div id="gmPullEntitiesList"></div>
       </div>
     </div>
@@ -151,12 +151,12 @@
 
     <div id="gmTools" class="hidden">
       <div class="card" style="margin-bottom:10px;">
-        <div class="section-title">Adicionar personagens ao cenário</div>
+        <div class="section-title">Personagens e monstros prontos</div>
         <div class="row">
           <select class="ctrl" id="gmSpawnSelect"></select>
           <button class="btn btn-primary" onclick="armGmPlacement()">📍 Colocar</button>
         </div>
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Escolha um personagem e clique no mapa para posicioná-lo.</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Escolha um modelo pronto e clique em Colocar. Em seguida, clique no mapa. Cada colocação cria uma nova cópia.</div>
         <div class="row"><input class="ctrl" id="gmNpcName" placeholder="Nome do novo NPC..." />
           <button class="btn" onclick="createGmNpc()">+ NPC</button></div>
         <div class="section-title">Ambiente & Horário</div>
@@ -282,10 +282,10 @@
   </aside>
 </div>
 
-<script src="js/state.js?v=terrain-fixed-20261122b" defer></script>
+<script src="js/state.js?v=gm-roster-20261122c" defer></script>
 <script src="js/editor.js?v=terrain-fixed-20261122b" defer></script>
-<script src="js/gameplay.js?v=terrain-fixed-20261122b" defer></script>
+<script src="js/gameplay.js?v=gm-roster-20261122c" defer></script>
 <script src="js/textures.js?v=terrain-fixed-20261122b" defer></script>
-<script src="js/main.js?v=terrain-fixed-20261122b" defer></script>
+<script src="js/main.js?v=gm-roster-20261122c" defer></script>
 </body>
 </html>
