@@ -191,6 +191,7 @@ function refreshSceneSelect() {
   ).join('');
   document.getElementById('activeSceneTag').textContent = getScene().name;
   renderGmPullList();
+  if (typeof refreshGmSpawnList === 'function') refreshGmSpawnList();
 }
 
 function onSceneSelectChange(id) {
@@ -282,7 +283,8 @@ function gmSwitchScene(pullChecked) {
 }
 
 function saveBank() {
-  localStorage.setItem('rpg_vtt_aligned_v8', JSON.stringify(state));
+  try { localStorage.setItem('rpg_vtt_aligned_v8', JSON.stringify(state)); logEvent('💾 Cenários salvos neste navegador.'); }
+  catch(error) { alert('Não foi possível salvar: ' + error.message); }
 }
 
 function exportJSON() {
@@ -299,7 +301,9 @@ function importJSON(e) {
   const reader = new FileReader();
   reader.onload = ev => {
     try {
+      beginEdit();
       state = JSON.parse(ev.target.result);
+      finishEdit();
       state.currentFloor = 0;
       state.selectedWallIdx = null;
       updateFloorLabel();
@@ -313,3 +317,36 @@ function importJSON(e) {
   reader.readAsText(file);
 }
 
+
+const undoHistory = [], redoHistory = [];
+let editSnapshot = null;
+function snapshotState(){ return JSON.stringify(state); }
+function beginEdit(){ if(editSnapshot === null) editSnapshot = snapshotState(); }
+function finishEdit(){
+  if(editSnapshot === null) return;
+  if(editSnapshot !== snapshotState()){
+    undoHistory.push(editSnapshot);
+    if(undoHistory.length > 60) undoHistory.shift();
+    redoHistory.length = 0;
+  }
+  editSnapshot = null;
+}
+function restoreState(serialized){
+  state = JSON.parse(serialized);
+  dragStart = null; previewRect = null; draggedObj = null;
+  selectedMapObject = null; draggingEntity = null; isDragging = false;
+  updateFloorLabel(); setMode(state.mode); refreshSceneSelect(); updateSelectedWallBar(); updateUI();
+}
+function undoEdit(){
+  finishEdit();
+  if(!undoHistory.length) return;
+  redoHistory.push(snapshotState());
+  restoreState(undoHistory.pop());
+  logEvent('↶ Última alteração desfeita.');
+}
+function redoEdit(){
+  if(!redoHistory.length) return;
+  undoHistory.push(snapshotState());
+  restoreState(redoHistory.pop());
+  logEvent('↷ Alteração refeita.');
+}
