@@ -266,30 +266,30 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   } else if (state.tool === 'window') {
     if (!isDrag) {
       const carved = carveOpeningOnWalls(floor, wx, wy, 22);
-      floor.windows.push({ x: carved.x, y: carved.y, orient: carved.orient });
+      floor.windows.push({ x: carved.x, y: carved.y, orient: carved.orient, style: state.buildStyle });
     }
   } else if (state.tool === 'door') {
     if (!isDrag) {
       const carved = carveOpeningOnWalls(floor, wx, wy, 34);
       const keyId = document.getElementById('lockKeyInput').value.trim();
-      floor.doors.push({ x: carved.x, y: carved.y, open: false, keyId, orient: carved.orient });
+      floor.doors.push({ x: carved.x, y: carved.y, open: false, keyId, orient: carved.orient, style: state.buildStyle });
     }
   } else if (state.tool === 'stairs') {
     if (!isDrag) {
-      floor.stairs.push({ x: wx, y: wy, dir: 'up', label: `→ ${state.currentFloor + 2}º` });
+      floor.stairs.push({ x: wx, y: wy, dir: 'up', label: `→ ${state.currentFloor + 2}º`, style: state.buildStyle });
       const upperIdx = state.currentFloor + 1;
       while (getScene().floors.length <= upperIdx) getScene().floors.push(createEmptyFloor(null));
       const upper = getScene().floors[upperIdx];
-      upper.stairs.push({ x: wx, y: wy, dir: 'down', label: `→ ${state.currentFloor + 1}º` });
+      upper.stairs.push({ x: wx, y: wy, dir: 'down', label: `→ ${state.currentFloor + 1}º`, style: state.buildStyle });
       upper.openings.push({ x: wx - 36, y: wy - 52, w: 72, h: 104 });
     }
   } else if (state.tool === 'prop') {
-    if (!isDrag) floor.props.push({ x: wx, y: wy, type: state.propType, rot: state.rotation });
+    if (!isDrag) floor.props.push({ x: wx, y: wy, type: state.propType, rot: state.rotation, style: state.buildStyle });
   } else if (state.tool === 'chest') {
     if (!isDrag) {
       const keyId = document.getElementById('lockKeyInput').value.trim();
       const loot = document.getElementById('chestLootInput').value.split(',').map(s => s.trim()).filter(Boolean);
-      floor.chests.push({ x: wx, y: wy, opened: false, keyId, loot });
+      floor.chests.push({ x: wx, y: wy, opened: false, keyId, loot, style: state.buildStyle });
     }
   } else if (state.tool === 'erase') {
     floor.areas = floor.areas.filter(a => !(wx >= a.x && wx <= a.x + a.w && wy >= a.y && wy <= a.y + a.h));
@@ -327,7 +327,7 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
     selectedMapObject = {kind:'areas', index:floor.areas.length - 1};
   } else if (state.tool === 'wall' && dragStart && Math.hypot(wx - dragStart.x, wy - dragStart.y) > 12) {
     const seg = makeOrthoSegment(dragStart.x, dragStart.y, wx, wy);
-    floor.walls.push(seg);
+    floor.walls.push({...seg, style:state.buildStyle});
     selectedMapObject = {kind:'walls', index:floor.walls.length - 1};
   }
   dragStart = null;
