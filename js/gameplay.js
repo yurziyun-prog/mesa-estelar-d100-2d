@@ -103,7 +103,7 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   const r = 12;
 
   for (const w of floor.walls) {
-    if (distToSegment(nx, ny, w.x1, w.y1, w.x2, w.y2) < r + 6) {
+    if (distToSegment(nx, ny, w.x1, w.y1, w.x2, w.y2) < r + (w.width||16)/2 - 2) {
       const nearOpenDoor = floor.doors.some(d => d.open && Math.hypot(d.x - nx, d.y - ny) < 38);
       if (!nearOpenDoor) return false;
     }
