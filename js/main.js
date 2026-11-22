@@ -161,6 +161,7 @@ let animTick = 0;
 function gameLoop() {
   animTick += 0.03;
   updateSimulation();
+  updateSkeletonAutonomy();
   followCamera();
   render();
   requestAnimationFrame(gameLoop);
