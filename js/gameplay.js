@@ -61,11 +61,11 @@ function onPaintedGround(floor, x, y) {
   const hit = (a) => x >= a.x && x <= a.x+a.w && y >= a.y && y <= a.y+a.h;
   for(const stroke of [...(floor.brushStrokes||[])].reverse()){
     for(let i=stroke.points.length-1;i>=0;i--){
-      if(brushPointInside(stroke,stroke.points[i],x,y,i))return stroke.mat!=='water'&&stroke.mat!=='void';
+      if(brushPointInside(stroke,stroke.points[i],x,y,i))return !['water','kenney_water','void'].includes(stroke.mat);
     }
   }
   const painted = [...floor.areas].reverse().find(hit);
-  if (painted) return painted.mat !== 'water';
+  if (painted) return !['water','kenney_water','void'].includes(painted.mat);
   const b = floor.terrainBounds || floor.bounds;
   return Boolean(floor.baseTerrain && b && hit(b) && floor.baseTerrain !== 'water');
 }
@@ -107,7 +107,7 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   // As camas têm colisão retangular proporcional ao seu tamanho.
   if(floor.props.some(p=>isSleepingFurniture(p)&&p.type!=='sleepingBag' && Math.abs(nx-p.x)<sleepFurnitureSize(p).w/2+r-4 && Math.abs(ny-p.y)<sleepFurnitureSize(p).h/2+r-4))return false;
 
-  const onWater = floor.areas.some(a => a.mat === 'water' && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
+  const onWater = floor.areas.some(a => ['water','kenney_water'].includes(a.mat) && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
   const onBridge = floor.areas.some(a => a.mat === 'bridge' && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
   if (onWater && !onBridge && !onPlacedBridge(floor,nx,ny)) return false;
   if (!walkableFloor(floor,nx,ny)) return false;
