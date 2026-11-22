@@ -256,7 +256,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     ctx.fillRect(33,-11,5,22);
     if(retro){
       // Dois painéis retráteis recolhem-se lateralmente, sem giro.
-      const left=d.open?-35:-34,right=d.open?35:0;
+      const left=d.open?-35:-34,right=d.open?35:34;
       const span=d.open?7:34;
       ctx.fillStyle='#788fa4';ctx.strokeStyle='#182735';ctx.lineWidth=2;
       ctx.fillRect(left,-8,span,16);ctx.strokeRect(left,-8,span,16);
