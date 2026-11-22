@@ -223,7 +223,7 @@ function changeConstructionMaterial(material){
  const kind=selectedConstructionKind(),item=selectedArchitectItem();
  beginEdit();
  if(kind==='wall'){if(item)item.material=CONSTRUCTION_WALL_MATERIALS[material];else state.wallVariant=CONSTRUCTION_WALL_MATERIALS[material];}
- else if(kind==='stairs'){if(item)item.material=material;else state.stairMaterial=material;}
+ else if(kind==='stairs'){if(item){item.material=material;syncLinkedStair(item,'material',material);}else state.stairMaterial=material;}
  else if(item)item.material=material;
  else state.constructionMaterial=material;
  finishEdit();refreshArchitectProperties();
@@ -232,7 +232,7 @@ function changeStairShape(shape){
  if(!['straight','spiral','ladder'].includes(shape))return;
  const item=selectedArchitectItem();
  beginEdit();
- if(item&&selectedMapObject?.kind==='stairs')item.shape=shape;else state.stairShape=shape;
+ if(item&&selectedMapObject?.kind==='stairs'){item.shape=shape;syncLinkedStair(item,'shape',shape);}else state.stairShape=shape;
  finishEdit();refreshArchitectProperties();
 }
 function toggleWallColorEditor(on){
@@ -256,4 +256,14 @@ function sampleArchitectColorAt(wx,wy){
  setArchitectObjectColor(color);
  document.getElementById('architectLibrarySelected').textContent='Cor copiada: '+color;
  return true;
+}
+
+function syncLinkedStair(source,key,value){
+ const floors=getScene().floors||[];
+ for(let i=0;i<floors.length;i++){
+  if(i===state.currentFloor)continue;
+  for(const stair of floors[i].stairs||[]){
+   if(Math.hypot(stair.x-source.x,stair.y-source.y)<2 && stair.dir!==source.dir)stair[key]=value;
+  }
+ }
 }
