@@ -75,6 +75,7 @@
             <option value="normal">🏰 Normal</option>
             <option value="futurist">🚀 Retro-futurista</option>
             <option value="arabia">🕌 Arábia</option>
+            <option value="downloads">📦 Downloads</option>
           </select>
         </div>
         <div style="font-size:11px;color:var(--text-muted);">Define a aparência dos próximos elementos. Misture livremente no mesmo mapa. O terreno não muda.</div>
@@ -85,17 +86,11 @@
           <button class="btn" style="padding:2px 6px; font-size:10px;" onclick="expandCurrentMap()">+ Expandir Mapa</button>
         </div>
         <div class="tool-grid">
-          <button class="tool-btn" data-tool="move" onclick="selectTool('move')">✋ Arrastar / Alinhar</button>
-          <button class="tool-btn active" data-tool="floor" onclick="openArchitectLibrary('terrain')">🖌️ Área / Chão</button>
-          <button class="tool-btn" data-tool="wall" onclick="selectTool('wall')">🧱 Parede Reta</button>
-          <button class="tool-btn" data-tool="window" onclick="selectTool('window')">🪟 Janela (Abre Vão)</button>
-          <button class="tool-btn" data-tool="door" onclick="selectTool('door')">🚪 Porta (Abre Vão)</button>
-          <button class="tool-btn" data-tool="stairs" onclick="selectTool('stairs')">🪜 Escada</button>
-          <button class="tool-btn" data-tool="furnitureMenu" onclick="openArchitectLibrary('furniture')">🪑 Móveis...</button>
-          <button class="tool-btn" data-tool="treeMenu" onclick="openArchitectLibrary('nature')">🌳 Árvores...</button>
-          <button class="tool-btn" data-tool="chest" onclick="selectTool('chest')">🧰 Baú</button>
-          <button class="tool-btn" data-prop="log" onclick="selectProp('log')">🪵 Tronco / Ponte</button>
+          <button class="tool-btn" data-tool="move" onclick="selectTool('move')">✋ Arrastar</button>
+          <button class="tool-btn" onclick="selectTool('move');document.getElementById('selectedWallBar').scrollIntoView({block:'nearest'})">📐 Alinhar</button>
           <button class="tool-btn" data-tool="erase" onclick="selectTool('erase')">🧹 Apagar</button>
+          <button class="tool-btn" data-tool="brush" onclick="openArchitectLibrary('brush')">🖌️ Pincel</button>
+          <button class="tool-btn" onclick="openArchitectLibrary('create')">✨ Criar</button>
         </div>
         <div id="selectedWallBar" class="hidden" style="margin-top:8px; padding-top:6px; border-top:1px solid var(--border);">
           <div style="font-size:11px; color:var(--gold); margin-bottom:4px;">Parede selecionada:</div>
@@ -116,6 +111,7 @@
           <button class="tool-btn" onclick="openArchitectLibrary('architecture')">🏛️ Elementos de construção</button>
           <button class="tool-btn" onclick="openArchitectLibrary('characters')">🎭 Personagens e NPCs</button>
           <button class="tool-btn" onclick="openArchitectLibrary('props')">🏺 Decoração e objetos</button>
+          <button class="tool-btn" onclick="openArchitectLibrary('downloads')">📦 Packs baixados</button>
         </div>
       </div>
       <div class="card" id="doorChestOptions">
@@ -206,6 +202,37 @@
       <div class="card">
         <div class="section-title" id="architectLibraryTitle">Biblioteca de construção</div>
         <div class="library-hint" id="architectLibraryDescription">Selecione uma categoria.</div>
+        <div id="brushSettings" class="hidden">
+          <div class="library-hint">Pincel adaptado da Oficina de Mapas do Mesa Estelar.</div>
+          <label>Formato
+            <select class="ctrl" id="brushShape" onchange="setArchitectBrush('shape',this.value)">
+              <option value="redondo">Redondo</option><option value="quadrado">Quadrado</option>
+              <option value="spray">Spray</option><option value="irregular">Irregular</option>
+            </select>
+          </label>
+          <label>Tamanho: <output id="brushSizeLabel">32</output>
+            <input type="range" id="brushSize" min="8" max="128" step="4" value="32" style="width:100%" oninput="setArchitectBrush('size',Number(this.value))" />
+          </label>
+          <label>Tipo de traço
+            <select class="ctrl" id="brushTexture" onchange="setArchitectBrush('texture',this.value)">
+              <option value="solida">Sólida</option><option value="pontilhada">Pontilhada</option>
+              <option value="giz">Giz</option><option value="ranhura">Ranhura</option>
+            </select>
+          </label>
+          <label>Material
+            <select class="ctrl" id="brushMaterial" onchange="setArchitectBrush('mat',this.value)">
+              <option value="grass">Grama</option><option value="sand">Areia</option>
+              <option value="dirt">Terra</option><option value="water">Água</option>
+              <option value="snow">Neve</option><option value="stone">Pedra</option>
+              <option value="wood">Madeira</option><option value="void">Remover terreno</option>
+            </select>
+          </label>
+          <p class="library-hint">Clique e arraste para pintar. Ctrl+Z desfaz a pincelada inteira.</p>
+        </div>
+        <div id="createSettings" class="hidden">
+          <p class="library-hint">Área reservada à futura criação de móveis, personagens, NPCs e monstros. Por enquanto, use os itens existentes da biblioteca.</p>
+          <div class="library-grid"><div class="library-card">🪑 Móveis</div><div class="library-card">🧑 Personagens</div><div class="library-card">🐉 Criaturas</div><div class="library-card">🧱 Construções</div></div>
+        </div>
         <input class="ctrl" id="architectLibrarySearch" placeholder="Pesquisar..." oninput="renderArchitectLibrary()" style="width:100%;margin:9px 0;" />
         <div class="library-grid" id="architectLibraryGrid"></div>
         <div class="library-selection" id="architectLibrarySelected">Escolha um item para colocar no mapa.</div>
@@ -268,12 +295,12 @@
   </aside>
 </div>
 
-<script src="js/state.js?v=beds-sleep-20261123a" defer></script>
-<script src="js/editor.js?v=beds-sleep-20261123a" defer></script>
-<script src="js/library.js?v=beds-sleep-20261123a" defer></script>
-<script src="js/gameplay.js?v=beds-sleep-20261123a" defer></script>
-<script src="js/textures.js?v=beds-sleep-20261123a" defer></script>
-<script src="js/main.js?v=beds-sleep-20261123a" defer></script>
+<script src="js/state.js?v=brush-stage1-20261123" defer></script>
+<script src="js/editor.js?v=brush-stage1-20261123" defer></script>
+<script src="js/library.js?v=brush-stage1-20261123" defer></script>
+<script src="js/gameplay.js?v=brush-stage1-20261123" defer></script>
+<script src="js/textures.js?v=brush-stage1-20261123" defer></script>
+<script src="js/main.js?v=brush-stage1-20261123" defer></script>
 <dialog id="lockDialog" class="lock-dialog">
   <form method="dialog" onsubmit="return false;">
     <h3 id="lockDialogTitle">Configurar tranca</h3>
