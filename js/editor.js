@@ -341,7 +341,7 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
     selectedMapObject = {kind:'areas', index:floor.areas.length - 1};
   } else if (state.tool === 'wall' && dragStart && Math.hypot(wx - dragStart.x, wy - dragStart.y) > 12) {
     const seg = makeOrthoSegment(dragStart.x, dragStart.y, wx, wy);
-    floor.walls.push({...seg, style:state.buildStyle==='downloads'?'normal':state.buildStyle, material:state.wallVariant||'wallMasonry',width:state.wallWidth||16});
+    floor.walls.push({...seg, style:state.buildStyle, material:state.wallVariant||'wallMasonry',width:state.wallWidth||16});
     mergeCollinearWalls(floor);
     selectedMapObject=null;state.selectedWallIdx=null;updateSelectedWallBar();
   }
