@@ -331,3 +331,5 @@
 #brushSettings:not(.hidden){display:flex;flex-direction:column;gap:10px;padding:8px 0;}
 #brushSettings label{font-size:12px;color:var(--text-muted);display:flex;flex-direction:column;gap:5px;}
 #brushSettings select{width:100%;}
+
+.library-thumb{width:36px;height:36px;flex-shrink:0;image-rendering:pixelated;border-radius:5px;background:#24332e;}
