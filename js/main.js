@@ -13,6 +13,7 @@ let isDragging = false;
 let isPanning = false;
 let draggingEntity = null;
 let draggingProp = null;
+function followCamera(){const e=activeActor();if(!e)return;state.camera.x=canvas.width/2-e.x*state.camera.zoom;state.camera.y=canvas.height/2-e.y*state.camera.zoom;}
 let lastMouse = { x: 0, y: 0 };
 
 function screenToWorld(sx, sy) {
@@ -25,6 +26,11 @@ function screenToWorld(sx, sy) {
 function setupInputs() {
   window.addEventListener('keydown', e => {
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName) || document.activeElement.isContentEditable) return;
+    if(state.mode==='gm'&&!e.ctrlKey&&!e.metaKey){
+      if(e.key==='Tab'){e.preventDefault();if(!e.repeat)gmCycle();return;}
+      if(e.key==='Enter'){e.preventDefault();gmConfirm();return;}
+      if(e.key==='Escape'){e.preventDefault();gmRelease();return;}
+    }
     if (e.ctrlKey || e.metaKey) {
       const k=e.key.toLowerCase();
       if(['z','y','c','v','s'].includes(k)) e.preventDefault();
@@ -34,9 +40,9 @@ function setupInputs() {
       if(k==='v') { pasteSelectedObject(); return; }
       if(k==='s') { saveCurrentSceneToBank(); return; }
     }
-    if(e.key === ' ' && state.mode === 'player') {
+    if(e.key === ' ' && activeActor()) {
       e.preventDefault();
-      const ent=getSelectedEntity();
+      const ent=activeActor();
       if(ent && ent.sceneId===state.activeSceneId) {
         let dx=(keys['d']||keys['arrowright']?1:0)-(keys['a']||keys['arrowleft']?1:0);
         let dy=(keys['s']||keys['arrowdown']?1:0)-(keys['w']||keys['arrowup']?1:0);
@@ -48,8 +54,8 @@ function setupInputs() {
     keys[e.key.toLowerCase()] = true;
     if (e.key.toLowerCase() === 'r') state.rotation = (state.rotation + 1) % 4;
     if (e.key === 'Delete' || e.key === 'Backspace') deleteSelectedWall();
-    if (e.key.toLowerCase() === 'e' && state.mode === 'player') {
-      const ent = getSelectedEntity();
+    if (e.key.toLowerCase() === 'e' && activeActor()) {
+      const ent = activeActor();
       if (ent && ent.sceneId === state.activeSceneId) interactNearby(ent);
     }
   });
@@ -82,13 +88,12 @@ function setupInputs() {
         ent.sceneId === state.activeSceneId && ent.floor === state.currentFloor && Math.hypot(ent.x - wx, ent.y - wy) < 28
       );
       if (clicked) {
-        state.selectedEntityId = clicked.id;
-        beginEdit();
-        draggingEntity = clicked;
-        updateUI();
+        gmPreviewId = clicked.id;
+        refreshGmFocus();
+        beginEdit();draggingEntity = clicked;
       }
-    } else if (state.mode === 'player') {
-      const ent = getSelectedEntity();
+    } else if (activeActor()) {
+      const ent = activeActor();
       if (!ent || ent.sceneId !== state.activeSceneId) return;
       const floor=getScene().floors[ent.floor];
       const movable=floor.props.find(p=>p.type==='log' && Math.hypot(p.x-wx,p.y-wy)<42 && Math.hypot(p.x-ent.x,p.y-ent.y)<100);
@@ -112,7 +117,7 @@ function setupInputs() {
     const { wx, wy } = screenToWorld(sx, sy);
     if (isDragging && state.mode === 'architect') {
       applyArchitectAction(wx, wy, true);
-    } else if (draggingProp && state.mode === 'player') {
+    } else if (draggingProp && activeActor()) {
       const ent=draggingProp.ent;
       const dx=wx-ent.x,dy=wy-ent.y,dist=Math.hypot(dx,dy);
       const factor=dist>105?105/dist:1;
@@ -141,7 +146,11 @@ function setupInputs() {
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
     const factor = e.deltaY < 0 ? 1.1 : 0.9;
-    state.camera.zoom = Math.max(0.45, Math.min(2.2, state.camera.zoom * factor));
+    const prior=state.camera.zoom, next=Math.max(.45,Math.min(2.2,prior*factor));
+    const rect=canvas.getBoundingClientRect(),sx=e.clientX-rect.left,sy=e.clientY-rect.top;
+    const wx=(sx-state.camera.x)/prior,wy=(sy-state.camera.y)/prior;
+    state.camera.zoom=next;
+    if(activeActor())followCamera();else{state.camera.x=sx-wx*next;state.camera.y=sy-wy*next;}
   }, { passive: false });
 }
 
@@ -151,6 +160,7 @@ let animTick = 0;
 function gameLoop() {
   animTick += 0.03;
   updateSimulation();
+  followCamera();
   render();
   requestAnimationFrame(gameLoop);
 }
@@ -163,8 +173,8 @@ function updateSimulation() {
     }
   });
 
-  if (state.mode === 'player') {
-    const ent = getSelectedEntity();
+  if (activeActor()) {
+    const ent = activeActor();
     if (ent && ent.sceneId === state.activeSceneId) {
       let dx = 0, dy = 0;
       if (keys['w'] || keys['arrowup']) dy -= 1;
