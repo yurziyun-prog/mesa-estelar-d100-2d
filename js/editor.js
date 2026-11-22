@@ -193,7 +193,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
         if (Math.hypot(wx - w.x1, wy - w.y1) < 16) {
           state.selectedWallIdx = i;
           selectedMapObject = { kind: 'walls', index: i };
-          updateSelectedWallBar();
+          updateSelectedWallBar();onArchitectSelectionChange();
           draggedObj = { kind: 'wallEnd', item: w, end: 1 };
           return;
         }
@@ -201,7 +201,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
           state.selectedWallIdx = i;
           updateSelectedWallBar();
           selectedMapObject = { kind: 'walls', index: i };
-          draggedObj = { kind: 'wallEnd', item: w, end: 2 };
+          onArchitectSelectionChange();draggedObj = { kind: 'wallEnd', item: w, end: 2 };
           return;
         }
         if (distToSegment(wx, wy, w.x1, w.y1, w.x2, w.y2) < 12) {
