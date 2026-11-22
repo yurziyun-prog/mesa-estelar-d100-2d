@@ -23,7 +23,16 @@ function screenToWorld(sx, sy) {
 
 function setupInputs() {
   window.addEventListener('keydown', e => {
-    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName) || document.activeElement.isContentEditable) return;
+    if (e.ctrlKey || e.metaKey) {
+      const k=e.key.toLowerCase();
+      if(['z','y','c','v','s'].includes(k)) e.preventDefault();
+      if(k==='z') { e.shiftKey ? redoEdit() : undoEdit(); return; }
+      if(k==='y') { redoEdit(); return; }
+      if(k==='c') { copySelectedObject(); return; }
+      if(k==='v') { pasteSelectedObject(); return; }
+      if(k==='s') { saveCurrentSceneToBank(); return; }
+    }
     keys[e.key.toLowerCase()] = true;
     if (e.key.toLowerCase() === 'r') state.rotation = (state.rotation + 1) % 4;
     if (e.key === 'Delete' || e.key === 'Backspace') deleteSelectedWall();
@@ -50,15 +59,18 @@ function setupInputs() {
     const { wx, wy } = screenToWorld(sx, sy);
 
     if (state.mode === 'architect') {
+      beginEdit();
       isDragging = true;
       dragStart = null;
       applyArchitectAction(wx, wy, false);
     } else if (state.mode === 'gm') {
+      if (gmPlacementId && placeGmEntityAt(wx,wy)) return;
       const clicked = state.entities.find(ent =>
         ent.sceneId === state.activeSceneId && ent.floor === state.currentFloor && Math.hypot(ent.x - wx, ent.y - wy) < 28
       );
       if (clicked) {
         state.selectedEntityId = clicked.id;
+        beginEdit();
         draggingEntity = clicked;
         updateUI();
       }
@@ -96,6 +108,7 @@ function setupInputs() {
     if (isDragging && state.mode === 'architect') {
       finalizeArchitectDrag(wx, wy, e.shiftKey);
     }
+    finishEdit();
     isDragging = false;
     isPanning = false;
     draggingEntity = null;
