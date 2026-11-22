@@ -1,10 +1,14 @@
 // Biblioteca do Arquiteto, independente da ficha do Mestre e do Jogador.
 const ARCHITECT_LIBRARY = {
  terrain:[['grass','🌿','Grama','mat'],['sand','🏜️','Areia','mat'],['dirt','🟤','Terra','mat'],['snow','❄️','Neve','mat'],['water','🌊','Água','mat'],['bridge','🌉','Ponte','mat'],['wood','🪵','Madeira','mat'],['checker','🔲','Ladrilho','mat'],['marble','🏛️','Mármore','mat'],['carpet','🟥','Tapete','mat'],['stone','🪨','Pedra irregular','mat'],['cobble','🧱','Calçamento','mat'],['metal','🔩','Piso metálico','mat'],['mosaic','🌀','Mosaico','mat']],
- furniture:[['table','🪵','Mesa','prop'],['chair','🪑','Cadeira','prop'],['bed','🛏️','Cama','prop'],['bookshelf','📚','Estante','prop'],['hearth','🔥','Lareira','prop'],['barrel','🛢️','Barril','prop'],['bench','🪑','Banco','prop'],['cabinet','🚪','Armário','prop'],['desk','🗄️','Escrivaninha','prop'],['sofa','🛋️','Sofá','prop'],['lowTable','🫖','Mesa baixa','prop'],['console','🖥️','Console','prop'],['lamp','💡','Luminária','prop']],
+ furniture:[['table','🪵','Mesa','prop'],['chair','🪑','Cadeira','prop'],['bed','🛏️','Cama de solteiro','prop'],['bedDouble','🛏️','Cama de casal','prop'],['sleepingBag','⛺','Saco de dormir','prop'],['capsuleBed','🛸','Cápsula de sono','prop'],['bookshelf','📚','Estante','prop'],['hearth','🔥','Lareira','prop'],['barrel','🛢️','Barril','prop'],['bench','🪑','Banco','prop'],['cabinet','🚪','Armário','prop'],['desk','🗄️','Escrivaninha','prop'],['sofa','🛋️','Sofá bege','prop'],['sofaBlue','🛋️','Sofá azul','prop'],['sofaRed','🛋️','Sofá vermelho','prop'],['sofaGreen','🛋️','Sofá verde','prop'],['lowTable','🫖','Mesa baixa','prop'],['console','🖥️','Console','prop'],['lamp','💡','Luminária','prop']],
  nature:[['tree','🌳','Carvalho','prop'],['pine','🌲','Pinheiro','prop'],['fruitTree','🍎','Frutífera','prop'],['bush','🌿','Arbusto','prop'],['rock','🪨','Rocha','prop'],['palm','🌴','Palmeira','prop'],['desertTree','🌳','Árvore de deserto','prop'],['cactus','🌵','Cacto','prop'],['flowers','🌸','Flores','prop'],['reeds','🌾','Juncos','prop'],['crystal','💎','Cristal','prop']],
  props:[['tent','⛺','Tenda','prop'],['oilLamp','🪔','Lâmpada de óleo','prop'],['cushions','🧵','Almofadas','prop'],['log','🪵','Tronco móvel','prop'],['urn','🏺','Ânfora','prop'],['crate','📦','Caixote','prop'],['rug','🧶','Tapete decorativo','prop'],['screen','🪟','Biombo','prop'],['fountain','⛲','Fonte','prop'],['torch','🔥','Tocha','prop']],
- architecture:[['wall','🧱','Parede','tool'],['window','🪟','Janela','tool'],['door','🚪','Porta','tool'],['stairs','🪜','Escada','tool'],['chest','🧰','Baú','tool']],
+ architecture:[
+ ['wallWood','🪵','Parede de madeira','wallVariant'],['wallBrick','🧱','Parede de tijolos','wallVariant'],['wallMasonry','🏛️','Parede de alvenaria','wallVariant'],['wallMetal','🔩','Parede metálica','wallVariant'],
+ ['window','🪟','Janela','tool'],['door','🚪','Porta padrão','tool'],['doorFuture','🚀','Porta retrátil','doorVariant'],['doorArabia','🕌','Porta árabe','doorVariant'],
+ ['stairs','🪜','Escada','tool'],['stairsStone','🏛️','Escada de pedra','stairVariant'],['bridgeWood','🌉','Ponte','bridgeVariant'],['chest','🧰','Baú','tool'],['chestFuture','🧰','Baú futurista','chestVariant']
+],
  characters:[['warrior','⚔️','Guerreiro','character'],['mage','🪄','Maga','character'],['ranger','🏹','Arqueira','character'],['villager','🧑','Aldeão','character'],['guard','🛡️','Guarda','character'],['merchant','🧳','Mercadora','character'],['goblin','👺','Goblin','character'],['skeleton','💀','Esqueleto','character'],['wolf','🐺','Lobo','character'],['dragon','🐉','Dragão','character']]
 };
 const LIBRARY_LABELS={terrain:'Terrenos e texturas',furniture:'Móveis',nature:'Árvores e natureza',props:'Objetos e decoração',architecture:'Construção',characters:'Personagens e NPCs'};
@@ -40,6 +44,11 @@ function selectArchitectLibraryItem(id,label,kind){
  if(kind==='mat')selectMaterial(id);
  else if(kind==='prop')selectProp(id);
  else if(kind==='tool')selectTool(id);
+ else if(kind==='wallVariant'){state.wallVariant=id;selectTool('wall');}
+ else if(kind==='doorVariant'){state.buildStyle=id==='doorFuture'?'futurist':id==='doorArabia'?'arabia':state.buildStyle;document.getElementById('sceneStyleSelect').value=state.buildStyle;selectTool('door');}
+ else if(kind==='stairVariant'){state.stairVariant=id;selectTool('stairs');}
+ else if(kind==='chestVariant'){state.chestVariant=id;selectTool('chest');}
+ else if(kind==='bridgeVariant'){selectMaterial('bridge');}
  else if(kind==='character'){architectCharacterTemplate=id;selectTool('character');}
  document.getElementById('architectLibrarySelected').textContent='Selecionado: '+label+' • Clique no mapa para colocar.';
  for(const card of document.querySelectorAll('.library-card'))card.classList.toggle('active',card.textContent.trim().endsWith(label));
@@ -56,8 +65,9 @@ function isItemInBuildCollection(id,category){
  const style=state?.buildStyle||'normal';
  // Terrenos são universais. Os itens básicos podem coexistir em todos os estilos.
  if(category==='terrain'||category==='architecture'||category==='characters')return true;
+ if(id==='capsuleBed')return style==='futurist';
  const arabia=new Set(['palm','desertTree','cactus','tent','oilLamp','cushions','lowTable','urn','rug','fountain']);
- const futurist=new Set(['console','lamp','crystal']);
+ const futurist=new Set(['console','lamp','crystal','capsuleBed']);
  if(style==='arabia')return !futurist.has(id);
  if(style==='futurist')return !arabia.has(id) || id==='palm';
  return !futurist.has(id) && !arabia.has(id);
