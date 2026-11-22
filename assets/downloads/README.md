@@ -10,3 +10,12 @@ Os ladrilhos foram organizados em uma mini-atlas PNG interno de 128×64 no arqui
 **Licenças dos dois pacotes: Creative Commons Zero (CC0)**, conforme `license.txt` / `License.txt` presentes nos ZIPs. Atribuição opcional: Kenney, https://kenney.nl/.
 
 Esta é uma seleção inicial, não a importação integral dos dois packs.
+
+## Seleção 2: objetos RPG Base
+
+Foram incorporadas mais doze miniaturas de sprites do pack `kenney_rpg-base.zip`:
+`rpgTile155`, `rpgTile175`, `rpgTile197`, `rpgTile159`, `rpgTile189`, `rpgTile185`, `rpgTile163`, `rpgTile183`, `rpgTile161`, `rpgTile194`, `rpgTile217`, `rpgTile201` (arquivos PNG do pack).
+
+Esses recursos foram reduzidos para 32×32 com amostragem nearest-neighbor e armazenados na mini-atlas local em `js/download-objects.js`, sob licença CC0.
+
+**Nota de funcionamento:** porta, janela, arco e escada de mão desta coleção são, por enquanto, **elementos gráficos decorativos**, não substituem as portas/escadas/janelas funcionais de **Elementos de construção**. Os demais objetos sólidos bloqueiam o movimento. A biblioteca Downloads é independente da coleção arquitetônica selecionada.
