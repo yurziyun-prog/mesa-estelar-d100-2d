@@ -20,7 +20,25 @@ function setMode(mode) {
   updateUI();
 }
 
-function canMoveTo(floorIdx, nx, ny) {
+function onPaintedGround(floor, x, y) {
+  const hit = (a) => x >= a.x && x <= a.x+a.w && y >= a.y && y <= a.y+a.h;
+  const painted = [...floor.areas].reverse().find(hit);
+  if (painted) return painted.mat !== 'water';
+  const b = floor.terrainBounds || floor.bounds;
+  return Boolean(floor.baseTerrain && b && hit(b) && floor.baseTerrain !== 'water');
+}
+function onPlacedBridge(floor, x, y) {
+  return floor.props.some(p => {
+    if (p.type !== 'log') return false;
+    const horizontal = (p.rot || 0) % 2 === 0;
+    return horizontal ? Math.abs(y-p.y) <= 13 && Math.abs(x-p.x) <= 70
+      : Math.abs(x-p.x) <= 13 && Math.abs(y-p.y) <= 70;
+  });
+}
+function walkableFloor(floor, x, y) {
+  return onPaintedGround(floor, x, y) || onPlacedBridge(floor, x, y);
+}
+function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   const floor = getScene().floors[floorIdx];
   if (!floor) return false;
   const r = 12;
@@ -41,7 +59,8 @@ function canMoveTo(floorIdx, nx, ny) {
 
   const onWater = floor.areas.some(a => a.mat === 'water' && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
   const onBridge = floor.areas.some(a => a.mat === 'bridge' && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
-  if (onWater && !onBridge) return false;
+  if (onWater && !onBridge && !onPlacedBridge(floor,nx,ny)) return false;
+  if (!walkableFloor(floor,nx,ny)) return false;
 
   return true;
 }
@@ -289,4 +308,32 @@ function createGmNpc(){
   renderGmPullList();
   updateUI();
   logEvent('🎭 NPC '+name+' criado. Marque-o na lista de cima e use Colocar.');
+}
+
+// Saltos curtos verificam uma aterrissagem segura; caminhar jamais cruza o vazio.
+function attemptJump(ent, dx, dy) {
+  const floor=getScene().floors[ent.floor];
+  if(!floor || ent.jumpUntil > performance.now()) return false;
+  const len=Math.hypot(dx,dy);
+  if(len===0) return false;
+  const ux=dx/len,uy=dy/len;
+  // Buscar a menor aterrissagem válida, permitindo pular pequenos vãos.
+  for(let d=42;d<=104;d+=8){
+    const x=ent.x+ux*d,y=ent.y+uy*d;
+    if(!canMoveTo(ent.floor,x,y,true)) continue;
+    // Não saltar através de paredes, portas ou objetos sólidos.
+    const blocked=[0.25,0.5,0.75].some(t=>{
+      const px=ent.x+ux*d*t,py=ent.y+uy*d*t;
+      return floor.walls.some(w=>distToSegment(px,py,w.x1,w.y1,w.x2,w.y2)<17)
+        || floor.doors.some(door=>!door.open&&Math.hypot(door.x-px,door.y-py)<24);
+    });
+    if(blocked) continue;
+    ent.jumpFrom={x:ent.x,y:ent.y};
+    ent.jumpStart=performance.now();
+    ent.jumpUntil=ent.jumpStart+380;
+    ent.x=x;ent.y=y;
+    return true;
+  }
+  logEvent('Não há terreno seguro ao alcance do salto.');
+  return false;
 }
