@@ -269,40 +269,52 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     ctx.textAlign = 'left';
   });
 
-  floor.walls.forEach((w, idx) => {
-    const isSel = !isBelow && state.mode === 'architect' && state.selectedWallIdx === idx;
+  // Desenhar todas as paredes por camada evita as emendas nas esquinas
+  // e nas junções em T: sombra -> moldura -> preenchimento -> detalhes.
+  const walls=floor.walls;
+  function wallPath(w){ctx.moveTo(w.x1,w.y1);ctx.lineTo(w.x2,w.y2);}
+  for(const pass of ['shadow','frame']){
+    ctx.save();ctx.lineCap='square';ctx.lineJoin='miter';ctx.lineWidth=18;
+    ctx.strokeStyle=pass==='shadow'?'rgba(0,0,0,.35)':'#28303c';
+    ctx.beginPath();
+    for(const w of walls){
+      if(pass==='shadow'){ctx.moveTo(w.x1+5,w.y1+6);ctx.lineTo(w.x2+5,w.y2+6);}
+      else wallPath(w);
+    }
+    ctx.stroke();ctx.restore();
+  }
+  // Agrupar trechos do mesmo material no mesmo desenho mantém as junções limpas.
+  const wallGroups=new Map();
+  for(const w of walls){
+    const key=(w.style||'normal')+'|'+(w.material||'');
+    if(!wallGroups.has(key))wallGroups.set(key,[]);
+    wallGroups.get(key).push(w);
+  }
+  for(const group of wallGroups.values()){
+    const w=group[0];
+    const fill=w.material==='wallWood'?'#926443':w.material==='wallBrick'?'#a4523d':
+      w.material==='wallMasonry'?'#b5b9b5':w.material==='wallMetal'?'#c2d8df':
+      isRetroFuture(w)?'#d1e0e6':isArabia(w)?'#d9b889':'#535d70';
+    ctx.save();ctx.lineCap='square';ctx.lineJoin='miter';ctx.lineWidth=14;ctx.strokeStyle=fill;
+    ctx.beginPath();for(const segment of group)wallPath(segment);ctx.stroke();ctx.restore();
+  }
+  walls.forEach((w,idx)=>{
     ctx.save();
-    ctx.lineCap = 'square';
-    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-    ctx.lineWidth = 18;
-    ctx.beginPath(); ctx.moveTo(w.x1 + 5, w.y1 + 6); ctx.lineTo(w.x2 + 5, w.y2 + 6); ctx.stroke();
-
-    ctx.strokeStyle = isSel ? '#f5b942' : (isRetroFuture(w) ? '#506e80' : isArabia(w) ? '#735238' : '#1e2430');
-    ctx.lineWidth = 18;
-    ctx.beginPath(); ctx.moveTo(w.x1, w.y1); ctx.lineTo(w.x2, w.y2); ctx.stroke();
-
-    ctx.strokeStyle = w.material==='wallWood'?'#926443':w.material==='wallBrick'?'#a4523d':w.material==='wallMasonry'?'#b5b9b5':w.material==='wallMetal'?'#c2d8df':isRetroFuture(w) ? '#d1e0e6' : isArabia(w) ? '#d9b889' : '#535d70';
-    ctx.lineWidth = 14;
-    ctx.beginPath(); ctx.moveTo(w.x1, w.y1); ctx.lineTo(w.x2, w.y2); ctx.stroke();
-
     if(w.material==='wallBrick'){
-      ctx.strokeStyle='#74392e';ctx.lineWidth=2;
-      const len=Math.hypot(w.x2-w.x1,w.y2-w.y1),steps=Math.max(1,Math.floor(len/24));
-      for(let i=1;i<steps;i++){let t=i/steps;ctx.beginPath();ctx.arc(w.x1+(w.x2-w.x1)*t,w.y1+(w.y2-w.y1)*t,2,0,7);ctx.stroke();}
+      ctx.fillStyle='rgba(100,45,30,.7)';
+      const len=Math.hypot(w.x2-w.x1,w.y2-w.y1);
+      for(let d=18;d<len-5;d+=24){
+        const t=d/len;ctx.beginPath();ctx.arc(w.x1+(w.x2-w.x1)*t,w.y1+(w.y2-w.y1)*t,1.6,0,Math.PI*2);ctx.fill();
+      }
     }else if(w.material==='wallWood'){
-      ctx.strokeStyle='#dbb483';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(w.x1,w.y1);ctx.lineTo(w.x2,w.y2);ctx.stroke();
+      ctx.strokeStyle='#dbb483';ctx.lineWidth=2;ctx.beginPath();wallPath(w);ctx.stroke();
     }
     if(isRetroFuture(w)){
-      ctx.strokeStyle='#43b5c4';ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(w.x1,w.y1);ctx.lineTo(w.x2,w.y2);ctx.stroke();
-      ctx.fillStyle='#d5a55a';
-      for(let t=0;t<=1;t+=0.2){
-        ctx.beginPath();ctx.arc(w.x1+(w.x2-w.x1)*t,w.y1+(w.y2-w.y1)*t,2.2,0,Math.PI*2);ctx.fill();
-      }
+      ctx.strokeStyle='#43b5c4';ctx.lineWidth=2;ctx.beginPath();wallPath(w);ctx.stroke();
     }
-    if (isSel) {
-      ctx.fillStyle = '#f5b942';
-      ctx.beginPath(); ctx.arc(w.x1, w.y1, 6, 0, Math.PI * 2); ctx.arc(w.x2, w.y2, 6, 0, Math.PI * 2); ctx.fill();
+    if(!isBelow&&state.mode==='architect'&&state.selectedWallIdx===idx){
+      ctx.strokeStyle='#f5b942';ctx.lineWidth=3;ctx.beginPath();wallPath(w);ctx.stroke();
+      ctx.fillStyle='#f5b942';ctx.beginPath();ctx.arc(w.x1,w.y1,6,0,Math.PI*2);ctx.arc(w.x2,w.y2,6,0,Math.PI*2);ctx.fill();
     }
     ctx.restore();
   });
