@@ -185,8 +185,7 @@ function init() {
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
   setupInputs();
-  refreshSceneSelect();
-  updateUI();
+  setMode(state.mode || 'architect');
   logEvent(`Cenário ativo: ${getScene().name}.`);
   requestAnimationFrame(gameLoop);
 }
