@@ -25,6 +25,7 @@ function screenToWorld(sx, sy) {
 
 function setupInputs() {
   window.addEventListener('keydown', e => {
+    if(e.key==='Escape'&&typeof architectEyedropper!=='undefined'&&architectEyedropper){architectEyedropper=false;document.getElementById('architectLibrarySelected').textContent='Conta-gotas cancelado.';return;}
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName) || document.activeElement.isContentEditable) return;
     if(state.mode==='gm'&&!e.ctrlKey&&!e.metaKey){
       if(e.key==='Tab'){e.preventDefault();if(!e.repeat)gmCycle();return;}
@@ -78,6 +79,7 @@ function setupInputs() {
     const { wx, wy } = screenToWorld(sx, sy);
 
     if (state.mode === 'architect') {
+      if(typeof sampleArchitectColorAt==='function'&&sampleArchitectColorAt(wx,wy))return;
       if(placePendingKey(wx,wy)) return;
       beginEdit();
       isDragging = true;
