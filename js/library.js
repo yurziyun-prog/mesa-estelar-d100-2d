@@ -4,7 +4,19 @@ const ARCHITECT_LIBRARY = {
   ['kenney_grass','🌿','RPG Base · Grama','mat'],['kenney_sand','🏜️','RPG Base · Terra arenosa','mat'],
   ['kenney_water','💧','RPG Base · Água','mat'],['kenney_stone','🏛️','RPG Base · Pedra clara','mat'],
   ['kenney_wood','🪵','Roguelike · Madeira','mat'],['kenney_brick','🪨','Roguelike · Pedra cinza','mat'],
-  ['kenney_masonry','🧱','Roguelike · Alvenaria','mat'],['kenney_flowers','🌷','Roguelike · Flores','mat']
+  ['kenney_masonry','🧱','Roguelike · Alvenaria','mat'],['kenney_flowers','🌷','Roguelike · Flores','mat'],
+  ['kenney_tree_green','🌳','RPG Base · Árvore verde','downloadProp'],
+  ['kenney_pine','🌲','RPG Base · Conífera','downloadProp'],
+  ['kenney_tree_autumn','🍂','RPG Base · Árvore outonal','downloadProp'],
+  ['kenney_bush','🌿','RPG Base · Arbusto','downloadProp'],
+  ['kenney_arch','🏛️','RPG Base · Arco decorativo','downloadProp'],
+  ['kenney_window','🪟','RPG Base · Janela decorativa','downloadProp'],
+  ['kenney_crate','📦','RPG Base · Caixote','downloadProp'],
+  ['kenney_barrel','🛢️','RPG Base · Barril','downloadProp'],
+  ['kenney_ladder','🪜','RPG Base · Escada de mão decorativa','downloadProp'],
+  ['kenney_door','🚪','RPG Base · Porta decorativa','downloadProp'],
+  ['kenney_urn','🏺','RPG Base · Vaso de pedra','downloadProp'],
+  ['kenney_fence','🪵','RPG Base · Cerca','downloadProp']
  ],
  terrain:[['grass','🌿','Grama','mat'],['sand','🏜️','Areia','mat'],['dirt','🟤','Terra','mat'],['snow','❄️','Neve','mat'],['water','🌊','Água','mat'],['bridge','🌉','Ponte','mat'],['wood','🪵','Madeira','mat'],['checker','🔲','Ladrilho','mat'],['marble','🏛️','Mármore','mat'],['carpet','🟥','Tapete','mat'],['stone','🪨','Pedra irregular','mat'],['cobble','🧱','Calçamento','mat'],['metal','🔩','Piso metálico','mat'],['mosaic','🌀','Mosaico','mat']],
  furniture:[['table','🪵','Mesa','prop'],['chair','🪑','Cadeira','prop'],['bed','🛏️','Cama de solteiro','prop'],['bedDouble','🛏️','Cama de casal','prop'],['sleepingBag','⛺','Saco de dormir','prop'],['capsuleBed','🛸','Cápsula de sono','prop'],['bookshelf','📚','Estante','prop'],['hearth','🔥','Lareira','prop'],['barrel','🛢️','Barril','prop'],['bench','🪑','Banco','prop'],['cabinet','🚪','Armário','prop'],['desk','🗄️','Escrivaninha','prop'],['sofa','🛋️','Sofá bege','prop'],['sofaBlue','🛋️','Sofá azul','prop'],['sofaRed','🛋️','Sofá vermelho','prop'],['sofaGreen','🛋️','Sofá verde','prop'],['lowTable','🫖','Mesa baixa','prop'],['console','🖥️','Console','prop'],['lamp','💡','Luminária','prop']],
@@ -48,7 +60,7 @@ function renderArchitectLibrary(){
 function selectArchitectLibraryItem(id,label,kind){
  architectCharacterTemplate=null;
  if(kind==='mat')selectMaterial(id);
- else if(kind==='prop')selectProp(id);
+ else if(kind==='prop'||kind==='downloadProp')selectProp(id);
  else if(kind==='tool'){
    if(id==='wall')state.wallVariant=null;
    if(id==='door')state.doorVariant=null;
