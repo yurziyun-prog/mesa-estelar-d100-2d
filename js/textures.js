@@ -214,7 +214,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
 
   floor.props.forEach(p => drawProp(p));
 
-  state.entities.filter(e => e.sceneId === sc.id && e.floor === floorIdx).forEach(ent => {
+  state.entities.filter(e => e.sceneId === state.activeSceneId && e.floor === floorIdx).forEach(ent => {
     drawCharacterToken(ent, isBelow);
   });
 }
