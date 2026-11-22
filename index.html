@@ -151,6 +151,14 @@
 
     <div id="gmTools" class="hidden">
       <div class="card" style="margin-bottom:10px;">
+        <div class="section-title">Adicionar personagens ao cenário</div>
+        <div class="row">
+          <select class="ctrl" id="gmSpawnSelect"></select>
+          <button class="btn btn-primary" onclick="armGmPlacement()">📍 Colocar</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Escolha um personagem e clique no mapa para posicioná-lo.</div>
+        <div class="row"><input class="ctrl" id="gmNpcName" placeholder="Nome do novo NPC..." />
+          <button class="btn" onclick="createGmNpc()">+ NPC</button></div>
         <div class="section-title">Ambiente & Horário</div>
         <div class="row" style="margin-bottom:4px;">
           <select id="timeOfDaySelect" class="ctrl" onchange="changeTimeOfDay(this.value)">
@@ -215,7 +223,7 @@
       <canvas id="mapCanvas"></canvas>
     </div>
     <div class="status-strip" id="hudStatus">
-      Modo Arquiteto • Paredes retas alinhadas • Porta/Janela abre vão na parede • R: Rotacionar • Botão direito: Câmera
+      Modo Arquiteto • Ctrl+Z: desfazer • Ctrl+C/V: copiar/colar • Ctrl+S: salvar • R: girar • Botão direito: Câmera
     </div>
   </div>
 
