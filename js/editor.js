@@ -271,8 +271,9 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   } else if (state.tool === 'door') {
     if (!isDrag) {
       const carved = carveOpeningOnWalls(floor, wx, wy, 34);
-      const keyId = document.getElementById('lockKeyInput').value.trim();
-      floor.doors.push({ x: carved.x, y: carved.y, open: false, keyId, orient: carved.orient, style: state.buildStyle });
+      const door = { x: carved.x, y: carved.y, open: false, keyId: '', orient: carved.orient, style: state.buildStyle };
+      floor.doors.push(door);
+      openLockDialog(door, 'door');
     }
   } else if (state.tool === 'stairs') {
     if (!isDrag) {
@@ -287,9 +288,10 @@ function applyArchitectAction(wx, wy, isDrag = false) {
     if (!isDrag) floor.props.push({ x: wx, y: wy, type: state.propType, rot: state.rotation, style: state.buildStyle });
   } else if (state.tool === 'chest') {
     if (!isDrag) {
-      const keyId = document.getElementById('lockKeyInput').value.trim();
       const loot = document.getElementById('chestLootInput').value.split(',').map(s => s.trim()).filter(Boolean);
-      floor.chests.push({ x: wx, y: wy, opened: false, keyId, loot, style: state.buildStyle });
+      const chest={ x: wx, y: wy, opened: false, keyId:'', loot, style: state.buildStyle };
+      floor.chests.push(chest);
+      openLockDialog(chest, 'chest');
     }
   } else if (state.tool === 'erase') {
     floor.areas = floor.areas.filter(a => !(wx >= a.x && wx <= a.x + a.w && wy >= a.y && wy <= a.y + a.h));
@@ -368,4 +370,64 @@ function pasteSelectedObject() {
   // Atualizar a referência permite colar sucessivamente ao lado da cópia anterior.
   window.mapClipboard.item = structuredClone(copy);
   logEvent('📋 Cópia adicionada ao mapa.');
+}
+
+let pendingLockItem = null;
+let pendingKeyPlacement = null;
+function openLockDialog(item,kind){
+  pendingLockItem={item,kind,sceneId:state.activeSceneId,floor:state.currentFloor};
+  const d=document.getElementById('lockDialog');
+  document.getElementById('lockDialogTitle').textContent=kind==='door'?'Configurar porta':'Configurar baú';
+  document.getElementById('lockDialogHint').textContent=item.style==='futurist'
+    ? 'Porta/baú futurista: código opcional, sem chave física.'
+    : 'Porta/baú Normal ou Arábia: tranca opcional, com chave física.';
+  document.getElementById('lockEnabled').checked=false;
+  document.getElementById('lockValue').value='';
+  const dest=document.getElementById('lockDestination');
+  dest.replaceChildren();
+  const option=document.createElement('option');option.value='map';option.textContent='🗺️ Posicionar no mapa';dest.append(option);
+  for(const ent of state.entities){
+    const opt=document.createElement('option');opt.value=ent.id;opt.textContent='🎒 Inventário: '+ent.name;dest.append(opt);
+  }
+  updateLockForm();
+  if(!d.open)d.showModal();
+}
+function updateLockForm(){
+  const on=document.getElementById('lockEnabled').checked;
+  const retro=pendingLockItem?.item.style==='futurist';
+  document.getElementById('lockOptions').classList.toggle('hidden',!on);
+  document.getElementById('keyDestinationBox').classList.toggle('hidden',retro);
+  document.getElementById('lockCodeLabel').textContent=retro?'Código de acesso':'Nome da chave';
+  document.getElementById('lockValue').placeholder=retro?'Ex.: 4821 (opcional)':'Ex.: Chave dourada (opcional)';
+}
+function saveLockDialog(confirmLock){
+  if(!pendingLockItem)return;
+  const {item}=pendingLockItem;
+  const on=confirmLock&&document.getElementById('lockEnabled').checked;
+  const retro=item.style==='futurist';
+  const value=document.getElementById('lockValue').value.trim();
+  if(!on || !value){item.keyId='';delete item.lockCode;}
+  else if(retro){item.lockCode=value;item.keyId='';}
+  else{
+    const key='chave_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+    item.keyId=key;delete item.lockCode;
+    const destination=document.getElementById('lockDestination').value;
+    const ent=state.entities.find(e=>e.id===destination);
+    if(ent){ent.inventory.push(key);updateUI();logEvent('🔑 '+value+' adicionada ao inventário de '+ent.name+'.');}
+    else{pendingKeyPlacement={keyId:key,label:value,sceneId:state.activeSceneId,floor:state.currentFloor};logEvent('🔑 Clique no mapa para colocar '+value+'.');}
+  }
+  document.getElementById('lockDialog').close();
+  pendingLockItem=null;
+  saveBank();
+}
+function placePendingKey(wx,wy){
+  if(!pendingKeyPlacement)return false;
+  const pk=pendingKeyPlacement;
+  const floor=state.scenes[pk.sceneId]?.floors[pk.floor];if(!floor)return false;
+  beginEdit();
+  floor.props.push({type:'key',x:wx,y:wy,keyId:pk.keyId,label:pk.label,style:'normal',rot:0});
+  pendingKeyPlacement=null;
+  finishEdit();
+  logEvent('🔑 Chave colocada no mapa.');
+  return true;
 }
