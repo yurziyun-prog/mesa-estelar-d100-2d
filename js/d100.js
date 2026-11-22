@@ -5,6 +5,7 @@ const D100_MIGRATION_VERSION=1;
 function normalizeD100Character(ent){
  if(!ent)return ent;
  const old=ent.attrs||{};
+ if(!ent.legacyAttrs && ('SAB' in old))ent.legacyAttrs={...old};
  const attrs={};
  for(const name of D100_ATTRIBUTES){
   const value=Number(old[name]);
@@ -26,8 +27,9 @@ function parseLegacySkillsD100(skills){
  if(!Array.isArray(skills))return [];
  return skills.map(skill=>{
   if(typeof skill==='object'&&skill){
-   return {name:String(skill.name||'Perícia'),base:Number.isFinite(Number(skill.base))?Number(skill.base):null,
-     training:Number(skill.training)||0,total:Number.isFinite(Number(skill.total))?Number(skill.total):null,
+   return {name:String(skill.name||'Perícia'),base:skill.base!==null&&skill.base!==undefined&&Number.isFinite(Number(skill.base))?Number(skill.base):null,
+     training:skill.training!==null&&skill.training!==undefined&&Number.isFinite(Number(skill.training))?Number(skill.training):null,
+     total:skill.total!==null&&skill.total!==undefined&&Number.isFinite(Number(skill.total))?Number(skill.total):null,
      provisional:skill.provisional!==false};
   }
   const raw=String(skill),match=raw.match(/^(.*?)\s*\+\s*(\d+)\s*$/);
@@ -44,6 +46,33 @@ function testD100Attribute(key){
  const ent=getSelectedEntity();if(!ent||!D100_ATTRIBUTES.includes(key))return;
  const roll=d100Roll();
  logEvent('🎲 '+ent.name+' • '+key+' '+ent.attrs[key]+' • d100: '+roll+' (sem fórmula-base importada, avaliação pendente do Mestre)');
+}
+function editD100Attribute(key){
+ const ent=getSelectedEntity();
+ if(!ent||!D100_ATTRIBUTES.includes(key)||state.mode!=='gm')return;
+ const raw=prompt('Valor d100 de '+key+' (ficha original do Mesa Estelar):',String(ent.attrs[key]));
+ if(raw===null)return;
+ const value=Number(raw);
+ if(!Number.isInteger(value)||value<1||value>100){logEvent('Valor de atributo inválido.');return;}
+ beginEdit();ent.attrs[key]=value;finishEdit();updateUI();
+}
+function editD100Skill(index){
+ const ent=getSelectedEntity(),skill=ent?.skillsD100?.[index];
+ if(!skill||state.mode!=='gm')return;
+ const base=prompt('Base da perícia '+skill.name+' (%). Consulte a fórmula no Mesa Estelar original:',String(skill.base??''));
+ if(base===null)return;
+ const train=prompt('Treino investido na perícia '+skill.name+' (%):',String(skill.training??''));
+ if(train===null)return;
+ if(base.trim()===''||train.trim()===''){logEvent('Base e treino são necessários.');return;}
+ const b=Number(base),t=Number(train);
+ if(!Number.isInteger(b)||!Number.isInteger(t)||b<0||t<0||b+t>100){logEvent('Valores d100 inválidos.');return;}
+ beginEdit();skill.base=b;skill.training=t;skill.total=b+t;skill.provisional=false;finishEdit();updateUI();
+}
+function addD100Skill(){
+ const ent=getSelectedEntity();if(!ent||state.mode!=='gm')return;
+ const name=prompt('Nome da perícia (conforme o Mesa Estelar d100):');
+ if(!name?.trim())return;
+ beginEdit();ent.skillsD100.push({name:name.trim(),base:null,training:null,total:null,provisional:true});finishEdit();updateUI();
 }
 function testD100Skill(index){
  const ent=getSelectedEntity(),skill=ent?.skillsD100?.[index];if(!skill)return;
@@ -64,6 +93,10 @@ function displayD100Skills(ent){
   row.textContent='🎯 '+skill.name+' · Base '+(skill.base??'—')+' + Treino '+(skill.training??'—')+' = '+target;
   row.title='Rolar d100 quando o valor total estiver definido';
   row.onclick=()=>testD100Skill(index);root.append(row);
+  if(state.mode==='gm'){
+    const edit=document.createElement('button');edit.type='button';edit.className='btn d100-edit';
+    edit.textContent='Editar';edit.onclick=()=>editD100Skill(index);root.append(edit);
+  }
  }
  for(const power of ent.powers||[]){
   const row=document.createElement('div');row.className='list-item';row.textContent='✨ '+power;root.append(row);
@@ -71,6 +104,9 @@ function displayD100Skills(ent){
  const note=document.createElement('div');note.className='d100-note';
  note.textContent='Perícias: Base + Treino = Total (d100). Fórmulas do sistema principal ainda precisam ser sincronizadas.';
  root.append(note);
+ if(state.mode==='gm'){
+  const add=document.createElement('button');add.type='button';add.className='btn';add.textContent='+ Perícia';add.onclick=addD100Skill;root.append(add);
+ }
 }
 // Esqueleto autônomo de demonstração: perceber, aproximar-se e parar. Não causa dano.
 // A IA de combate será conectada às regras do Mesa Estelar após validação da ficha.
