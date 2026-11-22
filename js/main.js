@@ -64,7 +64,7 @@ function setupInputs() {
       dragStart = null;
       applyArchitectAction(wx, wy, false);
     } else if (state.mode === 'gm') {
-      if (gmPlacementId && placeGmEntityAt(wx,wy)) return;
+      if ((gmPlacementTemplate || gmRosterPlacementIds?.length) && placeGmEntityAt(wx,wy)) return;
       const clicked = state.entities.find(ent =>
         ent.sceneId === state.activeSceneId && ent.floor === state.currentFloor && Math.hypot(ent.x - wx, ent.y - wy) < 28
       );
