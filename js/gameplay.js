@@ -1,5 +1,9 @@
 function setMode(mode) {
   state.mode = mode;
+  if(mode==='player' && getSelectedEntity()?.type!=='pc') {
+    const pc=state.entities.find(e=>e.type==='pc');
+    if(pc){state.selectedEntityId=pc.id;state.activeSceneId=pc.sceneId;state.currentFloor=pc.floor;updateFloorLabel();}
+  }
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   document.getElementById('architectTools').classList.toggle('hidden', mode !== 'architect');
   document.getElementById('gmTools').classList.toggle('hidden', mode !== 'gm');
@@ -181,6 +185,8 @@ function updateUI() {
 }
 
 function selectPlayerChar(id) {
+  const candidate=state.entities.find(e=>e.id===id);
+  if(!candidate || candidate.type!=='pc')return;
   state.selectedEntityId = id;
   const ent = getSelectedEntity();
   if (ent) {
