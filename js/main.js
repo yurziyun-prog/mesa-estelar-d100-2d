@@ -12,6 +12,7 @@ const keys = {};
 let isDragging = false;
 let isPanning = false;
 let draggingEntity = null;
+let draggingProp = null;
 let lastMouse = { x: 0, y: 0 };
 
 function screenToWorld(sx, sy) {
@@ -33,6 +34,17 @@ function setupInputs() {
       if(k==='v') { pasteSelectedObject(); return; }
       if(k==='s') { saveCurrentSceneToBank(); return; }
     }
+    if(e.key === ' ' && state.mode === 'player') {
+      e.preventDefault();
+      const ent=getSelectedEntity();
+      if(ent && ent.sceneId===state.activeSceneId) {
+        let dx=(keys['d']||keys['arrowright']?1:0)-(keys['a']||keys['arrowleft']?1:0);
+        let dy=(keys['s']||keys['arrowdown']?1:0)-(keys['w']||keys['arrowup']?1:0);
+        if(!dx&&!dy) {dx=ent.facingX||0;dy=ent.facingY||1;}
+        attemptJump(ent,dx,dy);
+      }
+      return;
+    }
     keys[e.key.toLowerCase()] = true;
     if (e.key.toLowerCase() === 'r') state.rotation = (state.rotation + 1) % 4;
     if (e.key === 'Delete' || e.key === 'Backspace') deleteSelectedWall();
@@ -51,7 +63,7 @@ function setupInputs() {
     const sy = e.clientY - rect.top;
     lastMouse = { x: sx, y: sy };
 
-    if (e.button === 2 || e.shiftKey) {
+    if (e.button === 2 || (e.shiftKey && state.mode !== 'player')) {
       isPanning = true;
       return;
     }
@@ -76,7 +88,11 @@ function setupInputs() {
       }
     } else if (state.mode === 'player') {
       const ent = getSelectedEntity();
-      if (ent && ent.sceneId === state.activeSceneId) interactNearby(ent);
+      if (!ent || ent.sceneId !== state.activeSceneId) return;
+      const floor=getScene().floors[ent.floor];
+      const movable=floor.props.find(p=>p.type==='log' && Math.hypot(p.x-wx,p.y-wy)<42 && Math.hypot(p.x-ent.x,p.y-ent.y)<100);
+      if(movable) {beginEdit();draggingProp={item:movable,ent};return;}
+      interactNearby(ent);
     }
   });
 
@@ -95,6 +111,12 @@ function setupInputs() {
     const { wx, wy } = screenToWorld(sx, sy);
     if (isDragging && state.mode === 'architect') {
       applyArchitectAction(wx, wy, true);
+    } else if (draggingProp && state.mode === 'player') {
+      const ent=draggingProp.ent;
+      const dx=wx-ent.x,dy=wy-ent.y,dist=Math.hypot(dx,dy);
+      const factor=dist>105?105/dist:1;
+      draggingProp.item.x=ent.x+dx*factor;
+      draggingProp.item.y=ent.y+dy*factor;
     } else if (draggingEntity && state.mode === 'gm') {
       draggingEntity.x = wx;
       draggingEntity.y = wy;
@@ -112,6 +134,7 @@ function setupInputs() {
     isDragging = false;
     isPanning = false;
     draggingEntity = null;
+    draggingProp = null;
   });
 
   canvas.addEventListener('wheel', e => {
@@ -150,11 +173,13 @@ function updateSimulation() {
 
       if (dx !== 0 || dy !== 0) {
         const len = Math.hypot(dx, dy);
-        const speed = 3.6;
+        ent.facingX=dx/len; ent.facingY=dy/len;
+        const speed = keys['shift'] ? 6.2 : 3.1;
         const vx = (dx / len) * speed;
         const vy = (dy / len) * speed;
         if (canMoveTo(ent.floor, ent.x + vx, ent.y)) ent.x += vx;
         if (canMoveTo(ent.floor, ent.x, ent.y + vy)) ent.y += vy;
+        ent.walkingUntil=performance.now()+130;
       }
     }
   }
