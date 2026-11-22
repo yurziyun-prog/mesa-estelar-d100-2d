@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mesa RPG 2D — Arquiteto, Mestre & Jogador</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header>
+  <div class="brand">⚔️ MESA RPG 2D</div>
+
+  <div class="center-bar">
+    <div class="mode-switch">
+      <button class="mode-btn active" data-mode="architect" onclick="setMode('architect')">🏛️ Arquiteto</button>
+      <button class="mode-btn" data-mode="gm" onclick="setMode('gm')">👑 Mestre</button>
+      <button class="mode-btn" data-mode="player" onclick="setMode('player')">🗡️ Jogador</button>
+    </div>
+
+    <div class="floor-bar">
+      <span>Andar:</span>
+      <button class="btn" onclick="changeFloor(-1)" style="padding:2px 7px;">▼</button>
+      <span id="floorLabel" style="color:var(--gold); min-width:74px; text-align:center; font-weight:600;">1º (Térreo)</span>
+      <button class="btn" onclick="changeFloor(1)" style="padding:2px 7px;">▲</button>
+    </div>
+  </div>
+
+  <div class="top-controls">
+    <button class="btn" onclick="saveBank()">💾 Salvar Banco</button>
+    <button class="btn" onclick="exportJSON()">⬇️ JSON</button>
+    <button class="btn" onclick="document.getElementById('importFile').click()">⬆️ Importar</button>
+    <input type="file" id="importFile" accept=".json" class="hidden" onchange="importJSON(event)" />
+  </div>
+</header>
+
+<div class="workspace">
+  <!-- PAINEL ESQUERDO -->
+  <aside id="leftSidebar">
+    <div class="card" id="sceneBankCard">
+      <div class="section-title">
+        <span>Banco de Cenários</span>
+        <span id="activeSceneTag" style="color:var(--gold); font-size:10px;"></span>
+      </div>
+      <div class="row">
+        <select id="sceneSelect" class="ctrl" onchange="onSceneSelectChange(this.value)"></select>
+      </div>
+
+      <div id="architectSceneControls">
+        <div class="row">
+          <input type="text" id="newSceneName" class="ctrl" placeholder="Nome do novo cenário..." />
+          <button class="btn btn-gold" onclick="createNewSceneAsArchitect()">+ Criar</button>
+        </div>
+        <div class="row" style="margin-bottom:0;">
+          <button class="btn btn-primary" style="flex:1;" onclick="saveCurrentSceneToBank()">💾 Salvar no Banco</button>
+          <button class="btn" onclick="duplicateCurrentScene()">📄 Duplicar</button>
+        </div>
+      </div>
+
+      <div id="gmSceneControls" class="hidden">
+        <div class="row">
+          <button class="btn btn-primary" style="flex:1;" onclick="gmSwitchScene(false)">🔄 Trocar Cenário</button>
+          <button class="btn btn-gold" style="flex:1;" onclick="gmSwitchScene(true)">🧲 Trocar & Puxar</button>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Arrastar para o cenário escolhido:</div>
+        <div id="gmPullEntitiesList"></div>
+      </div>
+    </div>
+
+    <div id="architectTools">
+      <div class="card" style="margin-bottom:10px;">
+        <div class="section-title">
+          <span>Construção & Ajuste</span>
+          <button class="btn" style="padding:2px 6px; font-size:10px;" onclick="expandCurrentMap()">+ Expandir Mapa</button>
+        </div>
+        <div class="tool-grid">
+          <button class="tool-btn" data-tool="move" onclick="selectTool('move')">✋ Arrastar / Alinhar</button>
+          <button class="tool-btn active" data-tool="floor" onclick="selectTool('floor')">🖌️ Área / Chão</button>
+          <button class="tool-btn" data-tool="wall" onclick="selectTool('wall')">🧱 Parede Reta</button>
+          <button class="tool-btn" data-tool="window" onclick="selectTool('window')">🪟 Janela (Abre Vão)</button>
+          <button class="tool-btn" data-tool="door" onclick="selectTool('door')">🚪 Porta (Abre Vão)</button>
+          <button class="tool-btn" data-tool="stairs" onclick="selectTool('stairs')">🪜 Escada</button>
+          <button class="tool-btn" data-tool="furnitureMenu" onclick="openCategoryMenu('furniture')">🪑 Móveis...</button>
+          <button class="tool-btn" data-tool="treeMenu" onclick="openCategoryMenu('trees')">🌳 Árvores...</button>
+          <button class="tool-btn" data-tool="chest" onclick="selectTool('chest')">🧰 Baú</button>
+          <button class="tool-btn" data-tool="erase" onclick="selectTool('erase')">🧹 Apagar</button>
+        </div>
+        <div id="selectedWallBar" class="hidden" style="margin-top:8px; padding-top:6px; border-top:1px solid var(--border);">
+          <div style="font-size:11px; color:var(--gold); margin-bottom:4px;">Parede selecionada:</div>
+          <div class="row" style="margin-bottom:0;">
+            <button class="btn" style="flex:1;" onclick="alignSelectedWall('ortho')">📐 Alinhar 90°</button>
+            <button class="btn" style="flex:1;" onclick="alignSelectedWall('snap')">🧲 Encaixar Vizinha</button>
+            <button class="btn btn-danger" onclick="deleteSelectedWall()">🗑️</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="floorOptions" style="margin-bottom:10px;">
+        <div class="section-title">Terrenos & Pisos Texturizados</div>
+        <div class="tool-grid">
+          <button class="tool-btn active" data-mat="grass" onclick="selectMaterial('grass')"><span class="swatch" style="background:#365c29"></span>Grama</button>
+          <button class="tool-btn" data-mat="sand" onclick="selectMaterial('sand')"><span class="swatch" style="background:#c9a966"></span>Deserto</button>
+          <button class="tool-btn" data-mat="dirt" onclick="selectMaterial('dirt')"><span class="swatch" style="background:#6e4e35"></span>Terra</button>
+          <button class="tool-btn" data-mat="snow" onclick="selectMaterial('snow')"><span class="swatch" style="background:#dce6f0"></span>Neve</button>
+          <button class="tool-btn" data-mat="water" onclick="selectMaterial('water')"><span class="swatch" style="background:#1c75bc"></span>Rio</button>
+          <button class="tool-btn" data-mat="bridge" onclick="selectMaterial('bridge')"><span class="swatch" style="background:#875329"></span>Ponte</button>
+          <button class="tool-btn" data-mat="wood" onclick="selectMaterial('wood')"><span class="swatch" style="background:#8f582c"></span>Madeira</button>
+          <button class="tool-btn" data-mat="checker" onclick="selectMaterial('checker')"><span class="swatch" style="background:#566073"></span>Quadriculado</button>
+          <button class="tool-btn" data-mat="marble" onclick="selectMaterial('marble')"><span class="swatch" style="background:#c2c9d4"></span>Mármore</button>
+          <button class="tool-btn" data-mat="carpet" onclick="selectMaterial('carpet')"><span class="swatch" style="background:#8c1d28"></span>Tapete</button>
+        </div>
+      </div>
+
+      <!-- MENU DE OPÇÕES DE MÓVEIS -->
+      <div class="card" id="furnitureOptions">
+        <div class="section-title">Opções de Móveis</div>
+        <div class="tool-grid">
+          <button class="tool-btn" data-prop="table" onclick="selectProp('table')">🪵 Mesa</button>
+          <button class="tool-btn" data-prop="chair" onclick="selectProp('chair')">🪑 Cadeira</button>
+          <button class="tool-btn" data-prop="bed" onclick="selectProp('bed')">🛏️ Cama</button>
+          <button class="tool-btn" data-prop="bookshelf" onclick="selectProp('bookshelf')">📚 Estante</button>
+          <button class="tool-btn" data-prop="hearth" onclick="selectProp('hearth')">🔥 Lareira</button>
+          <button class="tool-btn" data-prop="barrel" onclick="selectProp('barrel')">🛢️ Barril</button>
+        </div>
+      </div>
+
+      <!-- MENU DE OPÇÕES DE ÁRVORES & VEGETAÇÃO -->
+      <div class="card" id="treeOptions">
+        <div class="section-title">Opções de Árvores & Natureza</div>
+        <div class="tool-grid">
+          <button class="tool-btn active" data-prop="tree" onclick="selectProp('tree')">🌳 Carvalho</button>
+          <button class="tool-btn" data-prop="pine" onclick="selectProp('pine')">🌲 Pinheiro</button>
+          <button class="tool-btn" data-prop="fruitTree" onclick="selectProp('fruitTree')">🍎 Árvore Frutífera</button>
+          <button class="tool-btn" data-prop="bush" onclick="selectProp('bush')">🌿 Arbusto</button>
+          <button class="tool-btn" data-prop="rock" onclick="selectProp('rock')">🪨 Rocha</button>
+        </div>
+      </div>
+
+      <div class="card" id="doorChestOptions">
+        <div class="section-title">Porta / Baú</div>
+        <div class="row">
+          <label style="font-size:12px;">Chave:</label>
+          <input type="text" id="lockKeyInput" class="ctrl" placeholder="Ex: chave_dourada" />
+        </div>
+        <div class="row" style="margin-bottom:0;">
+          <label style="font-size:12px;">Loot:</label>
+          <input type="text" id="chestLootInput" class="ctrl" value="Poção de Cura, 25 Moedas" />
+        </div>
+      </div>
+    </div>
+
+    <div id="gmTools" class="hidden">
+      <div class="card" style="margin-bottom:10px;">
+        <div class="section-title">Ambiente & Horário</div>
+        <div class="row" style="margin-bottom:4px;">
+          <select id="timeOfDaySelect" class="ctrl" onchange="changeTimeOfDay(this.value)">
+            <option value="dawn">🌅 Amanhecer</option>
+            <option value="day" selected>☀️ Dia Claro</option>
+            <option value="dusk">🌇 Entardecer</option>
+            <option value="night">🌙 Noite (Lanternas)</option>
+          </select>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted);">
+          Clique para selecionar e arraste personagens ou NPCs pelo mapa.
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:10px;">
+        <div class="section-title">Balão de Fala</div>
+        <div class="row" style="margin-bottom:0;">
+          <input type="text" id="speechInput" class="ctrl" placeholder="Fala do personagem selecionado..." onkeydown="if(event.key==='Enter') speakSelected()" />
+          <button class="btn btn-primary" onclick="speakSelected()">💬</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:10px;">
+        <div class="section-title">Dados</div>
+        <div class="dice-row">
+          <button class="dice-btn" onclick="rollDice(4)">d4</button>
+          <button class="dice-btn" onclick="rollDice(6)">d6</button>
+          <button class="dice-btn" onclick="rollDice(8)">d8</button>
+          <button class="dice-btn" onclick="rollDice(10)">d10</button>
+          <button class="dice-btn" onclick="rollDice(20)">d20</button>
+          <button class="dice-btn" onclick="rollDice(100)">d100</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Registro da Sessão</div>
+        <div id="eventLog" class="log-box"></div>
+      </div>
+    </div>
+
+    <div id="playerTools" class="hidden">
+      <div class="card" style="margin-bottom:10px;">
+        <div class="section-title">Personagem Ativo (Teste)</div>
+        <div id="playerSwitchList"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Comandos</div>
+        <div style="font-size:12px; line-height:1.6; color:var(--text-muted);">
+          • <b>WASD / Setas:</b> Caminhar<br/>
+          • <b>E ou Clique próximo:</b> Portas, baús, escadas<br/>
+          • <b>Botão Direito / Shift+Arrastar:</b> Mover câmera<br/>
+          • <b>Scroll:</b> Zoom
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ÁREA CENTRAL SEM BOTÕES SOBREPOSTOS -->
+  <div class="canvas-column">
+    <div class="canvas-wrap">
+      <canvas id="mapCanvas"></canvas>
+    </div>
+    <div class="status-strip" id="hudStatus">
+      Modo Arquiteto • Paredes retas alinhadas • Porta/Janela abre vão na parede • R: Rotacionar • Botão direito: Câmera
+    </div>
+  </div>
+
+  <!-- FICHA LATERAL DIREITA -->
+  <aside class="right-panel" id="rightSidebar">
+    <div class="card">
+      <div class="section-title">
+        <span>Ficha do Selecionado</span>
+        <span id="entityTypeBadge" style="color:var(--gold);">PJ</span>
+      </div>
+      <div id="charHeader" style="font-size:15px; font-weight:700; margin-bottom:6px;">Sir Aldric • Explorador</div>
+
+      <div style="font-size:11px; color:var(--text-muted); display:flex; justify-content:space-between;">
+        <span>Vitalidade (HP)</span>
+        <span id="hpText">24 / 24</span>
+      </div>
+      <div class="bar-wrap"><div id="hpBar" class="bar-fill" style="background:var(--success); width:100%;"></div></div>
+
+      <div style="font-size:11px; color:var(--text-muted); display:flex; justify-content:space-between;">
+        <span>Saciedade (Fome)</span>
+        <span id="hungerText">85%</span>
+      </div>
+      <div class="bar-wrap"><div id="hungerBar" class="bar-fill" style="background:var(--gold); width:85%;"></div></div>
+
+      <div id="gmEntityControls" class="hidden" style="margin-top:6px; border-top:1px solid var(--border); padding-top:6px;">
+        <div class="row">
+          <button class="btn btn-danger" style="flex:1;" onclick="adjustStat('hp', -4)">-4 HP</button>
+          <button class="btn" style="flex:1;" onclick="adjustStat('hp', 4)">+4 HP</button>
+          <button class="btn" style="flex:1;" onclick="adjustStat('hunger', -15)">-Fome</button>
+        </div>
+        <div class="row" style="margin-bottom:0;">
+          <label style="font-size:11px;">Amigabilidade:</label>
+          <select id="attitudeSelect" class="ctrl" onchange="changeAttitude(this.value)">
+            <option value="Aliado">🟢 Aliado</option>
+            <option value="Neutro">🟡 Neutro</option>
+            <option value="Hostil">🔴 Hostil</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Atributos (Clique p/ Testar)</div>
+      <div class="stat-grid" id="attrGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Perícias & Poderes</div>
+      <div id="skillsList"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Equipamento & Mochila</div>
+      <div id="inventoryList"></div>
+    </div>
+  </aside>
+</div>
+
+<script src="js/state.js" defer></script>
+<script src="js/editor.js" defer></script>
+<script src="js/gameplay.js" defer></script>
+<script src="js/textures.js" defer></script>
+<script src="js/main.js" defer></script>
+</body>
+</html>
