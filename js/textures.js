@@ -379,7 +379,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     if (win.orient === 'v') ctx.rotate(Math.PI / 2);
     ctx.fillStyle = isRetroFuture(win) ? 'rgba(55, 210, 226, .6)' : 'rgba(135, 220, 255, 0.45)';
     ctx.fillRect(-20, -8, 40, 16);
-    ctx.strokeStyle = isRetroFuture(win) ? '#dba95d' : isArabia(win) ? '#e0a44e' : '#eaf7ff';
+    ctx.strokeStyle = ({wood:'#b9875b',stone:'#a7b3b5',castle:'#90939a',brick:'#a65f49',masonry:'#b4bbbc',metal:'#729bab',rust:'#9a6344',sandstone:'#d7b36f'})[win.material] || (isRetroFuture(win) ? '#dba95d' : isArabia(win) ? '#e0a44e' : '#eaf7ff');
     ctx.lineWidth = 2;
     ctx.strokeRect(-20, -8, 40, 16);
     ctx.restore();
@@ -413,7 +413,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
       // Antes girava pelo centro, criando a aparência de porta atravessada.
       ctx.translate(-34,0);
       if(d.open) ctx.rotate(-Math.PI/2);
-      ctx.fillStyle=d.keyId&&!d.open?'#bb843a':isArabia(d)?'#c28a50':'#9c5a27';
+      ctx.fillStyle=({wood:'#9c5a27',stone:'#9a9f9e',castle:'#7e8382',brick:'#a65b43',masonry:'#b5bbb8',metal:'#829aa8',rust:'#986042',sandstone:'#d3b77a'})[d.material] || (d.keyId&&!d.open?'#bb843a':isArabia(d)?'#c28a50':'#9c5a27');
       ctx.fillRect(0,-8,68,16);
       ctx.strokeStyle='#322014';ctx.lineWidth=2.5;ctx.strokeRect(0,-8,68,16);
       ctx.strokeStyle='#c89457';ctx.lineWidth=1;
@@ -436,7 +436,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     }
     ctx.fillStyle = 'rgba(0,0,0,0.32)';
     ctx.fillRect(c.x - 20, c.y - 12, 44, 28);
-    ctx.fillStyle = c.opened ? '#6e563e' : isArabia(c) ? '#b98a56' : '#f5b942';
+    ctx.fillStyle = c.opened ? '#6e563e' : (({wood:'#bc873f',stone:'#8f9797',castle:'#747b7c',brick:'#a25a43',masonry:'#c0c3bd',metal:'#829fab',rust:'#986044',sandstone:'#d9ba78'})[c.material] || (isArabia(c) ? '#b98a56' : '#f5b942'));
     ctx.fillRect(c.x - 22, c.y - 14, 44, 28);
     ctx.strokeStyle = '#2b1c0c';
     ctx.lineWidth = 2.5;
