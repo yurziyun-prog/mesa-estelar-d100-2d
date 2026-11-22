@@ -263,7 +263,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   } else if (state.tool === 'door') {
     if (!isDrag) {
       const carved = carveOpeningOnWalls(floor, wx, wy, 34);
-      const door = { x: carved.x, y: carved.y, open: false, keyId: '', orient: carved.orient, style: state.buildStyle };
+      const door = { x: carved.x, y: carved.y, open: false, keyId: '', orient: carved.orient, style: state.doorVariant==='doorFuture'?'futurist':state.doorVariant==='doorArabia'?'arabia':state.buildStyle };
       floor.doors.push(door);
       openLockDialog(door, 'door');
     }
