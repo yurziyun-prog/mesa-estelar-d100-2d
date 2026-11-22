@@ -450,6 +450,11 @@ function drawArabiaProp(p){
 }
 
 function drawProp(p) {
+  if(p.type==='key'){
+    ctx.save();ctx.translate(p.x,p.y);ctx.strokeStyle='#e7be4c';ctx.lineWidth=4;
+    ctx.beginPath();ctx.arc(-5,-2,5,0,Math.PI*2);ctx.moveTo(0,0);ctx.lineTo(15,11);ctx.moveTo(9,6);ctx.lineTo(7,11);ctx.moveTo(13,9);ctx.lineTo(11,14);ctx.stroke();
+    ctx.restore();return;
+  }
   if(isRetroFuture(p)) {drawFutureProp(p); return;}
   if(isArabia(p) || ['palm','desertTree','tent','oilLamp','cushions'].includes(p.type)){drawArabiaProp(p);return;}
   const cx = p.x;
