@@ -291,7 +291,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   } else if (state.tool === 'character') {
     if (!isDrag) placeArchitectCharacter(wx,wy);
   } else if (state.tool === 'prop') {
-    if (!isDrag) floor.props.push({ x: wx, y: wy, type: state.propType, rot: state.rotation, style: state.buildStyle });
+    if (!isDrag) floor.props.push({ x: wx, y: wy, type: state.propType, rot: state.rotation, style: state.propType.startsWith('kenney_')?'downloads':state.buildStyle });
   } else if (state.tool === 'chest') {
     if (!isDrag) {
       const loot = document.getElementById('chestLootInput').value.split(',').map(s => s.trim()).filter(Boolean);
