@@ -25,6 +25,7 @@ function screenToWorld(sx, sy) {
 
 function setupInputs() {
   window.addEventListener('keydown', e => {
+    if(e.key==='Escape'&&document.getElementById('architectContextMenu')){closeArchitectContextMenu();return;}
     if(e.key==='Escape'&&typeof architectEyedropper!=='undefined'&&architectEyedropper){architectEyedropper=false;document.getElementById('architectLibrarySelected').textContent='Conta-gotas cancelado.';return;}
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName) || document.activeElement.isContentEditable) return;
     if(state.mode==='gm'&&!e.ctrlKey&&!e.metaKey){
@@ -69,6 +70,9 @@ function setupInputs() {
 
   window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
   canvas.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('pointerdown',e=>{
+    if(!e.target.closest?.('#architectContextMenu'))closeArchitectContextMenu();
+  });
 
   canvas.addEventListener('mousedown', e => {
     const rect = canvas.getBoundingClientRect();
@@ -77,14 +81,17 @@ function setupInputs() {
     lastMouse = { x: sx, y: sy };
 
     if (e.button === 2) {
-      isPanning = true;
-      return;
+      if(state.mode==='architect'&&openArchitectContextMenu(sx,sy,e.clientX,e.clientY)){
+        isPanning=false;return;
+      }
+      isPanning=true;return;
     }
 
     const { wx, wy } = screenToWorld(sx, sy);
 
     if (state.mode === 'architect') {
       architectShiftHeld=e.shiftKey;
+      architectCtrlHeld=e.ctrlKey||e.metaKey;
       if(typeof sampleArchitectColorAt==='function'&&sampleArchitectColorAt(wx,wy))return;
       if(placePendingKey(wx,wy)) return;
       beginEdit();
@@ -126,6 +133,7 @@ function setupInputs() {
     const { wx, wy } = screenToWorld(sx, sy);
     if (isDragging && state.mode === 'architect') {
       architectShiftHeld=e.shiftKey;
+      architectCtrlHeld=e.ctrlKey||e.metaKey;
       applyArchitectAction(wx, wy, true);
     } else if (draggingProp && activeActor()) {
       const ent=draggingProp.ent;
@@ -145,6 +153,7 @@ function setupInputs() {
     const { wx, wy } = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
     if (isDragging && state.mode === 'architect') {
       architectShiftHeld=e.shiftKey;
+      architectCtrlHeld=e.ctrlKey||e.metaKey;
       finalizeArchitectDrag(wx, wy, e.shiftKey);
     }
     finishEdit();
