@@ -152,6 +152,11 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   // As camas têm colisão retangular proporcional ao seu tamanho.
   if(floor.props.some(p=>isSleepingFurniture(p)&&p.type!=='sleepingBag' && Math.abs(nx-p.x)<sleepFurnitureSize(p).w*(p.scale||1)/2+r-4 && Math.abs(ny-p.y)<sleepFurnitureSize(p).h*(p.scale||1)/2+r-4))return false;
 
+  // 平屋顶上的玻璃天窗不是安全行走区域；连接楼梯的出入口仍交给楼梯系统。
+  if((floor.roofOpenings||[]).some(o=>o.type==='skylight' &&
+    Math.abs(nx-o.x)<o.w/2+r&&Math.abs(ny-o.y)<o.h/2+r &&
+    floor.areas.some(a=>a.roof&&roofPitchFor(a.mat,a.roofPitch)==='flat' &&
+      nx>=a.x&&nx<=a.x+a.w&&ny>=a.y&&ny<=a.y+a.h)))return false;
   const onWater = floor.areas.some(a => ['water','kenney_water'].includes(a.mat) && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
   const onBridge = floor.areas.some(a => a.mat === 'bridge' && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
   if (onWater && !onBridge && !onPlacedBridge(floor,nx,ny)) return false;
