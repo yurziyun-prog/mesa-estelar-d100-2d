@@ -96,7 +96,11 @@ function selectArchitectLibraryItem(id,label,kind){
  else if(kind==='doorVariant'){state.doorVariant=id;selectTool('door');}
  else if(kind==='chestVariant'){state.chestVariant=id;selectTool('chest');}
  else if(kind==='bridgeVariant'){selectMaterial('bridge');}
-  else if(kind==='roof'){state.roofMaterial=id;selectTool('roof');}
+  else if(kind==='roof'){
+   state.roofMaterial=id;
+   state.roofPitch=id==='roof_concrete'?'flat':id==='roof_metal'?'gable':'hip';
+   selectTool('roof');
+ }
  else if(kind==='character'){architectCharacterTemplate=id;selectTool('character');}
  document.getElementById('architectLibrarySelected').textContent='Selecionado: '+label+' • Clique no mapa para colocar.';
  refreshArchitectProperties();
