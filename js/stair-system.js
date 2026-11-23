@@ -41,9 +41,11 @@ function ensureStairLanding(scene,sourceIndex,targetIndex,x,y){
   const usable=a=>!['water','void','kenney_water'].includes(a.mat);
   // 地板不能从下层的视觉投影代替上层的真实碰撞。
   // 目标楼层未铺地板时，建立可行走的建筑地板，不复制墙、门或窗。
-  const existing=(target.areas||[]).some(a=>usable(a)&&contains(a,x,y));
-  if(existing)return;
+  const existingArea=(target.areas||[]).find(a=>usable(a)&&contains(a,x,y));
   const footprints=(source.areas||[]).filter(a=>STRUCTURAL_FLOOR_MATERIALS.has(a.mat)&&contains(a,x,y));
+  const biggest=Math.max(0,...footprints.map(a=>a.w*a.h));
+  // 既有小平台而下层有更完整的建筑室内地板时，也补足上层面积。
+  if(existingArea && (existingArea.w*existingArea.h>=biggest||biggest<=0))return;
   if(footprints.length){
     for(const a of footprints){
       const duplicate=target.areas.some(b=>b.mat===a.mat&&Math.abs(b.x-a.x)<1&&Math.abs(b.y-a.y)<1&&Math.abs(b.w-a.w)<1&&Math.abs(b.h-a.h)<1);
@@ -52,6 +54,15 @@ function ensureStairLanding(scene,sourceIndex,targetIndex,x,y){
   }else{
     // 至少保证楼梯出口有一个可以活动的小平台。
     target.areas.push({x:x-90,y:y-90,w:180,h:180,mat:'wood'});
+  }
+}
+function repairExistingStairLandings(scene){
+  ensureFloorLevels(scene);
+  for(let i=0;i<scene.floors.length;i++){
+    for(const stair of scene.floors[i].stairs||[]){
+      const target=stairLinkedIndex(scene,i,stair);
+      if(target>=0)ensureStairLanding(scene,i,target,stair.x,stair.y);
+    }
   }
 }
 function safeStairArrival(scene,targetIndex,x,y,offset){
