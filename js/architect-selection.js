@@ -298,7 +298,9 @@ function openArchitectContextMenu(sx,sy,clientX,clientY){
  if(state.mode!=='architect'||state.tool!=='move')return false;
  const {wx,wy}=screenToWorld(sx,sy);
  const clicked=architectSelectionHit(wx,wy);
- if(clicked&&!architectSelections.some(ref=>ref.kind===clicked.kind&&ref.index===clicked.index)){
+ const bounds=architectSelectionBounds();
+ const insideSelection=bounds && rectContains(bounds,wx,wy);
+ if(clicked&&!insideSelection&&!architectSelections.some(ref=>ref.kind===clicked.kind&&ref.index===clicked.index)){
    architectSelections=expandArchitectSelection([clicked]);
    updateArchitectSelectionUI();
  }
