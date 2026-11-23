@@ -415,7 +415,10 @@ function hitArchitectObjectAt(wx,wy){
    const items=floor[kind]||[];
    for(let i=items.length-1;i>=0;i--){
      const item=items[i],radius=kind==='stairs'?50:kind==='props'&&['bed','bedDouble','capsuleBed'].includes(item.type)?50:30;
-     if(Math.hypot(item.x-wx,item.y-wy)<=radius)return {kind,index:i};
+     if(kind==='windows'){
+       const half=(item.width||40)/2;
+       if(item.orient==='v'?(Math.abs(wx-item.x)<16&&Math.abs(wy-item.y)<half+8):(Math.abs(wy-item.y)<16&&Math.abs(wx-item.x)<half+8))return {kind,index:i};
+     }else if(Math.hypot(item.x-wx,item.y-wy)<=radius)return {kind,index:i};
    }
  }
  for(let i=floor.walls.length-1;i>=0;i--){
