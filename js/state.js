@@ -194,6 +194,7 @@ function init() {
   for(const scene of Object.values(state.scenes||{})){refreshStairDestinationLinks(scene);repairExistingStairLandings(scene);}
   migrateModeScenes();
   migrateD100Characters();
+  clearTransientStairClimbs(state.entities);
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
   setupInputs();
@@ -410,6 +411,7 @@ function restoreState(serialized){
   for(const scene of Object.values(state.scenes||{})){refreshStairDestinationLinks(scene);repairExistingStairLandings(scene);}
   migrateModeScenes();
   migrateD100Characters();
+  clearTransientStairClimbs(state.entities);
   dragStart = null; previewRect = null; draggedObj = null;
   selectedMapObject = null; draggingEntity = null; isDragging = false;
   if(typeof architectSelections!=='undefined')architectSelections=[];
