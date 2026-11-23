@@ -44,6 +44,7 @@ function refreshGmFocus(){
 }
 function setMode(mode) {
   const priorMode=state.mode;
+  if(mode!==priorMode&&typeof clearTransientStairClimbs==='function')clearTransientStairClimbs(state.entities);
   if(state.scenes && state.activeSceneId){
     migrateModeScenes();
     if(priorMode==='architect'||priorMode==='gm')state.modeScenes[priorMode]=state.activeSceneId;
