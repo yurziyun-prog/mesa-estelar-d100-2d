@@ -40,7 +40,24 @@ function drawFutureArea(x,y,w,h,mat) {
 function drawCustomTileFinish(x,y,w,h,settings){
  const conf={material:'ceramic',pattern:'checker',size:32,color1:'#667388',color2:'#a9b7bf',...(settings||{})};
  const mat=conf.material,pattern=conf.pattern,size=Math.max(16,Number(conf.size)||32);
- const a=conf.color1||'#667388',b=conf.color2||'#a9b7bf';
+ let a=conf.color1||'#667388',b=conf.color2||'#a9b7bf';
+ // Older saved parquet areas sometimes retain blue-grey steel colors.
+ // Keep stored data unchanged, but render curated physically plausible material tones.
+ if(typeof tilePaletteFor==='function'&&['parquet','metal','marble','masonry'].includes(mat)){
+   const palette=tilePaletteFor(mat);
+   const curated=palette.some(v=>v[1].toLowerCase()===String(a).toLowerCase()&&v[2].toLowerCase()===String(b).toLowerCase());
+   if(!curated){
+     if(mat==='parquet'){
+       const looksWood=hex=>{
+         const v=String(hex).match(/^#([0-9a-f]{6})$/i);if(!v)return false;
+         const n=parseInt(v[1],16),r=n>>16,g=n>>8&255,bl=n&255;
+         return r>=g*.92&&g>=bl*.91&&r-bl>18;
+       };
+       if(!looksWood(a)||!looksWood(b))[a,b]=[palette[1][1],palette[1][2]];
+     }else [a,b]=[palette[0][1],palette[0][2]];
+   }
+ }
+
  // Desenhar em coordenadas globais evita deslocamentos entre áreas adjacentes.
  ctx.fillStyle=a;ctx.fillRect(x,y,w,h);
  for(let ty=Math.floor(y/size)*size;ty<y+h;ty+=size){
