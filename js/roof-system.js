@@ -82,7 +82,10 @@ function placeArchitectRoof(rect){
 }
 function setRoofPitch(pitch){
  if(!['gable','hip','flat'].includes(pitch))return;
- state.roofPitch=pitch;
+ const obj=typeof selectedArchitectItem==='function'?selectedArchitectItem():null;
+ if(obj&&isRoofMaterial(obj.mat)){
+   beginEdit();obj.roofPitch=pitch;finishEdit();
+ }else state.roofPitch=pitch;
 }
 function roofPitchFor(mat,pitch){
  if(['gable','hip','flat'].includes(pitch))return pitch;
