@@ -166,6 +166,12 @@ function handleArchitectSelection(wx,wy,isDrag){
    }else{
     item.x=b.x+(original.x-b.x)*fx;item.y=b.y+(original.y-b.y)*fy;
     if(ref.kind==='props')item.scale=Math.max(.25,Math.min(4,(original.scale||1)*Math.min(fx,fy)));
+    if(ref.kind==='windows'){
+      const oldWidth=original.width||40;
+      const newWidth=Math.max(24,Math.min(224,oldWidth*(original.orient==='v'?fy:fx)));
+      resizeWindowOpening(getScene().floors[state.currentFloor],item,item.width||oldWidth,newWidth);
+      item.width=newWidth;
+    }
    }
   }
  }
