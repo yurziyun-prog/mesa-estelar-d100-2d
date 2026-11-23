@@ -281,6 +281,14 @@ function render() {
   }
   drawArchitectSelectionHUD();
   drawArchitectMapGuides();
+  const actor=activeActor();
+  if(actor?.stairTransitionAt){
+    const elapsed=performance.now()-actor.stairTransitionAt;
+    if(elapsed<420){
+      ctx.fillStyle='rgba(11,17,26,'+(0.66*(1-elapsed/420))+')';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+    }else delete actor.stairTransitionAt;
+  }
 }
 
 init();
