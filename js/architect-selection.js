@@ -53,7 +53,7 @@ function handleArchitectSelection(wx,wy,isDrag){
    return;
   }
   const hit=architectSelectionHit(wx,wy);
-  if(hit?.kind==='areas'){
+  if(hit?.kind==='areas'&&!architectSelections.some(ref=>ref.kind==='areas'&&ref.index===hit.index)){
    // Clique simples seleciona o piso; arrastar sobre ele cria seleção por área.
    architectSelections=[];
    architectSelectionGesture={mode:'marquee',x:wx,y:wy,x2:wx,y2:wy,clickTarget:hit};
