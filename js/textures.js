@@ -661,6 +661,10 @@ function drawCharacterToken(ent, isBelow) {
     const t=1-(ent.jumpUntil-now)/380;
     lift=Math.sin(Math.PI*Math.max(0,Math.min(1,t)))*21;
   }
+  if(ent.fallUntil&&now<ent.fallUntil){
+    const t=Math.max(0,Math.min(1,1-(ent.fallUntil-now)/430));
+    lift=-Math.sin(Math.PI*t)*11; // stumble and recover after dropping through an open shaft
+  }
   const moving=ent.walkingUntil>now||Boolean(ent.stairClimb);
   const stride=moving?Math.sin(now/90)*3:0;
   const hostile=ent.attitude==='Hostil';
