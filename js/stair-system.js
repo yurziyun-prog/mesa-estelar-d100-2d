@@ -182,6 +182,18 @@ function transferOnStair(ent,stair,automatic=false){
 // 对于旧地图，台阶朝向默认与绘图一致：底端 +Y，顶端 -Y。
 // 从侧面穿行不启动攀爬，保留镂空楼梯下方的通道。
 const STAIR_TRAVEL_MS=1050;
+function clearTransientStairClimbs(entities){
+ for(const ent of entities||[]){
+  if(ent.stairClimb){
+   ent.x=ent.stairClimb.fromX??ent.x;
+   ent.y=ent.stairClimb.fromY??ent.y;
+   delete ent.stairClimb;
+  }
+  delete ent.stairClimbProgress;
+  // performance.now() 的时间基准在刷新页面后会改变。
+  delete ent.stairCooldown;
+ }
+}
 function stairLocal(stair,x,y){
  const angle=(stair.rot||0)*Math.PI/2,c=Math.cos(angle),s=Math.sin(angle);
  return {x:c*x+s*y,y:-s*x+c*y};
