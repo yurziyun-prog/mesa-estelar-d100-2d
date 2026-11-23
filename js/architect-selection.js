@@ -309,7 +309,9 @@ function openArchitectContextMenu(sx,sy,clientX,clientY){
  const menu=document.createElement('div');
  menu.id='architectContextMenu';menu.className='architect-context-menu';
  const grouped=architectSelections.some(ref=>Boolean(objectForSelection(ref)?.archGroupId));
+ const single=architectSelections.length===1?architectSelections[0]:null;
  const items=[
+  ...(single&&['windows','doors','chests','props','walls','stairs'].includes(single.kind)?[['✏️ Editar propriedades',()=>{closeArchitectContextMenu();editArchitectObject(single);}]]:[]),
   ...(architectSelections.length>1?[['🔗 Agrupar',architectGroupSelection]]:[]),
   ...(grouped?[['🔓 Desagrupar',architectUngroupSelection]]:[])
  ];
