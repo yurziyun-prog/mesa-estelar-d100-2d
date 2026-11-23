@@ -164,17 +164,9 @@ function interactNearby(entity) {
   const keyIndex=floor.props.findIndex(p=>p.type==='key'&&Math.hypot(p.x-entity.x,p.y-entity.y)<48);
   if(keyIndex!==-1){const key=floor.props.splice(keyIndex,1)[0];entity.inventory.push(key.keyId);updateUI();logEvent('🔑 '+entity.name+' recolheu '+(key.label||'uma chave')+'.');return;}
 
-  const stair = floor.stairs.find(s => Math.hypot(s.x - entity.x, s.y - entity.y) < 64);
-  if (stair) {
-    const targetFloor = stair.dir === 'up' ? entity.floor + 1 : entity.floor - 1;
-    if (getScene().floors[targetFloor]) {
-      entity.floor = targetFloor;
-      state.currentFloor = targetFloor;
-      updateFloorLabel();
-      logEvent(`${entity.name} foi para o ${targetFloor + 1}º andar.`);
-      return;
-    }
-  }
+  const stair=floor.stairs.find(s=>Math.hypot(s.x-entity.x,s.y-entity.y)<48);
+  // E continua funcionando em escadas antigas; as novas também se atravessam caminhando.
+  if(stair && transferOnStair(entity,stair,false))return;
 
   const door = floor.doors.find(d => Math.hypot(d.x - entity.x, d.y - entity.y) < 58);
   if (door) {
