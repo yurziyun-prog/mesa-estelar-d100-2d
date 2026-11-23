@@ -1,3 +1,40 @@
+function openTerrainDialog(creating) {
+  const dialog=document.getElementById('terrainDialog');
+  const floor=getScene().floors[state.currentFloor];
+  const bounds=creating?{w:540,h:400}:floor.terrainBounds||floor.bounds;
+  dialog.dataset.creating=String(creating);
+  document.getElementById('terrainTitle').textContent=creating?'Configurar novo cenário':'Terreno base';
+  document.getElementById('terrainKind').value=creating?'grass':floor.baseTerrain||'';
+  document.getElementById('terrainWidth').value=bounds.w/MAP_UNITS_PER_METER;
+  document.getElementById('terrainLength').value=bounds.h/MAP_UNITS_PER_METER;
+  dialog.showModal();
+}
+
+function applyTerrainSettings(event) {
+  event.preventDefault();
+  const dialog=document.getElementById('terrainDialog');
+  const terrain=document.getElementById('terrainKind').value||null;
+  const width=Number(document.getElementById('terrainWidth').value)*MAP_UNITS_PER_METER;
+  const length=Number(document.getElementById('terrainLength').value)*MAP_UNITS_PER_METER;
+  if(state.mode!=='architect'||![width,length].every(n=>n>=32&&n<=8192))return;
+  if(dialog.dataset.creating==='true'){
+    createNewSceneAsArchitect(terrain,width,length);
+  }else{
+    const floor=getScene().floors[state.currentFloor];
+    const {x,y}=floor.terrainBounds||floor.bounds;
+    beginEdit();
+    floor.baseTerrain=terrain;
+    floor.terrainBounds={x,y,w:width,h:length};
+    if(terrain){
+      expandFloorToInclude(floor,x,y,0);
+      expandFloorToInclude(floor,x+width,y+length,0);
+    }
+    finishEdit();
+  }
+  centerMap();
+  dialog.close();
+}
+
 function expandFloorToInclude(floor, x, y, pad = 120) {
   if (!floor.bounds) floor.bounds = { x: 80, y: 60, w: 680, h: 480 };
   const b = floor.bounds;

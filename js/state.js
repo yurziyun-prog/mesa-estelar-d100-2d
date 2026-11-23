@@ -205,9 +205,9 @@ function init() {
 
 function refreshSceneSelect() {
   const sel = document.getElementById('sceneSelect');
-  sel.innerHTML = Object.entries(state.scenes).map(([id, sc]) =>
-    `<option value="${id}" ${id === state.activeSceneId ? 'selected' : ''}>${sc.name}</option>`
-  ).join('');
+  sel.replaceChildren(...Object.entries(state.scenes).map(([id, sc]) =>
+    new Option(sc.name, id, false, id === state.activeSceneId)
+  ));
   document.getElementById('activeSceneTag').textContent = getScene().name;
   const styleSelect = document.getElementById('sceneStyleSelect');
   if(styleSelect) styleSelect.value = state.buildStyle || 'normal';
@@ -229,13 +229,13 @@ function onSceneSelectChange(id) {
   }
 }
 
-function createNewSceneAsArchitect() {
+function createNewSceneAsArchitect(terrain='grass', width=540, length=400) {
   const input = document.getElementById('newSceneName');
   const name = input.value.trim() || `Cenário ${Object.keys(state.scenes).length + 1}`;
   beginEdit();
   const id = 'scene_' + Date.now();
-  const f0 = createEmptyFloor('grass');
-  f0.bounds = { x: 120, y: 100, w: 540, h: 400 };
+  const f0 = createEmptyFloor(terrain);
+  f0.bounds = { x: 120, y: 100, w: width, h: length };
   f0.terrainBounds = {...f0.bounds};
   state.scenes[id] = { name, style: getScene()?.style || 'normal', floors: [f0, createEmptyFloor(null)] };
   state.activeSceneId = id;

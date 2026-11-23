@@ -69,7 +69,8 @@ function renderArchitectLibrary(){
  const query=(document.getElementById('architectLibrarySearch')?.value||'').toLocaleLowerCase('pt-BR');
  grid.replaceChildren();
  for(const [id,icon,label,kind] of (ARCHITECT_LIBRARY[architectCategory]||[])){
-  if(!label.toLocaleLowerCase('pt-BR').includes(query))continue;
+  if(!label.toLocaleLowerCase('pt-BR').includes(query)&&
+     !translateSiteText(label).toLocaleLowerCase().includes(query))continue;
   if(!isItemInBuildCollection(id,architectCategory))continue;
   const button=document.createElement('button');button.type='button';button.className='library-card';
   const emoji=document.createElement('span');emoji.className='emoji';emoji.textContent=icon;
@@ -106,7 +107,7 @@ function selectArchitectLibraryItem(id,label,kind){
  else if(kind==='character'){architectCharacterTemplate=id;selectTool('character');}
  document.getElementById('architectLibrarySelected').textContent='Selecionado: '+label+' • Clique no mapa para colocar.';
  refreshArchitectProperties();
- for(const card of document.querySelectorAll('.library-card'))card.classList.toggle('active',card.textContent.trim().endsWith(label));
+ for(const card of document.querySelectorAll('.library-card'))card.classList.toggle('active',card.textContent.trim().endsWith(translateSiteText(label)));
 }
 function placeArchitectCharacter(x,y){
  if(!architectCharacterTemplate)return;

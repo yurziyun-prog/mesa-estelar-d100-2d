@@ -114,7 +114,7 @@ function drawCustomTileFinish(x,y,w,h,settings){
   }
  }
 }
-function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null, roofPitch = null, roofHeight = null) {
+function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null, roofPitch = null, roofHeight = null, viewport = null) {
   if(isRoofMaterial(mat)){drawRoofSurface(x,y,w,h,mat,roofPitch,roofHeight);return;}
   if(mat==='kenney_water')mat='water';
   if(mat==='kenney_wood')mat='wood';
@@ -124,10 +124,29 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
   ctx.rect(x, y, w, h);
   ctx.clip();
 
-  if (mat === 'grass') {
+  const left = viewport ? Math.max(x, viewport.x - 64) : x;
+  const right = viewport ? Math.min(x+w, viewport.x+viewport.w+64) : x+w;
+  const top = viewport ? Math.max(y, viewport.y - 64) : y;
+  const bottom = viewport ? Math.min(y+h, viewport.y+viewport.h+64) : y+h;
+
+  if (mat === 'space' || mat === 'forest') {
+    const space=mat==='space', cell=space?48:38;
+    ctx.fillStyle=space?'#101529':'#29482e';
+    ctx.fillRect(x,y,w,h);
+    for(let gy=Math.floor(top/cell)*cell;gy<bottom;gy+=cell){
+      for(let gx=Math.floor(left/cell)*cell;gx<right;gx+=cell){
+        const n=Math.abs(Math.sin(gx*12.9898+gy*78.233)*43758.5453)%1;
+        const px=gx+cell*n,py=gy+cell*((n*23)%1);
+        ctx.fillStyle=space?(n>.83?'#c9daff':'#757f9f'):(n>.5?'#365a36':'#24402a');
+        ctx.beginPath();
+        ctx.arc(px,py,space?1+n:12+n*10,0,Math.PI*2);
+        ctx.fill();
+      }
+    }
+  } else if (mat === 'grass') {
     ctx.fillStyle='#4e7540';ctx.fillRect(x,y,w,h);
-    const cell=13, sx=Math.floor(x/cell)*cell,sy=Math.floor(y/cell)*cell;
-    for(let gy=sy;gy<y+h;gy+=cell) for(let gx=sx;gx<x+w;gx+=cell){
+    const cell=13, sx=Math.floor(left/cell)*cell,sy=Math.floor(top/cell)*cell;
+    for(let gy=sy;gy<bottom;gy+=cell) for(let gx=sx;gx<right;gx+=cell){
       const n=Math.sin(gx*12.9898+gy*78.233)*43758.5453;
       const f=n-Math.floor(n);
       ctx.strokeStyle=f>.55?'rgba(148,187,94,.30)':'rgba(28,73,31,.32)';
@@ -172,8 +191,8 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
     // Água contínua, sem padrões amarelos vindos dos cantos de tiles externos.
     ctx.fillStyle='#218fbd';ctx.fillRect(x,y,w,h);
     const sw=58,sh=39;
-    for(let gy=Math.floor(y/sh)*sh;gy<y+h;gy+=sh){
-      for(let gx=Math.floor(x/sw)*sw;gx<x+w;gx+=sw){
+    for(let gy=Math.floor(top/sh)*sh;gy<bottom;gy+=sh){
+      for(let gx=Math.floor(left/sw)*sw;gx<right;gx+=sw){
         const shift=Math.sin(animTick*.7+gx*.021+gy*.034)*6;
         ctx.strokeStyle='rgba(169,234,238,.20)';ctx.lineWidth=1.8;
         ctx.beginPath();ctx.moveTo(gx+6+shift,gy+14);ctx.quadraticCurveTo(gx+sw*.48,gy+8+shift*.2,gx+sw-7+shift,gy+14);ctx.stroke();
@@ -197,23 +216,23 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
     ctx.fillStyle = '#6b4b32';
     ctx.fillRect(x, y, w, h);
     ctx.fillStyle = 'rgba(40, 22, 10, 0.25)';
-    for (let dy = y + 14; dy < y + h; dy += 28) {
-      for (let dx = x + 14; dx < x + w; dx += 32) {
+    for (let dy = y + 14 + 28*Math.floor((top-y)/28); dy < bottom; dy += 28) {
+      for (let dx = x + 14 + 32*Math.floor((left-x)/32); dx < right; dx += 32) {
         ctx.beginPath(); ctx.arc(dx, dy, 2.5, 0, Math.PI * 2); ctx.fill();
       }
     }
   } else if (mat === 'sand') {
     ctx.fillStyle='#dac38c';ctx.fillRect(x,y,w,h);
-    for(let gy=Math.floor(y/11)*11;gy<y+h;gy+=11)for(let gx=Math.floor(x/11)*11;gx<x+w;gx+=11){
+    for(let gy=Math.floor(top/11)*11;gy<bottom;gy+=11)for(let gx=Math.floor(left/11)*11;gx<right;gx+=11){
       const n=Math.sin(gx*13.17+gy*8.91)*18437.12,f=n-Math.floor(n);
       ctx.fillStyle=f>.5?'rgba(255,248,213,.30)':'rgba(137,96,48,.16)';
       ctx.fillRect(gx+f*7,gy+f*6,f>.8?3:1.4,1.4);
     }
     ctx.strokeStyle='rgba(157,117,62,.13)';ctx.lineWidth=1.4;
-    for(let gy=y+14;gy<y+h;gy+=24){ctx.beginPath();ctx.moveTo(x,gy);ctx.quadraticCurveTo(x+w/2,gy-7,x+w,gy+2);ctx.stroke();}
+    for(let gy=y+14+24*Math.floor((top-y)/24);gy<bottom;gy+=24){ctx.beginPath();ctx.moveTo(x,gy);ctx.quadraticCurveTo(x+w/2,gy-7,x+w,gy+2);ctx.stroke();}
   } else if(mat==='cave'){
     ctx.fillStyle='#484a48';ctx.fillRect(x,y,w,h);
-    for(let gy=Math.floor(y/27)*27;gy<y+h;gy+=27)for(let gx=Math.floor(x/31)*31;gx<x+w;gx+=31){
+    for(let gy=Math.floor(top/27)*27;gy<bottom;gy+=27)for(let gx=Math.floor(left/31)*31;gx<right;gx+=31){
       const n=Math.abs(Math.sin(gx*14.78+gy*5.63)*3472.3)%1;
       ctx.fillStyle=n>.6?'rgba(141,145,136,.17)':'rgba(19,23,24,.24)';
       ctx.beginPath();ctx.ellipse(gx+n*15,gy+n*10,5+n*9,3+n*6,n*3,0,Math.PI*2);ctx.fill();
@@ -222,7 +241,7 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
     }
   } else if(mat==='mud'){
     ctx.fillStyle='#5d4c36';ctx.fillRect(x,y,w,h);
-    for(let gy=Math.floor(y/24)*24;gy<y+h;gy+=24)for(let gx=Math.floor(x/26)*26;gx<x+w;gx+=26){
+    for(let gy=Math.floor(top/24)*24;gy<bottom;gy+=24)for(let gx=Math.floor(left/26)*26;gx<right;gx+=26){
       const n=Math.abs(Math.sin(gx*7.11+gy*23.53)*1981.9)%1;
       ctx.fillStyle='rgba(116,96,65,.40)';ctx.beginPath();ctx.ellipse(gx+10+n*6,gy+11,9+n*5,3+n*2,.2,0,Math.PI*2);ctx.fill();
       ctx.strokeStyle='rgba(185,162,121,.24)';ctx.lineWidth=1.5;
@@ -332,7 +351,8 @@ function drawUpperStairOpening(stair){
    ctx.save();ctx.rotate(-(stair.rot||0)*Math.PI/2);ctx.translate(-stair.x,-stair.y);
    if(lower.terrainBounds&&lower.baseTerrain){
      const b=lower.terrainBounds;
-     drawTexturedArea(b.x,b.y,b.w,b.h,lower.baseTerrain);
+     drawTexturedArea(b.x,b.y,b.w,b.h,lower.baseTerrain,null,null,null,null,
+       {x:stair.x-60,y:stair.y-60,w:120,h:120});
    }
    for(const area of lower.areas||[]){
      drawTexturedArea(area.x,area.y,area.w,area.h,area.mat,area.color,area.tile,area.roofPitch,area.roofHeight);
@@ -544,7 +564,9 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
   // Área inicial compacta e expansível
   if (floor.terrainBounds && floor.baseTerrain) {
     const b = floor.terrainBounds;
-    drawTexturedArea(b.x, b.y, b.w, b.h, floor.baseTerrain);
+    const {a:zoom,e:offsetX,f:offsetY}=ctx.getTransform();
+    drawTexturedArea(b.x,b.y,b.w,b.h,floor.baseTerrain,null,null,null,null,
+      {x:-offsetX/zoom,y:-offsetY/zoom,w:canvas.width/zoom,h:canvas.height/zoom});
   }
   if (floor.bounds) {
     const b = floor.bounds;

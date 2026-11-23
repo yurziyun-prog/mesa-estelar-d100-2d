@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mesa RPG 2D — Arquiteto, Mestre & Jogador</title>
-  <link rel="stylesheet" href="css/style.css?v=stairwell-visibility-sync-fall-20261123" />
+  <link rel="stylesheet" href="css/style.css?v=terrain-cloud-20261124" />
 </head>
 <body>
 
@@ -27,6 +27,10 @@
   </div>
 
   <div class="top-controls">
+    <select id="siteLanguage" class="ctrl" aria-label="Idioma / 语言" onchange="setSiteLanguage(this.value)">
+      <option value="pt-BR">Português</option><option value="zh-CN">中文</option>
+    </select>
+    <button class="btn" onclick="document.getElementById('cloudBankDialog').showModal()">☁️ Nuvem</button>
     <button class="btn" onclick="centerMap()" title="Centralizar o mapa na área de jogo">Centralizar mapa</button>
     <button class="btn" onclick="exportJSON()">⬇️ JSON</button>
     <button class="btn" onclick="document.getElementById('importFile').click()">⬆️ Importar</button>
@@ -49,10 +53,10 @@
       <div id="architectSceneControls">
         <div class="row">
           <input type="text" id="newSceneName" class="ctrl" placeholder="Nome do novo cenário..." />
-          <button class="btn btn-gold" onclick="createNewSceneAsArchitect()">+ Criar</button>
+          <button class="btn btn-gold" onclick="openTerrainDialog(true)">+ Criar</button>
         </div>
         <div class="row" style="margin-bottom:0;">
-          <button class="btn btn-primary" style="flex:1;" onclick="saveCurrentSceneToBank()">💾 Salvar no Banco</button>
+          <button class="btn btn-primary" style="flex:1;" onclick="saveCurrentSceneToBank()">💾 Salvar neste navegador</button>
           <button class="btn" onclick="duplicateCurrentScene()">📄 Duplicar</button>
         </div>
       </div>
@@ -85,6 +89,7 @@
           <button class="btn" style="padding:2px 6px; font-size:10px;" onclick="expandCurrentMap()">+ Expandir Mapa</button>
         </div>
         <div class="tool-grid">
+          <button class="tool-btn" onclick="openTerrainDialog(false)">Terreno base</button>
           <button class="tool-btn" data-tool="move" onclick="selectTool('move')">👆 Selecionar / Arrastar</button>
           <button class="tool-btn" onclick="selectTool('move');document.getElementById('selectedWallBar').scrollIntoView({block:'nearest'})">📐 Alinhar</button>
           <button class="tool-btn" data-tool="erase" onclick="selectTool('erase')">🧹 Apagar</button>
@@ -421,19 +426,21 @@
 </div>
 
 <script src="js/d100.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/state.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/roof-system.js?v=slab-wall-extension-20261124" defer></script>
+<script src="js/state.js?v=terrain-cloud-20261124" defer></script>
+<script src="js/roof-system.js?v=terrain-cloud-20261124" defer></script>
 <script src="js/stair-system.js?v=slab-wall-extension-20261124" defer></script>
-<script src="js/editor.js?v=slab-wall-extension-20261124" defer></script>
-<script src="js/library.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/gameplay.js?v=slab-wall-extension-20261124" defer></script>
+<script src="js/editor.js?v=terrain-cloud-20261124" defer></script>
+<script src="js/library.js?v=terrain-cloud-20261124" defer></script>
+<script src="js/gameplay.js?v=terrain-cloud-20261124" defer></script>
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/textures.js?v=slab-wall-extension-20261124" defer></script>
+<script src="js/textures.js?v=terrain-cloud-20261124" defer></script>
 <script src="js/architect-selection.js?v=slab-wall-extension-20261124" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
+<script src="js/i18n.js?v=terrain-cloud-20261124" defer></script>
+<script src="js/cloud-bank.js?v=terrain-cloud-20261124" defer></script>
 <script src="js/main.js?v=map-center-20261124" defer></script>
 <dialog id="lockDialog" class="lock-dialog">
   <form method="dialog" onsubmit="return false;">
@@ -480,6 +487,40 @@
    <button class="btn btn-primary" type="button" onclick="saveArchitectObjectProperties()">Salvar alterações</button>
   </div>
  </form>
+</dialog>
+<dialog id="terrainDialog" class="lock-dialog">
+  <form id="terrainForm" onsubmit="applyTerrainSettings(event)">
+    <h3 id="terrainTitle">Terreno base</h3>
+    <label>Terreno <select id="terrainKind" class="ctrl">
+      <option value="grass">Grama</option><option value="sand">Deserto</option>
+      <option value="cave">Terreno rochoso</option><option value="forest">Floresta</option>
+      <option value="space">Espaço sideral</option><option value="snow">Neve</option>
+      <option value="dirt">Terra</option><option value="water">Água</option>
+      <option value="mud">Lama</option><option value="">Sem terreno</option>
+    </select></label>
+    <div class="row">
+      <label>Largura (m) <input id="terrainWidth" class="ctrl" type="number" min="1" max="256" step="any" required></label>
+      <label>Comprimento (m) <input id="terrainLength" class="ctrl" type="number" min="1" max="256" step="any" required></label>
+    </div>
+    <div class="row">
+      <button type="button" class="btn" onclick="document.getElementById('terrainDialog').close()">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Aplicar</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="cloudBankDialog" class="lock-dialog">
+  <form onsubmit="event.preventDefault()">
+    <h3>Banco na nuvem</h3>
+    <p>Use um repositório privado inicializado no GitHub e um token de acesso restrito a esse repositório, com permissão de leitura e escrita em Contents.</p>
+    <label>Repositório privado <input id="cloudRepository" class="ctrl" placeholder="usuario/repositorio" autocomplete="off" required></label>
+    <label>Token do GitHub <input id="cloudToken" class="ctrl" type="password" autocomplete="off" required></label>
+    <p role="status" id="cloudStatus"></p>
+    <div class="row">
+      <button type="button" class="btn" onclick="document.getElementById('cloudBankDialog').close()">Fechar</button>
+      <button type="button" class="btn" onclick="runCloudBank('load')">Abrir da nuvem</button>
+      <button type="button" class="btn btn-primary" onclick="runCloudBank('save')">Salvar na nuvem</button>
+    </div>
+  </form>
 </dialog>
 </body>
 </html>

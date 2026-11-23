@@ -107,7 +107,7 @@ function onPaintedGround(floor, x, y) {
   if (painted) return !['water','kenney_water','void'].includes(painted.mat);
   const b = floor.terrainBounds || floor.bounds;
   if(floor.stairs?.some(s=>Math.abs(s.x-x)<18&&Math.abs(s.y-y)<25))return true;
-  return Boolean(floor.baseTerrain && b && hit(b) && floor.baseTerrain !== 'water');
+  return Boolean(floor.baseTerrain && b && hit(b) && !['water','space','void'].includes(floor.baseTerrain));
 }
 function onPlacedBridge(floor, x, y) {
   return floor.props.some(p => {
@@ -307,15 +307,27 @@ function updateUI() {
     if(label)label.textContent=ent.ai?.enabled?'Autonomia ativa · '+(ent.ai.state||'vigiar'):'Autonomia desligada';
   }
 
-  document.getElementById('inventoryList').innerHTML = ent.inventory.length
-    ? ent.inventory.map(item => `<div class="list-item"><span>🎒 ${item}</span></div>`).join('')
-    : '<div style="font-size:11px; color:var(--text-muted);">Mochila vazia</div>';
+  const inventory = document.getElementById('inventoryList');
+  inventory.replaceChildren(...ent.inventory.map(item => {
+    const row=document.createElement('div');
+    row.className='list-item';
+    row.dataset.userText='';
+    row.textContent='🎒 '+item;
+    return row;
+  }));
+  if(!ent.inventory.length)inventory.textContent='Mochila vazia';
 
   const pcs = state.entities.filter(e => e.type === 'pc');
-  document.getElementById('playerSwitchList').innerHTML = pcs.map(p => `
-    <button class="tool-btn ${p.id === ent.id ? 'active' : ''}" style="width:100%; margin-bottom:4px;"
-      onclick="selectPlayerChar('${p.id}')">🗡️ ${p.name} (${state.scenes[p.sceneId]?.name || ''})</button>
-  `).join('');
+  document.getElementById('playerSwitchList').replaceChildren(...pcs.map(p => {
+    const button=document.createElement('button');
+    button.className='tool-btn';
+    button.classList.toggle('active',p.id===ent.id);
+    button.style.cssText='width:100%; margin-bottom:4px;';
+    button.dataset.userText='';
+    button.textContent=`🗡️ ${p.name} (${state.scenes[p.sceneId]?.name || ''})`;
+    button.addEventListener('click',()=>selectPlayerChar(p.id));
+    return button;
+  }));
 }
 
 function selectPlayerChar(id) {
