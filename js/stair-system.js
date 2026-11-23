@@ -71,9 +71,17 @@ function safeStairArrival(scene,targetIndex,x,y,offset){
     [x+offset,y+20],[x,y+30],[x,y-30],
     [x-offset,y+20],[x+offset,y-25],[x-offset,y-25],[x,y],
   ];
-  const usable=(px,py)=>onPaintedGround(floor,px,py)&&!floor.walls.some(w=>distToSegment(px,py,w.x1,w.y1,w.x2,w.y2)<20)
-    &&!floor.doors.some(d=>!d.open&&Math.hypot(px-d.x,py-d.y)<24);
-  return candidates.find(([px,py])=>usable(px,py))||[x,y];
+  const usable=(px,py)=>canMoveTo(targetIndex,px,py);
+  const selected=candidates.find(([px,py])=>usable(px,py));
+  if(selected)return selected;
+  // 如果出口被新放置的物件占据，就搜索附近合法位置，不能把人物放进墙里。
+  for(let radius=40;radius<=120;radius+=16){
+    for(let angle=0;angle<Math.PI*2;angle+=Math.PI/8){
+      const px=x+Math.cos(angle)*radius,py=y+Math.sin(angle)*radius;
+      if(usable(px,py))return [px,py];
+    }
+  }
+  return null;
 }
 function createStairPair(scene,fromLevel,toLevel,x,y,shape,material,style,continuous=false,linkId=''){
  const srcIndex=floorIndexForLevel(scene,fromLevel,true,{x,y});
@@ -165,7 +173,13 @@ function transferOnStair(ent,stair,automatic=false){
  ensureStairLanding(scene,ent.floor,target,stair.x,stair.y);
  ent.floor=target;
  const offset=stair.dir==='up'?32:-32;
- const [arrivalX,arrivalY]=safeStairArrival(scene,target,counterpart.stair.x,counterpart.stair.y,offset);
+ const landing=safeStairArrival(scene,target,counterpart.stair.x,counterpart.stair.y,offset);
+ if(!landing){
+   ent.floor=stairLinkedIndex(scene,target,counterpart.stair);
+   logEvent('⚠️ A saída da escada está bloqueada; libere o patamar no andar de destino.');
+   return false;
+ }
+ const [arrivalX,arrivalY]=landing;
  ent.x=arrivalX;ent.y=arrivalY;
  ent.stairCooldown=now+1050;
  ent.stairTransitionAt=now;
