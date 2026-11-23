@@ -33,7 +33,10 @@ const ARCHITECT_LIBRARY = {
  architecture:[
   ['checker','🔲','Ladrilho','mat'],['wood','🪵','Parquê de madeira','mat'],['marble','🏛️','Mármore','mat'],['stone','🪨','Piso de pedra','mat'],['cobble','🧱','Calçamento','mat'],['metal','🔩','Piso metálico','mat'],['mosaic','🌀','Mosaico','mat'],['bridge','🌉','Piso de ponte','mat'],
   ['wall','🧱','Parede','tool'],['door','🚪','Porta','tool'],['window','🪟','Janela','tool'],
-  ['stairs','🪜','Escada','tool'],['bridgeWood','🌉','Ponte','bridgeVariant'],
+  ['stairs','🪜','Escada','tool'],
+   ['roof_tile','🏠','Telhado · telhas','roof'],['roof_concrete','🏢','Cobertura · concreto / terraço','roof'],
+   ['roof_metal','🏭','Telhado · metal','roof'],['roof_thatch','🌾','Telhado · palha','roof'],
+   ['bridgeWood','🌉','Ponte','bridgeVariant'],
   ['chest','🧰','Baú','tool'],['chestFuture','🧰','Baú futurista','chestVariant']
  ],
  characters:[['warrior','⚔️','Guerreiro','character'],['mage','🪄','Maga','character'],['ranger','🏹','Arqueira','character'],['villager','🧑','Aldeão','character'],['guard','🛡️','Guarda','character'],['merchant','🧳','Mercadora','character'],['goblin','👺','Goblin','character'],['skeleton','💀','Esqueleto','character'],['wolf','🐺','Lobo','character'],['dragon','🐉','Dragão','character']]
@@ -93,6 +96,7 @@ function selectArchitectLibraryItem(id,label,kind){
  else if(kind==='doorVariant'){state.doorVariant=id;selectTool('door');}
  else if(kind==='chestVariant'){state.chestVariant=id;selectTool('chest');}
  else if(kind==='bridgeVariant'){selectMaterial('bridge');}
+  else if(kind==='roof'){state.roofMaterial=id;selectTool('roof');}
  else if(kind==='character'){architectCharacterTemplate=id;selectTool('character');}
  document.getElementById('architectLibrarySelected').textContent='Selecionado: '+label+' • Clique no mapa para colocar.';
  refreshArchitectProperties();
