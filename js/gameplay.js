@@ -115,11 +115,11 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   if (floor.chests.some(c => Math.hypot(c.x - nx, c.y - ny) < r + 14)) return false;
 
   const solidProps = ['tree', 'pine', 'fruitTree', 'rock', 'table', 'bookshelf', 'hearth', 'barrel', 'cabinet', 'sofa', 'sofaBlue', 'sofaRed', 'sofaGreen'];
-  if (floor.props.some(p => solidProps.includes(p.type) && Math.hypot(p.x - nx, p.y - ny) < r + 14)) return false;
-  if (floor.props.some(p => isKenneyObject(p.type) && KENNEY_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17))return false;
-  if (floor.props.some(p => isKenneyRoguelikeObject(p.type) && KENNEY_ROGUELIKE_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17))return false;
+  if (floor.props.some(p => solidProps.includes(p.type) && Math.hypot(p.x - nx, p.y - ny) < r + 14*(p.scale||1))) return false;
+  if (floor.props.some(p => isKenneyObject(p.type) && KENNEY_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17*(p.scale||1)))return false;
+  if (floor.props.some(p => isKenneyRoguelikeObject(p.type) && KENNEY_ROGUELIKE_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17*(p.scale||1)))return false;
   // As camas têm colisão retangular proporcional ao seu tamanho.
-  if(floor.props.some(p=>isSleepingFurniture(p)&&p.type!=='sleepingBag' && Math.abs(nx-p.x)<sleepFurnitureSize(p).w/2+r-4 && Math.abs(ny-p.y)<sleepFurnitureSize(p).h/2+r-4))return false;
+  if(floor.props.some(p=>isSleepingFurniture(p)&&p.type!=='sleepingBag' && Math.abs(nx-p.x)<sleepFurnitureSize(p).w*(p.scale||1)/2+r-4 && Math.abs(ny-p.y)<sleepFurnitureSize(p).h*(p.scale||1)/2+r-4))return false;
 
   const onWater = floor.areas.some(a => ['water','kenney_water'].includes(a.mat) && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
   const onBridge = floor.areas.some(a => a.mat === 'bridge' && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
