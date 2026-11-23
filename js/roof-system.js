@@ -142,6 +142,53 @@ function roofPitchFor(mat,pitch){
  if(['gable','hip','flat'].includes(pitch))return pitch;
  return mat==='roof_concrete'?'flat':'gable';
 }
+// 天窗只属于屋顶，不在其他楼层制造开口。梯口优先使用现有楼梯连接坐标。
+function addRoofOpening(x,y,type='skylight'){
+ const floor=getScene().floors[state.currentFloor];
+ const roof=(floor.areas||[]).find(a=>a.roof&&pointInArchitectArea(a,x,y,-18));
+ if(!roof){logEvent('⚠️ 请先切换到有屋顶的楼层，再放置天窗或阁楼出口。');return false;}
+ if(!Array.isArray(floor.roofOpenings))floor.roofOpenings=[];
+ if(floor.roofOpenings.some(o=>Math.hypot(o.x-x,o.y-y)<35)){
+  logEvent('⚠️ 两个屋顶开口距离太近。');return false;
+ }
+ if(type==='hatch'){
+  const atStair=floor.stairs.some(st=>Math.hypot(st.x-x,st.y-y)<62);
+  if(!atStair){logEvent('⚠️ 楼梯出入口需要放在本层楼梯附近。');return false;}
+ }
+ floor.roofOpenings.push({x,y,w:type==='hatch'?66:78,h:type==='hatch'?74:52,type,roofId:roof.roofId||null});
+ logEvent(type==='hatch'?'🚪 已添加楼梯屋顶出口。':'🪟 已添加屋顶天窗。');
+ return true;
+}
+function drawRoofOpenings(floor){
+ const openings=[...(floor.roofOpenings||[])];
+ for(const opening of (floor.openings||[])){
+  if(!opening.stairLinkId)continue;
+  if(!floor.areas.some(a=>a.roof&&pointInArchitectArea(a,opening.x+opening.w/2,opening.y+opening.h/2)))continue;
+  if(openings.some(o=>Math.hypot(o.x-(opening.x+opening.w/2),o.y-(opening.y+opening.h/2))<26))continue;
+  openings.push({x:opening.x+opening.w/2,y:opening.y+opening.h/2,
+   w:Math.min(62,opening.w),h:Math.min(74,opening.h),type:'hatch'});
+ }
+ for(const o of openings){
+  ctx.save();ctx.translate(o.x,o.y);
+  ctx.fillStyle='#263039';ctx.fillRect(-o.w/2-5,-o.h/2-5,o.w+10,o.h+10);
+  ctx.fillStyle=o.type==='skylight'?'#6dc7d4':'#202c37';
+  ctx.fillRect(-o.w/2,-o.h/2,o.w,o.h);
+  ctx.strokeStyle=o.type==='skylight'?'#d6f4ef':'#af9877';ctx.lineWidth=4;
+  ctx.strokeRect(-o.w/2,-o.h/2,o.w,o.h);
+  if(o.type==='skylight'){
+   ctx.strokeStyle='rgba(240,255,255,.75)';ctx.lineWidth=3;
+   ctx.beginPath();ctx.moveTo(0,-o.h/2);ctx.lineTo(0,o.h/2);
+   ctx.moveTo(-o.w/2,0);ctx.lineTo(o.w/2,0);ctx.stroke();
+   ctx.fillStyle='rgba(255,255,255,.22)';
+   ctx.beginPath();ctx.moveTo(-o.w/2+5,-o.h/2+4);ctx.lineTo(o.w/2-9,-o.h/2+4);
+   ctx.lineTo(-o.w/2+5,o.h/2-7);ctx.closePath();ctx.fill();
+  }else{
+   ctx.strokeStyle='#dcb96e';ctx.lineWidth=3;
+   ctx.beginPath();ctx.moveTo(-o.w/2+8,o.h/2-10);ctx.lineTo(o.w/2-8,o.h/2-10);ctx.stroke();
+  }
+  ctx.restore();
+ }
+}
 function drawRoofSurface(x,y,w,h,mat,pitchValue=null,roofHeight=null){
  ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
  const palettes={
