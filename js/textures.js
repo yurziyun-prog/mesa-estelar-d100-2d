@@ -300,7 +300,7 @@ function drawArchitecturalStair(stair,overlay=false){
   rust:['#8c5944','#bd9471','#4c3632'],sandstone:['#bba071','#ecce99','#72604b']
  };
  const [base,lit,edge]=materials[mat]||materials.wood;
- ctx.save();ctx.translate(stair.x,stair.y);
+ ctx.save();ctx.translate(stair.x,stair.y);ctx.rotate((stair.rot||0)*Math.PI/2);
  if(overlay&&shape!=='open'){ctx.restore();return;}
  if(!overlay){
    ctx.fillStyle='rgba(0,0,0,.27)';ctx.fillRect(-32+6,-49+7,68,98);
@@ -564,7 +564,12 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
   state.entities.filter(e => e.sceneId === state.activeSceneId && e.floor === floorIdx).forEach(ent => {
     drawCharacterToken(ent, isBelow);
   });
-  floor.stairs.filter(s=>stairVisualShape(s.shape)==='open').forEach(s=>drawArchitecturalStair(s,true));
+  // 镂空楼梯对下方人物显示台阶遮挡；攀爬时人物绘制在台阶上方。
+  floor.stairs.filter(s=>stairVisualShape(s.shape)==='open' &&
+    !state.entities.some(e=>e.sceneId===state.activeSceneId&&e.floor===floorIdx&&e.stairClimb &&
+      ((e.stairClimb.linkId&&e.stairClimb.linkId===s.linkId)||
+       (!e.stairClimb.linkId&&Math.hypot(e.stairClimb.x-s.x,e.stairClimb.y-s.y)<5))))
+    .forEach(s=>drawArchitecturalStair(s,true));
 }
 
 function drawCharacterToken(ent, isBelow) {
