@@ -453,10 +453,12 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     ctx.translate(win.x, win.y);
     if (win.orient === 'v') ctx.rotate(Math.PI / 2);
     ctx.fillStyle = isRetroFuture(win) ? 'rgba(55, 210, 226, .6)' : 'rgba(135, 220, 255, 0.45)';
-    ctx.fillRect(-20, -8, 40, 16);
+    ctx.fillRect(-(win.width||40)/2, -8, win.width||40, 16);
     ctx.strokeStyle = ({wood:'#b9875b',stone:'#a7b3b5',castle:'#90939a',brick:'#a65f49',masonry:'#b4bbbc',metal:'#729bab',rust:'#9a6344',sandstone:'#d7b36f'})[win.material] || (isRetroFuture(win) ? '#dba95d' : isArabia(win) ? '#e0a44e' : '#eaf7ff');
     ctx.lineWidth = 2;
-    ctx.strokeRect(-20, -8, 40, 16);
+    ctx.strokeRect(-(win.width||40)/2, -8, win.width||40, 16);
+    ctx.strokeStyle='rgba(241,250,252,.55)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(0,-8);ctx.lineTo(0,8);ctx.stroke();
     ctx.restore();
   });
 
@@ -464,7 +466,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     ctx.save();
     ctx.translate(d.x,d.y);
     if(d.orient==='v') ctx.rotate(Math.PI/2);
-    const retro=isRetroFuture(d);
+    const retro=(d.mechanism||((d.style==='futurist')?'sliding':'hinged'))==='sliding';
     // Trilho ou batente permanece fixo na parede.
     ctx.fillStyle=retro?'#728b9b':isArabia(d)?'#895f3d':'#3d2819';
     ctx.fillRect(-38,-10,76,20);
@@ -486,8 +488,10 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     } else {
       // A folha gira a 90 graus em torno da dobradiça na ponta esquerda.
       // Antes girava pelo centro, criando a aparência de porta atravessada.
-      ctx.translate(-34,0);
-      if(d.open) ctx.rotate(-Math.PI/2);
+      const side=d.hingeSide==='right'?-1:1;
+      ctx.translate(side<0?34:-34,0);
+      if(side<0)ctx.scale(-1,1);
+      if(d.open)ctx.rotate((d.swing==='out'?1:-1)*Math.PI/2);
       ctx.fillStyle=({wood:'#9c5a27',stone:'#9a9f9e',castle:'#7e8382',brick:'#a65b43',masonry:'#b5bbb8',metal:'#829aa8',rust:'#986042',sandstone:'#d3b77a'})[d.material] || (d.keyId&&!d.open?'#bb843a':isArabia(d)?'#c28a50':'#9c5a27');
       ctx.fillRect(0,-8,68,16);
       ctx.strokeStyle='#322014';ctx.lineWidth=2.5;ctx.strokeRect(0,-8,68,16);
