@@ -112,7 +112,7 @@ function setupInputs() {
       const ent = activeActor();
       if (!ent || ent.sceneId !== state.activeSceneId) return;
       const floor=getScene().floors[ent.floor];
-      const movable=floor.props.find(p=>p.type==='log' && Math.hypot(p.x-wx,p.y-wy)<42 && Math.hypot(p.x-ent.x,p.y-ent.y)<100);
+      const movable=floor.props.find(p=>(p.type==='log'||isPortableLadder(p)) && Math.hypot(p.x-wx,p.y-wy)<42 && Math.hypot(p.x-ent.x,p.y-ent.y)<110);
       if(movable) {beginEdit();draggingProp={item:movable,ent};return;}
       interactNearby(ent);
     }
@@ -137,6 +137,7 @@ function setupInputs() {
       applyArchitectAction(wx, wy, true);
     } else if (draggingProp && activeActor()) {
       const ent=draggingProp.ent;
+      if(isPortableLadder(draggingProp.item)&&uprightPortableLadder(draggingProp.item))return;
       const dx=wx-ent.x,dy=wy-ent.y,dist=Math.hypot(dx,dy);
       const factor=dist>105?105/dist:1;
       draggingProp.item.x=ent.x+dx*factor;
