@@ -279,6 +279,7 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
        ...(state.material==='checker'?{tile:structuredClone(state.tileConfig||{})}:{}),
        ...(state.material==='carpet'?{color:state.propColor}:{})});
     selectedMapObject = {kind:'areas', index:floor.areas.length - 1};
+    if(typeof onArchitectSelectionChange==='function')onArchitectSelectionChange();
   } else if (state.tool === 'wall' && dragStart && Math.hypot(wx - dragStart.x, wy - dragStart.y) > 12) {
     const seg = makeOrthoSegment(dragStart.x, dragStart.y, wx, wy);
     floor.walls.push({...seg, style:state.buildStyle, material:state.wallVariant||'wallMasonry',width:state.wallWidth||16,...(state.wallCustomColor?{color:state.propColor}:{})});
