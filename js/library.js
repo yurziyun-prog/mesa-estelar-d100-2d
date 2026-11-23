@@ -216,7 +216,7 @@ function refreshArchitectProperties(){
  if(mat&&kind)mat.value=kind==='wall'
     ?(Object.keys(CONSTRUCTION_WALL_MATERIALS).find(k=>CONSTRUCTION_WALL_MATERIALS[k]===(item?.material||state.wallVariant))||'masonry')
     :(item?.material||(kind==='stairs'?state.stairMaterial:state.constructionMaterial)||'wood');
- const shape=document.getElementById('stairShape');if(shape)shape.value=item?.shape||state.stairShape||'straight';
+ const shape=document.getElementById('stairShape');if(shape)shape.value=stairVisualShape(item?.shape||state.stairShape);
  const title=document.getElementById('constructionOptionTitle');
  if(title)title.textContent=kind==='wall'?'Parede · material e espessura':kind==='stairs'?'Escada · material e formato':'Construção · material';
  syncWallThicknessUI();syncArchitectColorUI();
@@ -232,7 +232,7 @@ function changeConstructionMaterial(material){
  finishEdit();refreshArchitectProperties();
 }
 function changeStairShape(shape){
- if(!['straight','spiral','ladder'].includes(shape))return;
+ if(!STAIR_SHAPES.includes(shape))return;
  const item=selectedArchitectItem();
  beginEdit();
  if(item&&selectedMapObject?.kind==='stairs'){item.shape=shape;syncLinkedStair(item,'shape',shape);}else state.stairShape=shape;
@@ -266,7 +266,7 @@ function syncLinkedStair(source,key,value){
  for(let i=0;i<floors.length;i++){
   if(i===state.currentFloor)continue;
   for(const stair of floors[i].stairs||[]){
-   if(Math.hypot(stair.x-source.x,stair.y-source.y)<2 && stair.dir!==source.dir)stair[key]=value;
+   if(source.linkId?stair.linkId===source.linkId:(Math.hypot(stair.x-source.x,stair.y-source.y)<2&&stair.dir!==source.dir))stair[key]=value;
   }
  }
 }
