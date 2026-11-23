@@ -24,8 +24,23 @@ function deployPortableLadder(ent,p){
  logEvent('🪜 '+ent.name+' '+(uprightPortableLadder(p)?'preparou':'guardou')+' a escada '+(p.type==='foldingLadder'?'dobrável':'de mão')+'.');
 }
 function interactPortableLadder(ent){
- const floor=getScene().floors[ent.floor],p=portableLadderAt(floor,ent.x,ent.y,85);
- if(!p)return false;
+ const scene=getScene(),floor=scene.floors[ent.floor],p=portableLadderAt(floor,ent.x,ent.y,85);
+ if(!p){
+   // 从楼上回到原来的梯子位置；无需复制楼梯家具。
+   const lower=floorIndexForLevel(scene,floorLevel(scene,ent.floor)-1,false);
+   const below=lower>=0?portableLadderAt(scene.floors[lower],ent.x,ent.y,60):null;
+   if(below&&uprightPortableLadder(below)){
+     const answer=prompt('Escada móvel abaixo: digite DESCER para retornar ao andar inferior.','descer');
+     if(answer?.trim().toLowerCase()==='descer'){
+       ent.floor=lower;ent.x=below.x;ent.y=below.y+28;
+       ent.stairCooldown=performance.now()+950;ent.stairTransitionAt=performance.now();
+       state.currentFloor=lower;updateFloorLabel();
+       logEvent('🪜 '+ent.name+' desceu ao '+floorName(floorLevel(scene,lower))+' pela escada móvel.');
+     }
+     return true;
+   }
+   return false;
+ }
  const action=ladderState(p);
  if(uprightPortableLadder(p)){
    const answer=prompt('Escada '+(p.type==='foldingLadder'?'dobrável':'de mão')+
