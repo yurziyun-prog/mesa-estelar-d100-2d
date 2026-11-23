@@ -15,6 +15,7 @@ function selectionBoundsOne(ref){
  if(ref.kind==='walls')return {x:Math.min(obj.x1,obj.x2),y:Math.min(obj.y1,obj.y2),w:Math.abs(obj.x2-obj.x1),h:Math.abs(obj.y2-obj.y1)};
  if(ref.kind==='areas')return {x:obj.x,y:obj.y,w:obj.w,h:obj.h};
  const r=ref.kind==='stairs'?50:ref.kind==='props'?24*(obj.scale||1):ref.kind==='entities'?16:24;
+ if(ref.kind==='windows')return obj.orient==='v'?{x:obj.x-12,y:obj.y-(obj.width||40)/2,w:24,h:obj.width||40}:{x:obj.x-(obj.width||40)/2,y:obj.y-12,w:obj.width||40,h:24};
  return {x:obj.x-r,y:obj.y-r,w:2*r,h:2*r};
 }
 function architectSelectionBounds(){
