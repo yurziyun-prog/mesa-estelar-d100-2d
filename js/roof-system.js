@@ -13,7 +13,7 @@ function roofSupportingBounds(floor){
     w:Math.abs(w.x2-w.x1),h:Math.abs(w.y2-w.y1)});
  }
  for(const a of floor.areas||[]){
-  if(!isRoofMaterial(a.mat)&&!['water','kenney_water','void'].includes(a.mat))pieces.push(a);
+  if(!isRoofMaterial(a.mat)&&!['grass','sand','dirt','snow','water','kenney_water','void','cave','mud','carpet'].includes(a.mat))pieces.push(a);
  }
  if(!pieces.length)return null;
  const x=Math.min(...pieces.map(p=>p.x)),y=Math.min(...pieces.map(p=>p.y));
