@@ -71,7 +71,7 @@ function setupInputs() {
     const sy = e.clientY - rect.top;
     lastMouse = { x: sx, y: sy };
 
-    if (e.button === 2 || (e.shiftKey && state.mode !== 'player')) {
+    if (e.button === 2) {
       isPanning = true;
       return;
     }
@@ -79,6 +79,7 @@ function setupInputs() {
     const { wx, wy } = screenToWorld(sx, sy);
 
     if (state.mode === 'architect') {
+      architectShiftHeld=e.shiftKey;
       if(typeof sampleArchitectColorAt==='function'&&sampleArchitectColorAt(wx,wy))return;
       if(placePendingKey(wx,wy)) return;
       beginEdit();
@@ -119,6 +120,7 @@ function setupInputs() {
 
     const { wx, wy } = screenToWorld(sx, sy);
     if (isDragging && state.mode === 'architect') {
+      architectShiftHeld=e.shiftKey;
       applyArchitectAction(wx, wy, true);
     } else if (draggingProp && activeActor()) {
       const ent=draggingProp.ent;
@@ -137,6 +139,7 @@ function setupInputs() {
     const rect = canvas.getBoundingClientRect();
     const { wx, wy } = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
     if (isDragging && state.mode === 'architect') {
+      architectShiftHeld=e.shiftKey;
       finalizeArchitectDrag(wx, wy, e.shiftKey);
     }
     finishEdit();
@@ -241,7 +244,7 @@ function render() {
       ctx.stroke();
     } else {
       ctx.globalAlpha = 0.6;
-      drawTexturedArea(previewRect.x, previewRect.y, previewRect.w, previewRect.h, previewRect.mat);
+      drawTexturedArea(previewRect.x, previewRect.y, previewRect.w, previewRect.h, previewRect.mat, null, previewRect.tile);
       ctx.globalAlpha = 1;
       ctx.strokeStyle = '#fff';
       ctx.strokeRect(previewRect.x, previewRect.y, previewRect.w, previewRect.h);
@@ -259,6 +262,8 @@ function render() {
     ctx.fillStyle = ambientColors[state.timeOfDay];
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
+  drawArchitectSelectionHUD();
+  drawArchitectMapGuides();
 }
 
 init();
