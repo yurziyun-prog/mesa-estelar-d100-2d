@@ -109,9 +109,14 @@ function createArchitectStair(wx,wy){
   pair.origin.shaftId=shaft;pair.destination.shaftId=shaft;
   level=next;count++;
  }
+ const incomplete=[];
  for(let level=start+sign;sign>0?level<=end:level>=end;level+=sign){
-  const idx=floorIndexForLevel(scene,level,false);
-  if(idx>=0)warnMissingStairFloor(scene,idx,wx,wy);
+   const idx=floorIndexForLevel(scene,level,false);
+   if(idx>=0&&!hasBuiltFloorAt(scene.floors[idx],wx,wy))incomplete.push(floorName(level));
+ }
+ if(incomplete.length){
+   const msg='⚠️ 这些楼层还没有楼板：'+incomplete.join('、')+'。楼梯可以保留，之后由建筑师自行铺设楼板。';
+   logEvent(msg);alert(msg);
  }
  updateFloorLabel();
  logEvent('🪜 '+(shape==='continuous'?'Escada contínua':'Escada')+' '+(up?'subindo':'descendo')+' de '+floorName(start)+' até '+floorName(end)+'; ligação nos dois sentidos.');
