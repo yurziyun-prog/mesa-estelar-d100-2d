@@ -60,7 +60,11 @@ function changeFloor(delta) {
 }
 function updateFloorLabel(){
  const label=document.getElementById('floorLabel');
- if(label)label.textContent=floorName(floorLevel(getScene(),state.currentFloor));
+ if(label){
+  const scene=getScene(),floor=scene.floors[state.currentFloor];
+  const roof=Boolean(floor?.areas?.some(a=>isRoofMaterial(a.mat)));
+  label.textContent=floorName(floorLevel(scene,state.currentFloor))+(roof?' · Cobertura':'');
+ }
 }
 
 // ALINHAMENTO E RECORTE DE PAREDE PARA PORTA / JANELA
