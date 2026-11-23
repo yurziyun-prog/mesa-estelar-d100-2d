@@ -200,6 +200,8 @@ function updateSimulation() {
   if (activeActor()) {
     const ent = activeActor();
     if (ent && ent.sceneId === state.activeSceneId) {
+      // 攀爬期间锁定水平输入，动画逐帧运行，完成时才进入相邻楼层。
+      if(advanceStairClimb(ent))return;
       let dx = 0, dy = 0;
       if (keys['w'] || keys['arrowup']) dy -= 1;
       if (keys['s'] || keys['arrowdown']) dy += 1;
@@ -213,9 +215,10 @@ function updateSimulation() {
         const speed = keys['shift'] ? 6.2 : 3.1;
         const vx = (dx / len) * speed;
         const vy = (dy / len) * speed;
-        if (canMoveTo(ent.floor, ent.x + vx, ent.y)) ent.x += vx;
-        if (canMoveTo(ent.floor, ent.x, ent.y + vy)) ent.y += vy;
-        tryWalkingStair(ent,dx,dy);
+        if(!tryWalkingStair(ent,dx/len,dy/len)){
+          if (canMoveTo(ent.floor, ent.x + vx, ent.y)) ent.x += vx;
+          if (canMoveTo(ent.floor, ent.x, ent.y + vy)) ent.y += vy;
+        }
         ent.walkingUntil=performance.now()+130;
       }
     }
