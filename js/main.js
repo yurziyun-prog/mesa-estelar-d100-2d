@@ -270,6 +270,7 @@ function render() {
     ctx.restore();
   }
 
+  drawExternalBuildingTop();
   const ambientColors = {
     dawn: 'rgba(255, 160, 90, 0.13)',
     day: 'rgba(0, 0, 0, 0)',
