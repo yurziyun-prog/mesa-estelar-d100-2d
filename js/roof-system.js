@@ -159,7 +159,7 @@ function addRoofOpening(x,y,type='skylight'){
  logEvent(type==='hatch'?'🚪 已添加楼梯屋顶出口。':'🪟 已添加屋顶天窗。');
  return true;
 }
-function drawRoofOpenings(floor){
+function drawRoofOpenings(floor,region=null){
  const openings=[...(floor.roofOpenings||[])];
  for(const opening of (floor.openings||[])){
   if(!opening.stairLinkId)continue;
@@ -169,6 +169,7 @@ function drawRoofOpenings(floor){
    w:Math.min(62,opening.w),h:Math.min(74,opening.h),type:'hatch'});
  }
  for(const o of openings){
+  if(region&&!pointInArchitectArea(region,o.x,o.y))continue;
   ctx.save();ctx.translate(o.x,o.y);
   ctx.fillStyle='#263039';ctx.fillRect(-o.w/2-5,-o.h/2-5,o.w+10,o.h+10);
   ctx.fillStyle=o.type==='skylight'?'#6dc7d4':'#202c37';
@@ -279,13 +280,13 @@ function drawExternalBuildingTop(){
  const candidates=[];
  for(const floor of higher)for(const area of floor.areas||[]){
   if(['water','void','kenney_water'].includes(area.mat))continue;
-  candidates.push({area,level:floor.level});
+  candidates.push({area,level:floor.level,floor});
  }
  if(!candidates.length)return;
  const highest=Math.max(...candidates.map(e=>e.level));
  const top=candidates.filter(e=>e.level===highest);
  ctx.save();ctx.translate(state.camera.x,state.camera.y);ctx.scale(state.camera.zoom,state.camera.zoom);
- for(const {area,level} of top){
+ for(const {area,level,floor} of top){
   const key=state.activeSceneId+':'+level+':'+area.x+':'+area.y+':'+area.w+':'+area.h;
   const indoor=roofCoverageAtActor(area,actor);
   const now=performance.now();
@@ -297,8 +298,10 @@ function drawExternalBuildingTop(){
   roofFadeLevels.set(key,fade);
   if(fade.alpha<.015)continue;
   ctx.save();ctx.globalAlpha=fade.alpha;
-  if(isRoofMaterial(area.mat))drawRoofSurface(area.x,area.y,area.w,area.h,area.mat,area.roofPitch,area.roofHeight);
-  else drawTexturedArea(area.x,area.y,area.w,area.h,area.mat,area.color,area.tile);
+  if(isRoofMaterial(area.mat)){
+    drawRoofSurface(area.x,area.y,area.w,area.h,area.mat,area.roofPitch,area.roofHeight);
+    drawRoofOpenings(floor,area);
+  }else drawTexturedArea(area.x,area.y,area.w,area.h,area.mat,area.color,area.tile);
   ctx.restore();
  }
  ctx.restore();
