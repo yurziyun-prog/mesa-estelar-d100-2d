@@ -1,0 +1,136 @@
+// Sistema de escadas arquitetônicas do Mesa Estelar 2D.
+// Níveis absolutos: -1 = 1º subterrâneo, 0 = térreo, 1 = 2º andar.
+// Índices em scene.floors permanecem estáveis para não danificar personagens salvos.
+const STAIR_SHAPES=['straight','spiral','open','continuous'];
+let stairTransferSequence=0;
+function ensureFloorLevels(scene){
+ if(!scene?.floors)return;
+ scene.floors.forEach((floor,index)=>{
+  if(!Number.isInteger(floor.level))floor.level=index;
+  if(!Array.isArray(floor.openings))floor.openings=[];
+  if(!Array.isArray(floor.stairs))floor.stairs=[];
+ });
+}
+function floorIndexForLevel(scene,level,create=false,at=null){
+ ensureFloorLevels(scene);
+ let index=scene.floors.findIndex(f=>f.level===level);
+ if(index!==-1||!create)return index;
+ const floor=createEmptyFloor(null);
+ floor.level=level;
+ const x=at?.x??400,y=at?.y??320;
+ // Um patamar utilizável na criação de um piso que ainda não existe.
+ floor.areas.push({x:x-100,y:y-104,w:200,h:208,mat:level<0?'stone':'wood'});
+ floor.bounds={x:x-150,y:y-154,w:300,h:308};
+ floor.terrainBounds={...floor.bounds};
+ scene.floors.push(floor);
+ return scene.floors.length-1;
+}
+function floorLevel(scene,index){ensureFloorLevels(scene);return scene.floors[index]?.level??0;}
+function floorName(level){return level===0?'Térreo':level<0?Math.abs(level)+'º Subterrâneo':(level+1)+'º Andar';}
+function stairVisualShape(value){return value==='ladder'?'open':value||'straight';}
+function stairLinkedIndex(scene,sourceIndex,stair){
+ if(Number.isInteger(stair.targetFloor)&&scene.floors[stair.targetFloor])return stair.targetFloor;
+ if(Number.isInteger(stair.targetLevel))return floorIndexForLevel(scene,stair.targetLevel,false);
+ return floorIndexForLevel(scene,floorLevel(scene,sourceIndex)+(stair.dir==='down'?-1:1),false);
+}
+function createStairPair(scene,fromLevel,toLevel,x,y,shape,material,style,continuous=false,linkId=''){
+ const srcIndex=floorIndexForLevel(scene,fromLevel,true,{x,y});
+ const dstIndex=floorIndexForLevel(scene,toLevel,true,{x,y});
+ const from=scene.floors[srcIndex],to=scene.floors[dstIndex];
+ const up=toLevel>fromLevel;
+ const pairId=linkId||'stair_'+Date.now().toString(36)+'_'+(++stairTransferSequence);
+ const common={x,y,shape,material,style,linkId:pairId,continuous};
+ // A direcionalidade é sempre local ao andar em que a escada está desenhada.
+ const origin={...common,dir:up?'up':'down',targetFloor:dstIndex,targetLevel:toLevel};
+ const destination={...common,dir:up?'down':'up',targetFloor:srcIndex,targetLevel:fromLevel};
+ from.stairs.push(origin);
+ to.stairs.push(destination);
+ // O furo é apenas decorativo no piso superior e acompanha o destino.
+ const upper=up?to:from;
+ if(!upper.openings.some(o=>o.stairLinkId===pairId))
+  upper.openings.push({x:x-36,y:y-52,w:72,h:104,stairLinkId:pairId});
+ return {srcIndex,dstIndex,origin,destination};
+}
+function createArchitectStair(wx,wy){
+ const scene=getScene();ensureFloorLevels(scene);
+ const start=floorLevel(scene,state.currentFloor);
+ const up=confirm('Neste andar, a escada SOBE?\n\nOK = SOBE\nCancelar = DESCE');
+ const sign=up?1:-1;
+ const rawShape=state.stairShape||'straight',shape=stairVisualShape(rawShape);
+ let end=start+sign;
+ if(shape==='continuous'){
+  const answer=prompt('Escada contínua: até qual andar?\n0 = térreo, 1 = 2º, 2 = 3º; -1 = 1º subterrâneo.',String(start+sign*2));
+  if(answer===null)return false;
+  const requested=Number(answer.trim());
+  if(!Number.isInteger(requested)||requested*sign<=start*sign||Math.abs(requested-start)>12){
+   alert('Indique um nível válido na direção escolhida (até 12 andares).');
+   return false;
+  }
+  end=requested;
+ }
+ const material=state.stairMaterial||'wood',style=state.buildStyle||'normal';
+ const shaft='shaft_'+Date.now().toString(36)+'_'+(++stairTransferSequence);
+ let level=start,count=0;
+ while(level!==end){
+  const next=level+sign;
+  // Nos pavimentos intermediários há uma entrada de descida e outra de subida.
+  // Afastar as duas extremidades permite ao jogador escolher continuar ou sair.
+  const baseX=shape==='continuous'?wx+((level===start?1:-1)*33):wx;
+  const baseY=wy;
+  const pair=createStairPair(scene,level,next,baseX,baseY,shape,material,style,shape==='continuous',shaft+'_'+count);
+  pair.origin.shaftId=shaft;pair.destination.shaftId=shaft;
+  level=next;count++;
+ }
+ updateFloorLabel();
+ logEvent('🪜 '+(shape==='continuous'?'Escada contínua':'Escada')+' '+(up?'subindo':'descendo')+' de '+floorName(start)+' até '+floorName(end)+'; ligação nos dois sentidos.');
+ return true;
+}
+function refreshStairDestinationLinks(scene){
+ ensureFloorLevels(scene);
+ for(let i=0;i<scene.floors.length;i++){
+  for(const stair of scene.floors[i].stairs){
+   if(!Number.isInteger(stair.targetFloor)||!scene.floors[stair.targetFloor]){
+    const idx=floorIndexForLevel(scene,floorLevel(scene,i)+(stair.dir==='down'?-1:1));
+    if(idx!==-1){stair.targetFloor=idx;stair.targetLevel=floorLevel(scene,idx);}
+   }
+  }
+ }
+}
+function findStairCounterpart(scene,floorIndex,stair){
+ const targetIndex=stairLinkedIndex(scene,floorIndex,stair);
+ if(targetIndex<0)return null;
+ const target=scene.floors[targetIndex];
+ const matched=(stair.linkId&&target.stairs.find(s=>s.linkId===stair.linkId&&s.dir!==stair.dir))
+  ||target.stairs.find(s=>s.dir!==stair.dir&&Math.hypot(s.x-stair.x,s.y-stair.y)<55);
+ return {index:targetIndex,stair:matched||stair};
+}
+function transferOnStair(ent,stair,automatic=false){
+ const scene=getScene();
+ const counterpart=findStairCounterpart(scene,ent.floor,stair);
+ if(!counterpart)return false;
+ const now=performance.now();
+ if(automatic && now<(ent.stairCooldown||0))return false;
+ const target=counterpart.index;
+ ent.floor=target;
+ // O personagem reaparece no patamar do lado oposto ao sentido da subida.
+ const offset=stair.dir==='up'?32:-32;
+ ent.x=counterpart.stair.x+offset;
+ ent.y=counterpart.stair.y+20;
+ ent.stairCooldown=now+1050;
+ state.currentFloor=target;updateFloorLabel();
+ if(typeof refreshGmFocus==='function')refreshGmFocus();
+ logEvent('🪜 '+ent.name+' chegou ao '+floorName(floorLevel(scene,target))+'.');
+ return true;
+}
+function tryWalkingStair(ent,dx,dy){
+ if(!ent||!dx&&!dy)return;
+ const scene=getScene(),floor=scene.floors[ent.floor];if(!floor)return;
+ const now=performance.now();
+ if(now<(ent.stairCooldown||0))return;
+ // Entrar no núcleo da escada usando movimento, sem exigir E ou marcador textual.
+ // A aproximação evita trocar de nível só por estar parado sobre a escada.
+ for(const stair of floor.stairs){
+  const d=Math.hypot(ent.x-stair.x,ent.y-stair.y);
+  if(d<19 && transferOnStair(ent,stair,true))break;
+ }
+}
