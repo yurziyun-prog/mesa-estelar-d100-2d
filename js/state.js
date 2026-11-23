@@ -385,6 +385,9 @@ function restoreState(serialized){
   migrateD100Characters();
   dragStart = null; previewRect = null; draggedObj = null;
   selectedMapObject = null; draggingEntity = null; isDragging = false;
+  if(typeof architectSelections!=='undefined')architectSelections=[];
+  if(typeof architectSelectionGesture!=='undefined')architectSelectionGesture=null;
+  if(typeof architectPropertyTarget!=='undefined')architectPropertyTarget=null;
   updateFloorLabel(); setMode(state.mode); refreshSceneSelect(); updateSelectedWallBar(); updateUI();
 }
 function undoEdit(){
