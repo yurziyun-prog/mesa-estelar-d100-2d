@@ -125,7 +125,10 @@ function stairPathBlocked(floor,stair){
 }
 function safeStairArrival(scene,targetIndex,x,y,offset,stair=null,ignoreId=null){
  const floor=scene.floors[targetIndex];
- const local=[[offset,20],[0,30],[0,-30],[-offset,20],[0,0]];
+ // 出梯位置根据目标楼层确定：下楼时抵达台阶底部，上楼时离开洞口边缘。
+ const local=stair?.dir==='up'
+   ?[[0,68],[0,60],[24,66],[-24,66],[offset,20],[0,0]]
+   :[[0,-68],[0,-60],[24,-66],[-24,-66],[offset,20],[0,0]];
  const candidates=local.map(([lx,ly])=>{
    const point=stair?stairWorld(stair,lx,ly):{x:lx,y:ly};
    return [x+point.x,y+point.y];
