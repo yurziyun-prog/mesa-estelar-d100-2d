@@ -33,6 +33,7 @@ function expandCurrentMap() {
 
 function selectTool(tool) {
   state.tool = tool;
+  if(tool!=='move'&&typeof architectSelections!=='undefined')architectSelections=[];
   if(typeof refreshArchitectProperties==='function')refreshArchitectProperties();
   document.querySelectorAll('#architectTools [data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === tool));
 }
@@ -252,6 +253,11 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
   window.activeBrushStroke=null;
   const floor = getScene().floors[state.currentFloor];
 
+  if(state.tool==='move'){
+    finishArchitectSelection(wx,wy);
+    dragStart=null;previewRect=null;draggedObj=null;
+    return;
+  }
   if (draggedObj) {
     if (draggedObj.kind === 'wallEnd' || draggedObj.kind === 'wallMove') {
       const seg = makeOrthoSegment(draggedObj.item.x1, draggedObj.item.y1, draggedObj.item.x2, draggedObj.item.y2);
