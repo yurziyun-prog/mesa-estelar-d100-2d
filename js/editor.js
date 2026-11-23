@@ -393,7 +393,7 @@ function mergeCollinearWalls(floor){
   for(let i=0;i<walls.length&&!changed;i++){
    const a=walls[i],ah=Math.abs(a.y1-a.y2)<1,av=Math.abs(a.x1-a.x2)<1;
    for(let j=i+1;j<walls.length;j++){
-    const b=walls[j];if((a.style||'normal')!==(b.style||'normal')||(a.material||'')!==(b.material||''))continue;
+    const b=walls[j];if((a.style||'normal')!==(b.style||'normal')||(a.material||'wallMasonry')!==(b.material||'wallMasonry')||(a.color||'')!==(b.color||'')||(a.width||16)!==(b.width||16)||(a.archGroupId||'')!==(b.archGroupId||''))continue;
     const bh=Math.abs(b.y1-b.y2)<1,bv=Math.abs(b.x1-b.x2)<1;
     if(ah&&bh&&Math.abs(a.y1-b.y1)<1){
      const lo=Math.min(a.x1,a.x2,b.x1,b.x2),hi=Math.max(a.x1,a.x2,b.x1,b.x2);
