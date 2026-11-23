@@ -132,6 +132,7 @@ function createInitialState() {
     buildStyle: 'normal',
     propColor:'#a35d64',
     wallWidth:16,
+    tileConfig:{material:'ceramic',pattern:'checker',size:32,color1:'#667388',color2:'#a9b7bf'},
     stairShape:'straight',
     stairMaterial:'wood',
     wallCustomColor:false,
@@ -427,6 +428,7 @@ function migrateBuildStyles(){
   if(!state.buildStyle || state.buildStyle==='downloads')state.buildStyle='normal';
   if(!state.propColor)state.propColor='#a35d64';
   if(!state.wallWidth)state.wallWidth=16;
+  if(!state.tileConfig)state.tileConfig={material:'ceramic',pattern:'checker',size:32,color1:'#667388',color2:'#a9b7bf'};
   if(!state.stairShape)state.stairShape='straight';
   if(!state.stairMaterial)state.stairMaterial='wood';
   if(!state.brush)state.brush={shape:'redondo',size:32,texture:'solida',mat:'grass'};
