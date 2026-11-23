@@ -54,7 +54,13 @@ function createStairPair(scene,fromLevel,toLevel,x,y,shape,material,style,contin
 function createArchitectStair(wx,wy){
  const scene=getScene();ensureFloorLevels(scene);
  const start=floorLevel(scene,state.currentFloor);
- const up=confirm('Neste andar, a escada SOBE?\n\nOK = SOBE\nCancelar = DESCE');
+ const answer=prompt('Esta escada SOBE ou DESCE neste andar?\nDigite: sobe / desce', 'sobe');
+ if(answer===null)return false;
+ const direction=answer.trim().toLowerCase();
+ if(!['sobe','subir','desce','descer'].includes(direction)){
+  alert('Escolha "sobe" ou "desce".');return false;
+ }
+ const up=direction==='sobe'||direction==='subir';
  const sign=up?1:-1;
  const rawShape=state.stairShape||'straight',shape=stairVisualShape(rawShape);
  let end=start+sign;
@@ -75,7 +81,7 @@ function createArchitectStair(wx,wy){
   const next=level+sign;
   // Nos pavimentos intermediários há uma entrada de descida e outra de subida.
   // Afastar as duas extremidades permite ao jogador escolher continuar ou sair.
-  const baseX=shape==='continuous'?wx+((level===start?1:-1)*33):wx;
+  const baseX=shape==='continuous'?wx+(count%2===0?36:-36):wx;
   const baseY=wy;
   const pair=createStairPair(scene,level,next,baseX,baseY,shape,material,style,shape==='continuous',shaft+'_'+count);
   pair.origin.shaftId=shaft;pair.destination.shaftId=shaft;
