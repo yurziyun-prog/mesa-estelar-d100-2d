@@ -262,6 +262,17 @@
           </div>
           <div class="library-hint">Bordas alinhadas a 32 unidades. Segure Shift durante o desenho para precisão livre.</div>
         </div>
+        <div id="roofOptions" class="hidden">
+          <div class="section-title">屋顶结构 · Cobertura</div>
+          <label class="library-hint">坡度与形状
+            <select class="ctrl" id="roofPitch" onchange="setRoofPitch(this.value)">
+              <option value="gable">双坡屋顶 / Duas águas</option>
+              <option value="hip">四坡屋顶 / Quatro águas</option>
+              <option value="flat">平屋顶 / Plano</option>
+            </select>
+          </label>
+          <p class="library-hint">屋顶独立放置在建筑上一层；屋檐不能超过支撑范围 0.75 m。</p>
+        </div>
         <div id="constructionOptions" class="hidden">
           <div class="section-title" id="constructionOptionTitle">Opções de construção</div>
           <label class="library-hint">Material
