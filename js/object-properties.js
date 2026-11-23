@@ -18,7 +18,7 @@ function editArchitectObject(ref=null){
  put('objectDialogMaterial',['wood','stone','brick','castle','masonry','metal','rust','sandstone'].includes(obj.material)?obj.material:'wood');
  put('objectDialogColor',/^#[0-9a-f]{6}$/i.test(obj.color||'')?obj.color:'#a35d64');
  put('objectDialogWidth',kind==='windows'?(obj.width||40):kind==='doors'?68:kind==='walls'?(obj.width||16):72);
- el('objectDialogWidthRow').style.display=['windows','doors','walls'].includes(kind)?'block':'none';
+ el('objectDialogWidthRow').style.display=['windows','walls'].includes(kind)?'block':'none';
  el('objectDialogColorRow').style.display='block';
  el('objectDoorOptions').style.display=kind==='doors'?'block':'none';
  if(kind==='doors'){
@@ -61,7 +61,7 @@ function saveArchitectObjectProperties(){
  const target=architectPropertyTarget,obj=getArchitectPropertyItem();if(!obj||!target)return;
  const get=id=>document.getElementById(id).value;
  const width=Number(get('objectDialogWidth'));
- if(['windows','doors','walls'].includes(target.kind)&&(!Number.isFinite(width)||width<16||width>224)){
+ if(['windows','walls'].includes(target.kind)&&(!Number.isFinite(width)||width<16||width>224)){
    alert('Largura inválida.');return;
  }
  const lock=get('objectDoorLock'),value=get('objectDoorLockValue').trim();
@@ -71,7 +71,7 @@ function saveArchitectObjectProperties(){
  beginEdit();
  const floor=getScene().floors[state.currentFloor];
  obj.style=get('objectDialogStyle');
- obj.material=get('objectDialogMaterial');
+ obj.material=target.kind==='walls'?(CONSTRUCTION_WALL_MATERIALS[get('objectDialogMaterial')]||'wallMasonry'):get('objectDialogMaterial');
  obj.color=get('objectDialogColor');
  if(target.kind==='windows'){
    const old=obj.width||40;
