@@ -32,6 +32,47 @@ function stairLinkedIndex(scene,sourceIndex,stair){
  if(Number.isInteger(stair.targetLevel))return floorIndexForLevel(scene,stair.targetLevel,false);
  return floorIndexForLevel(scene,floorLevel(scene,sourceIndex)+(stair.dir==='down'?-1:1),false);
 }
+// Geometry for the two reciprocal ends and the upper-floor void must stay together.
+function syncLinkedStairPosition(source,fromX,fromY){
+ if(!source?.linkId)return;
+ const scene=getScene(),dx=source.x-fromX,dy=source.y-fromY;
+ if(Math.abs(dx)+Math.abs(dy)<.001)return;
+ for(const floor of scene.floors){
+  for(const peer of floor.stairs||[]){
+   if(peer===source||peer.linkId!==source.linkId)continue;
+   peer.x+=dx;peer.y+=dy;
+   peer.rot=source.rot;
+  }
+  for(const opening of floor.openings||[]){
+   if(opening.stairLinkId===source.linkId){
+    opening.x+=dx;opening.y+=dy;
+   }
+  }
+  for(const hatch of floor.roofOpenings||[]){
+   if(hatch.stairLinkId===source.linkId){hatch.x+=dx;hatch.y+=dy;}
+  }
+ }
+}
+function stairOpeningRect(stair){
+ const spiral=stairVisualShape(stair.shape)==='spiral';
+ return {x:stair.x-(spiral?43:35),y:stair.y-(spiral?43:52),w:spiral?86:70,h:spiral?86:104};
+}
+function applyFallDamage(ent,levels,reason='queda'){
+ const dropped=Math.max(1,Math.abs(Number(levels)||1));
+ // One storey generally hurts but should not normally kill a healthy character.
+ // Higher falls climb non-linearly. CON offers a modest reduction.
+ const constitution=Number(ent.attrs?.CON||ent.attributes?.CON||10);
+ const reduction=Math.max(0,Math.floor((constitution-10)/4));
+ const raw=Math.round(2+3*dropped+3*Math.max(0,dropped-1)**2);
+ const damage=Math.max(1,raw-reduction);
+ if(Number.isFinite(ent.hp)){
+  ent.hp=Math.max(0,ent.hp-damage);
+  ent.fallDamageLast=damage;
+ }
+ logEvent('💥 '+ent.name+' '+reason+' ('+dropped+' 层)：'+damage+' HP 伤害'+(ent.hp===0?'，已失去行动能力':'')+'。');
+ if(typeof updateUI==='function')updateUI();
+ return damage;
+}
 // 旧版本曾自动复制楼板。保留用户保存的现有数据，不再进行此类迁移。
 function repairExistingStairLandings(scene){ensureFloorLevels(scene);}
 function hasBuiltFloorAt(floor,x,y){
@@ -352,10 +393,12 @@ function tryFallThroughStairOpening(ent,nx,ny,dx,dy){
    logEvent('⚠️ 楼板洞口下方没有安全落脚点，人物不能在这里完成坠落。');
    return true;
   }
+  const sourceFloor=ent.floor;
   ent.floor=target;ent.x=landing[0];ent.y=landing[1];
   ent.stairCooldown=performance.now()+900;
   ent.stairTransitionAt=performance.now();
   ent.fallUntil=performance.now()+430;
+  applyFallDamage(ent,Math.abs(floorLevel(scene,sourceFloor)-floorLevel(scene,target))||1);
   state.currentFloor=target;updateFloorLabel();
   if(typeof refreshGmFocus==='function')refreshGmFocus();
   logEvent('↘️ '+ent.name+' 从楼板开口跌落到了 '+floorName(floorLevel(scene,target))+'。');
