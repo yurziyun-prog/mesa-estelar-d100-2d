@@ -94,7 +94,7 @@ function setRoofPitch(pitch){
  if(!['gable','hip','flat'].includes(pitch))return;
  const obj=typeof selectedArchitectItem==='function'?selectedArchitectItem():null;
  if(obj&&isRoofMaterial(obj.mat)){
-   beginEdit();obj.roofPitch=pitch;finishEdit();
+   beginEdit();obj.roofPitch=pitch;obj.roofWalkable=pitch==='flat';finishEdit();
  }else state.roofPitch=pitch;
 }
 function setRoofHeight(value){
@@ -107,9 +107,24 @@ function setRoofHeight(value){
 function setRoofAttic(enabled){
  const obj=typeof selectedArchitectItem==='function'?selectedArchitectItem():null;
  if(obj&&isRoofMaterial(obj.mat)){
-   // 既有屋顶只更改标记；阁楼地板需要建筑师主动新建，避免偷偷改变场景。
-   beginEdit();obj.roofAttic=Boolean(enabled);finishEdit();
-   logEvent('ℹ️ 已更新阁楼选项。既有屋顶下的地板不会自动生成，请使用建筑地板工具铺设。');
+   const floor=getScene().floors[state.currentFloor];
+   beginEdit();
+   obj.roofAttic=Boolean(enabled);
+   if(!obj.roofId)obj.roofId='roof_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6);
+   const existing=floor.areas.filter(a=>a.attic&&a.atticRoofId===obj.roofId);
+   if(enabled&&!existing.length){
+     const inset=Math.min(26,Math.min(obj.w,obj.h)*.15);
+     floor.areas.splice(Math.max(0,floor.areas.indexOf(obj)),0,{
+       x:obj.x+inset,y:obj.y+inset,w:Math.max(1,obj.w-inset*2),h:Math.max(1,obj.h-inset*2),
+       mat:'wood',attic:true,atticRoofId:obj.roofId
+     });
+   }else if(!enabled){
+     for(let i=floor.areas.length-1;i>=0;i--){
+       if(floor.areas[i].attic&&floor.areas[i].atticRoofId===obj.roofId)floor.areas.splice(i,1);
+     }
+   }
+   finishEdit();
+   logEvent(enabled?'🏠 已按你的选择添加阁楼地板。':'🏠 已删除此屋顶的阁楼地板。');
  }else state.roofAttic=Boolean(enabled);
 }
 function roofPitchFor(mat,pitch){
