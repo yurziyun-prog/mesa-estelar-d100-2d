@@ -787,6 +787,7 @@ function drawProp(p) {
     ctx.save();ctx.translate(p.x,p.y);ctx.scale(p.scale,p.scale);ctx.translate(-p.x,-p.y);
     drawProp({...p,scale:1});ctx.restore();return;
   }
+  if(isPortableLadder(p)){drawPortableLadder(p);return;}
   if(isKenneyObject(p.type)){drawKenneyObject(p);return;}
   if(isKenneyRoguelikeObject(p.type)){drawKenneyRoguelikeObject(p);return;}
   if(isSleepingFurniture(p)){drawSleepingFurniture(p);return;}
