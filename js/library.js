@@ -215,6 +215,11 @@ function refreshArchitectProperties(){
  if(roofControls)roofControls.classList.toggle('hidden',!roofActive);
  const pitchSelect=document.getElementById('roofPitch');
  if(pitchSelect&&roofActive)pitchSelect.value=roofPitchFor(item?.mat||state.roofMaterial,item?.roofPitch||state.roofPitch);
+ const h=document.getElementById('roofHeight');
+ if(h&&roofActive)h.value=item?.roofHeight??state.roofHeight??2;
+ const attic=document.getElementById('roofAttic');
+ if(attic&&roofActive)attic.checked=Boolean(item?.roofAttic??state.roofAttic);
+
  const furniture=Boolean(item?.type)||item?.mat==='carpet'||(!item&&(['furniture','props'].includes(architectCategory)||(architectCategory==='furniture'&&state.material==='carpet')));
  const showColors=kind==='wall'?Boolean(state.wallCustomColor||item?.color):!kind&&furniture;
  document.getElementById('objectColorSettings')?.classList.toggle('hidden',!showColors);
