@@ -82,7 +82,7 @@ function onPaintedGround(floor, x, y) {
     if(pitch==='flat')return true;
     // 斜屋顶不充当水平楼板，仅允许显式铺设的阁楼活动区域。
     const attic=(floor.areas||[]).some(a=>a.attic&&hit(a)&&(a.atticRoofId===painted.roofId||!painted.roofId));
-    return attic;
+    return attic&&atticHeadroomAt(painted,x,y)>=1.8;
   }
   if (painted) return !['water','kenney_water','void'].includes(painted.mat);
   const b = floor.terrainBounds || floor.bounds;
