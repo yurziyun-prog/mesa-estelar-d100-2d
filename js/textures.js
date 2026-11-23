@@ -321,7 +321,7 @@ function drawArchitecturalStair(stair,overlay=false){
    ctx.strokeStyle=lit;ctx.lineWidth=2.2;ctx.beginPath();ctx.arc(0,0,45,0,2*Math.PI);ctx.stroke();
  }else if(shape==='open'){
    if(!overlay){
-     ctx.fillStyle='rgba(11,14,21,.18)';ctx.fillRect(-30,-47,60,94);
+     ctx.fillStyle='rgba(11,14,21,.10)';ctx.fillRect(-30,-47,60,94);
    }
    ctx.strokeStyle=edge;ctx.lineWidth=7;ctx.beginPath();
    ctx.moveTo(-29,-48);ctx.lineTo(-29,48);
@@ -590,11 +590,15 @@ function drawCharacterToken(ent, isBelow) {
     return;
   }
   let lift=0;
+  if(ent.stairClimb){
+    const progress=ent.stairClimbProgress||0;
+    lift=ent.stairClimb.dir==='down'?Math.max(0,20*(1-progress)):6+22*progress;
+  }
   if(ent.jumpUntil && now<ent.jumpUntil){
     const t=1-(ent.jumpUntil-now)/380;
     lift=Math.sin(Math.PI*Math.max(0,Math.min(1,t)))*21;
   }
-  const moving=ent.walkingUntil>now;
+  const moving=ent.walkingUntil>now||Boolean(ent.stairClimb);
   const stride=moving?Math.sin(now/90)*3:0;
   const hostile=ent.attitude==='Hostil';
   const isMonster=ent.role==='Monstro'||ent.role==='Fera';
