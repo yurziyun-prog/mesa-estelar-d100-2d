@@ -90,6 +90,17 @@ function placeArchitectRoof(rect){
  logEvent('🏠 已在 '+floorName(level)+' 建造屋顶。可以把屋顶当作可行走表面，混凝土屋顶可作为露台。');
  return true;
 }
+// 仅供游戏内移动碰撞使用的简化净空模型，非工程结构计算。
+// 屋檐处约 0.8 米；屋脊根据建筑师设置的高度逐渐升高。
+function atticHeadroomAt(roof,x,y){
+ const pitch=roofPitchFor(roof.mat,roof.roofPitch);
+ if(pitch==='flat')return Infinity;
+ const nx=Math.max(0,1-Math.abs(x-(roof.x+roof.w/2))/(roof.w/2||1));
+ const ny=Math.max(0,1-Math.abs(y-(roof.y+roof.h/2))/(roof.h/2||1));
+ const slope=roof.w>=roof.h?ny:nx;
+ const fraction=pitch==='hip'?Math.min(nx,ny):slope;
+ return .8+Math.max(.25,roof.roofHeight??2)*fraction;
+}
 function setRoofPitch(pitch){
  if(!['gable','hip','flat'].includes(pitch))return;
  const obj=typeof selectedArchitectItem==='function'?selectedArchitectItem():null;
