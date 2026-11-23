@@ -36,6 +36,7 @@ const ARCHITECT_LIBRARY = {
   ['stairs','🪜','Escada','tool'],
    ['roof_tile','🏠','Telhado · telhas','roof'],['roof_concrete','🏢','Cobertura · concreto / terraço','roof'],
    ['roof_metal','🏭','Telhado · metal','roof'],['roof_thatch','🌾','Telhado · palha','roof'],
+   ['skylight','🪟','天窗 / Claraboia','roofOpening'],['hatch','🚪','阁楼出口 / Alçapão','roofOpening'],
    ['bridgeWood','🌉','Ponte','bridgeVariant'],
   ['chest','🧰','Baú','tool'],['chestFuture','🧰','Baú futurista','chestVariant']
  ],
@@ -101,6 +102,7 @@ function selectArchitectLibraryItem(id,label,kind){
    state.roofPitch=id==='roof_concrete'?'flat':id==='roof_metal'?'gable':'hip';
    selectTool('roof');
  }
+ else if(kind==='roofOpening'){state.roofOpeningType=id;selectTool('roofOpening');}
  else if(kind==='character'){architectCharacterTemplate=id;selectTool('character');}
  document.getElementById('architectLibrarySelected').textContent='Selecionado: '+label+' • Clique no mapa para colocar.';
  refreshArchitectProperties();
