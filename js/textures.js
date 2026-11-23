@@ -322,16 +322,40 @@ function drawUpperStairOpening(stair){
    ctx.beginPath();ctx.rect(-w/2,-h/2,w,h);
  }
  ctx.save();ctx.clip();
- if(slab){
-   const shadow=ctx.createLinearGradient(0,-h/2,0,h/2);
-   shadow.addColorStop(0,'#09111b');shadow.addColorStop(.55,'#23303b');shadow.addColorStop(1,'#111c28');
-   ctx.fillStyle=shadow;ctx.fillRect(-w/2-2,-h/2-2,w+4,h+4);
-   // Lower treads are visible far below the opening, not above the actor.
-   ctx.fillStyle='rgba(146,164,174,.45)';
-   for(let y=-29;y<=27;y+=16)ctx.fillRect(-w/2+9,y,w-18,3);
- }else{
-   ctx.fillStyle='rgba(7,12,18,.28)';ctx.fillRect(-w/2,-h/2,w,h);
+ // 画出下层的真实结构，不用假台阶遮盖上层的人物。
+ const sc=getScene(),current=state.currentFloor;
+ const destination=stairLinkedIndex(sc,current,stair);
+ const lower=destination>=0?sc.floors[destination]:null;
+ if(lower){
+   // We are already translated and rotated into the stair's local coordinates.
+   // Temporarily return to world coordinates to draw the lower level through the opening.
+   ctx.save();ctx.rotate(-(stair.rot||0)*Math.PI/2);ctx.translate(-stair.x,-stair.y);
+   if(lower.terrainBounds&&lower.baseTerrain){
+     const b=lower.terrainBounds;
+     drawTexturedArea(b.x,b.y,b.w,b.h,lower.baseTerrain);
+   }
+   for(const area of lower.areas||[]){
+     drawTexturedArea(area.x,area.y,area.w,area.h,area.mat,area.color,area.tile,area.roofPitch,area.roofHeight);
+   }
+   for(const prop of lower.props||[]){
+     if(Math.hypot(prop.x-stair.x,prop.y-stair.y)<90)drawProp(prop);
+   }
+   for(const peer of lower.stairs||[]){
+     if(peer.linkId&&peer.linkId===stair.linkId||(!peer.linkId&&Math.hypot(peer.x-stair.x,peer.y-stair.y)<3))
+       drawArchitecturalStair(peer);
+   }
+   // People standing beneath an open staircase are visible through the gaps.
+   for(const ent of state.entities||[]){
+     if(ent.sceneId===state.activeSceneId&&ent.floor===destination&&
+        Math.hypot(ent.x-stair.x,ent.y-stair.y)<100)drawCharacterToken(ent,true);
+   }
+   // The stair's open treads should occlude some lower objects, but not upper-floor actors.
+   const lowStair=(lower.stairs||[]).find(peer=>peer.linkId&&peer.linkId===stair.linkId);
+   if(lowStair&&stairVisualShape(lowStair.shape)==='open')drawArchitecturalStair(lowStair,true);
+   ctx.restore();
  }
+ ctx.fillStyle=slab?'rgba(5,12,22,.24)':'rgba(5,12,22,.10)';
+ ctx.fillRect(-w/2,-h/2,w,h);
  ctx.restore();
  ctx.lineWidth=5;ctx.strokeStyle=slab?'#536574':'#91a3ac';ctx.stroke();
  ctx.lineWidth=2;ctx.strokeStyle='#c2d0d2';ctx.stroke();
@@ -425,6 +449,32 @@ function drawArchitecturalStair(stair,overlay=false){
  ctx.restore();
 }
 
+function drawLowerStoreyWallContinuations(sc,upperIndex){
+ const upper=sc.floors[upperIndex],level=floorLevel(sc,upperIndex);
+ const underIndex=floorIndexForLevel(sc,level-1,false);
+ if(underIndex<0)return;
+ const beneath=sc.floors[underIndex];
+ if(!beneath?.walls?.length)return;
+ // Lower walls can remain visible from upstairs as enclosing structural masonry,
+ // but lower windows and doors do not appear on the upper storey.
+ const colors={wallWood:'#906842',wallBrick:'#a56853',wallMasonry:'#a3aaac',
+   wallCastle:'#8a8b87',wallMetal:'#a5bdc9',wallRust:'#96715a',wallSandstone:'#d1b381'};
+ ctx.save();ctx.lineCap='square';ctx.lineJoin='bevel';
+ for(const wall of beneath.walls){
+   const covered=(upper.walls||[]).some(other=>
+     distToSegment(wall.x1,wall.y1,other.x1,other.y1,other.x2,other.y2)<7&&
+     distToSegment(wall.x2,wall.y2,other.x1,other.y1,other.x2,other.y2)<7);
+   if(covered)continue;
+   const color=wall.color||colors[wall.material]||'#8d9a9f';
+   ctx.strokeStyle='rgba(4,9,16,.35)';ctx.lineWidth=(wall.width||16)+8;
+   ctx.beginPath();ctx.moveTo(wall.x1+4,wall.y1+4);ctx.lineTo(wall.x2+4,wall.y2+4);ctx.stroke();
+   ctx.strokeStyle=color;ctx.lineWidth=(wall.width||16)*.85;
+   ctx.beginPath();ctx.moveTo(wall.x1,wall.y1);ctx.lineTo(wall.x2,wall.y2);ctx.stroke();
+   ctx.strokeStyle='rgba(255,255,255,.23)';ctx.lineWidth=2;
+   ctx.beginPath();ctx.moveTo(wall.x1-3,wall.y1-3);ctx.lineTo(wall.x2-3,wall.y2-3);ctx.stroke();
+ }
+ ctx.restore();
+}
 function drawFloorLayer(sc, floorIdx, isBelow) {
   const floor = sc.floors[floorIdx];
   if (!floor) return;
@@ -456,6 +506,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
   // 只将楼下的自然地形和地板作为背景，隐藏门、窗、墙、家具和人物。
   if(isBelow)return;
 
+  drawLowerStoreyWallContinuations(sc,floorIdx);
   if(typeof drawRoofOpenings==='function')drawRoofOpenings(floor);
   floor.stairs.forEach(stair=>drawArchitecturalStair(stair));
 
