@@ -99,7 +99,7 @@ function openedDoorLeaf(d){
   const swing=d.swing==='out'?1:-1;
   if(d.orient==='v'){
     const hy=d.y+side*34;
-    return {x1:d.x,y1:hy,x2:d.x+68*swing,y2:hy};
+    return {x1:d.x,y1:hy,x2:d.x-68*swing,y2:hy};
   }
   const hx=d.x+side*34;
   return {x1:hx,y1:d.y,x2:hx,y2:d.y+68*swing};
