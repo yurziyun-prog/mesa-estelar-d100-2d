@@ -17,6 +17,7 @@ function editArchitectObject(ref=null){
  put('objectDialogStyle',obj.style||'normal');
  put('objectDialogMaterial',['wood','stone','brick','castle','masonry','metal','rust','sandstone'].includes(obj.material)?obj.material:'wood');
  put('objectDialogColor',/^#[0-9a-f]{6}$/i.test(obj.color||'')?obj.color:'#a35d64');
+ el('objectDialogUseColor').checked=Boolean(obj.color);
  put('objectDialogWidth',kind==='windows'?(obj.width||40):kind==='doors'?68:kind==='walls'?(obj.width||16):72);
  el('objectDialogWidthRow').style.display=['windows','walls'].includes(kind)?'block':'none';
  el('objectDialogColorRow').style.display='block';
@@ -72,7 +73,8 @@ function saveArchitectObjectProperties(){
  const floor=getScene().floors[state.currentFloor];
  obj.style=get('objectDialogStyle');
  obj.material=target.kind==='walls'?(CONSTRUCTION_WALL_MATERIALS[get('objectDialogMaterial')]||'wallMasonry'):get('objectDialogMaterial');
- obj.color=get('objectDialogColor');
+ if(document.getElementById('objectDialogUseColor').checked)obj.color=get('objectDialogColor');
+ else delete obj.color;
  if(target.kind==='windows'){
    const old=obj.width||40;
    resizeWindowOpening(floor,obj,old,width);
