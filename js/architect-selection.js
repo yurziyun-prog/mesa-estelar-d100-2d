@@ -8,7 +8,7 @@ let architectContextPosition=null;
 const MAP_UNITS_PER_METER=32; // convenção de projeto: 32 unidades de mundo = 1 m
 function objectForSelection(ref){
  const scene=getScene(),floor=scene?.floors?.[state.currentFloor];
- return ref.kind==='entities'?state.entities[ref.index]:floor?.[ref.kind]?.[ref.index];
+ return ref.kind==='entities'?null:floor?.[ref.kind]?.[ref.index];
 }
 function selectionBoundsOne(ref){
  const obj=objectForSelection(ref);if(!obj)return null;
@@ -26,15 +26,8 @@ function architectSelectionBounds(){
  return {x,y,w:Math.max(1,x2-x),h:Math.max(1,y2-y)};
 }
 function rectContains(b,x,y){return x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h;}
-function architectSelectionHit(wx,wy){
- const hit=hitArchitectObjectAt(wx,wy);
- if(hit)return hit;
- for(let i=state.entities.length-1;i>=0;i--){
-  const e=state.entities[i];
-  if(e.sceneId===state.activeSceneId&&e.floor===state.currentFloor&&Math.hypot(e.x-wx,e.y-wy)<23)return {kind:'entities',index:i};
- }
- return null;
-}
+function architectSelectionHit(wx,wy){return hitArchitectObjectAt(wx,wy);}
+
 // Expandir componentes ligados geometricamente, preservando cada segmento e suas aberturas.
 const ARCH_CONNECT_EPS=.75;
 function architectSameWall(a,b){
@@ -68,11 +61,11 @@ function expandArchitectSelection(seed,includeManual=true){
   const ref=queue.shift(),k=key(ref);
   if(visited.has(k))continue;
   const obj=objectForSelection(ref);if(!obj)continue;
-  if(ref.kind==='entities' && (obj.sceneId!==state.activeSceneId||obj.floor!==state.currentFloor))continue;
+  if(ref.kind==='entities')continue;
   visited.add(k);result.push(ref);
   if(includeManual&&obj.archGroupId){
-   for(const kind of ['areas','walls','doors','windows','stairs','chests','props','entities']){
-    const arr=kind==='entities'?state.entities:floor[kind]||[];
+   for(const kind of ['areas','walls','doors','windows','stairs','chests','props']){
+    const arr=floor[kind]||[];
     arr.forEach((p,i)=>{if(p.archGroupId===obj.archGroupId&&!visited.has(kind+':'+i))queue.push({kind,index:i});});
    }
   }
@@ -189,10 +182,6 @@ function finishArchitectSelection(wx,wy){
      if(box&&box.x>=b.x&&box.y>=b.y&&box.x+box.w<=b.x+b.w&&box.y+box.h<=b.y+b.h)selected.push(ref);
     }
    }
-   for(let i=0;i<state.entities.length;i++){
-    const e=state.entities[i];
-    if(e.sceneId===state.activeSceneId&&e.floor===state.currentFloor&&rectContains(b,e.x,e.y))selected.push({kind:'entities',index:i});
-   }
    architectSelections=uniqueArchitectRefs(selected.flatMap(ref=>expandArchitectSelection([ref])));
   }else if(g.clickTarget)architectSelections=expandArchitectSelection([g.clickTarget]);
  }
@@ -261,11 +250,11 @@ function deleteArchitectSelection(){
  }
  const valid=[...byKind].flatMap(([kind,indices])=>
   [...indices].filter(i=>Number.isInteger(i)&&i>=0&&
-   (kind==='entities'?state.entities:floor[kind])?.[i]!==undefined).map(i=>({kind,index:i})));
+   floor[kind]?.[i]!==undefined).map(i=>({kind,index:i})));
  if(!valid.length)return false;
  beginEdit();
  for(const [kind,indices] of byKind){
-  const list=kind==='entities'?state.entities:floor[kind];
+  const list=floor[kind];
   if(!Array.isArray(list))continue;
   for(const i of [...indices].sort((a,b)=>b-a)){
    if(i>=0&&i<list.length)list.splice(i,1);
