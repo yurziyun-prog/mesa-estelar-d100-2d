@@ -292,6 +292,40 @@ function syncLinkedStair(source,key,value){
  }
 }
 
+// Material-specific, curated pairs prevent wood finishes inheriting steel-blue colors.
+const TILE_MATERIAL_PALETTES={
+ parquet:[['Carvalho claro','#b99161','#e1bf8e'],['Carvalho natural','#93613b','#b88452'],['Nogueira','#67432e','#936947'],['Madeira escura','#432c21','#6e4b35'],['Mogno','#803c30','#ab644b'],['Bambu','#a99a67','#cfbd80'],['Cerejeira','#aa7158','#d79a79'],['Madeira envelhecida','#746454','#a1917d']],
+ metal:[['Aço','#687783','#b2c2cb'],['Ferro escuro','#424a52','#79838a'],['Bronze','#816443','#bd996a'],['Cobre','#946047','#c98c61'],['Metal enferrujado','#764c3b','#b17855']],
+ marble:[['Mármore branco','#d4d3cb','#f4f1e9'],['Mármore cinza','#858a92','#c0c3c7'],['Mármore preto','#282d32','#62676b'],['Mármore verde','#456d61','#8db5a2'],['Mármore rosado','#b78f8b','#e4bfaf']],
+ masonry:[['Pedra clara','#a7a59b','#d4d0c4'],['Granito','#72777a','#a9afb0'],['Ardósia','#495563','#7c8894'],['Arenito','#aa8d69','#d0b78d'],['Pedra escura','#464745','#777a76']],
+ ceramic:[['Azul e cinza','#667388','#a9b7bf'],['Azulejo branco e azul','#e4e5dc','#537fa3'],['Terracota','#a9573c','#e6af85'],['Cerâmica verde','#698b7a','#c3d7bd'],['Preto e branco','#303238','#eeeae2'],['Amarelo colonial','#aa8544','#edcc88']],
+ decorative:[['Azul e dourado','#345477','#d7b66a'],['Vermelho e marfim','#a34443','#e7d8b4'],['Verde e creme','#518077','#dddbc3'],['Roxo e ouro','#6d4f7e','#c7a66c']]
+};
+function tilePaletteFor(material){return TILE_MATERIAL_PALETTES[material]||TILE_MATERIAL_PALETTES.ceramic;}
+function setTilePalettePreset(index){
+ const pair=tilePaletteFor(selectedTileConfig()?.material)[index];if(!pair)return;
+ const item=selectedArchitectItem();beginEdit();
+ if(item?.mat==='checker')item.tile={...state.tileConfig,...(item.tile||{}),color1:pair[1],color2:pair[2]};
+ else state.tileConfig={...state.tileConfig,color1:pair[1],color2:pair[2]};
+ finishEdit();syncTileOptions();
+}
+function updateTilePaletteUI(){
+ const t=selectedTileConfig()||state.tileConfig;
+ const swatches=document.getElementById('tileMaterialPalette');
+ if(swatches){
+  swatches.replaceChildren();
+  tilePaletteFor(t?.material).forEach(([name,c1,c2],i)=>{
+   const btn=document.createElement('button');btn.type='button';btn.className='tile-palette-option';
+   btn.title=name;btn.setAttribute('aria-label',name);
+   btn.style.background='linear-gradient(100deg,'+c1+' 50%,'+c2+' 50%)';
+   btn.classList.toggle('active',String(t.color1).toLowerCase()===c1&&String(t.color2).toLowerCase()===c2);
+   btn.onclick=()=>setTilePalettePreset(i);swatches.appendChild(btn);
+  });
+ }
+ const caption=document.getElementById('tilePaletteCaption');
+ if(caption)caption.textContent='Paleta de '+({parquet:'madeira',metal:'metal',marble:'mármore',masonry:'pedra',decorative:'decoração'}[t.material]||'cerâmica');
+ for(const id of ['tileColor1','tileColor2']){const el=document.getElementById(id);if(el){el.disabled=true;el.title='Escolha uma combinação da paleta do material.';}}
+}
 function selectedTileConfig(){
  const item=selectedArchitectItem();
  if(item?.mat==='checker')return item.tile||state.tileConfig;
@@ -303,13 +337,17 @@ function syncTileOptions(){
   const el=document.getElementById(id);if(el&&t[key]!=null)el.value=t[key];
  }
  const label=document.getElementById('tileSizeLabel');if(label)label.textContent=t.size||32;
+ updateTilePaletteUI();
 }
 function setTileOption(key,value){
  const valid=['material','pattern','size','color1','color2'];if(!valid.includes(key))return;
  if(key==='size')value=Math.min(96,Math.max(16,Number(value)||32));
  const item=selectedArchitectItem();
+ if(key==='color1'||key==='color2')return;
+ const oldConfig=selectedTileConfig()||state.tileConfig;
+ const palette=key==='material'&&value!==oldConfig.material?tilePaletteFor(value)[0]:null;
  beginEdit();
- if(item?.mat==='checker'){item.tile={...state.tileConfig,...(item.tile||{}),[key]:value};}
- else state.tileConfig={...state.tileConfig,[key]:value};
+ if(item?.mat==='checker')item.tile={...state.tileConfig,...(item.tile||{}),[key]:value,...(palette?{color1:palette[1],color2:palette[2]}:{})};
+ else state.tileConfig={...state.tileConfig,[key]:value,...(palette?{color1:palette[1],color2:palette[2]}:{})};
  finishEdit();syncTileOptions();
 }
