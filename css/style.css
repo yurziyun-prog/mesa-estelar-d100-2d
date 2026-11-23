@@ -367,3 +367,10 @@
 #objectDialogColorRow{display:flex;flex-direction:row;align-items:center;gap:10px;}
 #objectDialogColorRow input[type=color]{height:28px;width:50px;border:1px solid var(--border);border-radius:5px;}
 #architectObjectDialog{max-width:min(460px,95vw);width:420px;}
+
+/* Curated swatches keep flooring palettes physically plausible for each material. */
+.tile-material-palette{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:6px 0 12px;}
+.tile-palette-option{height:28px;border:2px solid rgba(225,237,248,.34);border-radius:5px;cursor:pointer;transition:border-color .1s,transform .1s;}
+.tile-palette-option:hover{transform:translateY(-1px);border-color:#d3dfec;}
+.tile-palette-option.active{outline:2px solid #f5c15b;outline-offset:1px;border-color:#1b2431;}
+#tileColor1:disabled,#tileColor2:disabled{opacity:.8;cursor:not-allowed;}
