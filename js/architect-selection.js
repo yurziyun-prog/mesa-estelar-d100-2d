@@ -132,6 +132,12 @@ function drawArchitectSelectionHUD(){
   ctx.setLineDash([6/state.camera.zoom,4/state.camera.zoom]);
   ctx.fillStyle='rgba(241,197,98,.08)';ctx.fillRect(b.x,b.y,b.w,b.h);
   ctx.strokeRect(b.x,b.y,b.w,b.h);ctx.setLineDash([]);
+  const measure=(b.w/MAP_UNITS_PER_METER).toFixed(1)+' × '+(b.h/MAP_UNITS_PER_METER).toFixed(1)+' m';
+  ctx.font=(12/state.camera.zoom)+'px system-ui';ctx.textAlign='left';ctx.textBaseline='bottom';
+  const tw=ctx.measureText(measure).width;
+  ctx.fillStyle='rgba(14,20,30,.9)';
+  ctx.fillRect(b.x,b.y-24/state.camera.zoom,tw+12/state.camera.zoom,21/state.camera.zoom);
+  ctx.fillStyle='#f7e4b7';ctx.fillText(measure,b.x+6/state.camera.zoom,b.y-7/state.camera.zoom);
   if(g?.mode!=='marquee'){
    const size=10/state.camera.zoom;ctx.fillStyle='#f1c562';ctx.fillRect(b.x+b.w-size/2,b.y+b.h-size/2,size,size);
   }
