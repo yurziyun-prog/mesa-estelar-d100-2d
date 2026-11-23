@@ -85,8 +85,7 @@
           <button class="btn" style="padding:2px 6px; font-size:10px;" onclick="expandCurrentMap()">+ Expandir Mapa</button>
         </div>
         <div class="tool-grid">
-          <button class="tool-btn" data-tool="select" onclick="selectTool('select')">👆 Selecionar</button>
-          <button class="tool-btn" data-tool="move" onclick="selectTool('move')">✋ Arrastar</button>
+          <button class="tool-btn" data-tool="move" onclick="selectTool('move')">👆 Selecionar / Arrastar</button>
           <button class="tool-btn" onclick="selectTool('move');document.getElementById('selectedWallBar').scrollIntoView({block:'nearest'})">📐 Alinhar</button>
           <button class="tool-btn" data-tool="erase" onclick="selectTool('erase')">🧹 Apagar</button>
           <button class="tool-btn" data-tool="brush" onclick="openArchitectLibrary('brush')">🖌️ Pincel</button>
@@ -192,7 +191,7 @@
       <canvas id="mapCanvas"></canvas>
     </div>
     <div class="status-strip" id="hudStatus">
-      Modo Arquiteto • Ctrl+Z: desfazer • Ctrl+C/V: copiar/colar • Ctrl+S: salvar • R: girar • Botão direito: Câmera
+      Modo Arquiteto • Selecionar/Arrastar: marque uma área, mova ou redimensione a seleção • Shift: borda livre • Ctrl+Z: desfazer • Botão direito: câmera
     </div>
   </div>
 
@@ -238,6 +237,31 @@
             </select>
           </label>
           <p class="library-hint">Clique e arraste para pintar. Ctrl+Z desfaz a pincelada inteira.</p>
+        </div>
+        <div id="tileOptions" class="hidden">
+          <div class="section-title">Ladrilho · acabamento e decoração</div>
+          <label class="library-hint">Material
+            <select class="ctrl" id="tileMaterial" onchange="setTileOption('material',this.value)">
+              <option value="ceramic">Cerâmica</option><option value="marble">Mármore</option>
+              <option value="masonry">Alvenaria</option><option value="metal">Metal</option>
+              <option value="parquet">Parquê de madeira</option><option value="decorative">Decorado</option>
+            </select>
+          </label>
+          <label class="library-hint">Desenho
+            <select class="ctrl" id="tilePattern" onchange="setTileOption('pattern',this.value)">
+              <option value="checker">Quadriculado</option><option value="plain">Liso</option>
+              <option value="diagonal">Diagonal</option><option value="diamond">Losangos</option>
+              <option value="rosette">Rosetas</option><option value="herringbone">Espinha de peixe</option>
+            </select>
+          </label>
+          <label class="library-hint">Tamanho do módulo: <output id="tileSizeLabel">32</output> unidades
+            <input type="range" id="tileSize" min="16" max="96" step="16" value="32" oninput="setTileOption('size',Number(this.value))" style="width:100%"/>
+          </label>
+          <div class="row" style="gap:12px;align-items:center">
+            <label class="library-hint">Cor base <input type="color" id="tileColor1" value="#667388" oninput="setTileOption('color1',this.value)"/></label>
+            <label class="library-hint">Cor secundária <input type="color" id="tileColor2" value="#a9b7bf" oninput="setTileOption('color2',this.value)"/></label>
+          </div>
+          <div class="library-hint">Bordas alinhadas a 32 unidades. Segure Shift durante o desenho para precisão livre.</div>
         </div>
         <div id="constructionOptions" class="hidden">
           <div class="section-title" id="constructionOptionTitle">Opções de construção</div>
