@@ -223,26 +223,28 @@ function render() {
   const sc = getScene();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  for (let f = 0; f <= state.currentFloor; f++) {
-    const isBelow = f < state.currentFloor;
-    const depthDiff = state.currentFloor - f;
-
+  // Renderizar conforme a altura física, não conforme o índice no array.
+  // Isso preserva os níveis antigos e permite subterrâneos anexados ao fim da lista.
+  ensureFloorLevels(sc);
+  const currentLevel=floorLevel(sc,state.currentFloor);
+  const visible=sc.floors.map((floor,i)=>({i,level:floor.level}))
+    .filter(item=>item.level<=currentLevel)
+    .sort((a,b)=>a.level-b.level);
+  for(const entry of visible){
+    const f=entry.i,isBelow=f!==state.currentFloor;
+    const depthDiff=currentLevel-entry.level;
     ctx.save();
-    ctx.translate(state.camera.x, state.camera.y);
-    ctx.scale(state.camera.zoom, state.camera.zoom);
-
-    if (isBelow) {
-      const scale = Math.pow(0.97, depthDiff);
-      ctx.scale(scale, scale);
+    ctx.translate(state.camera.x,state.camera.y);
+    ctx.scale(state.camera.zoom,state.camera.zoom);
+    if(isBelow){
+      const perspective=Math.pow(.97,depthDiff);
+      ctx.scale(perspective,perspective);
     }
-
-    drawFloorLayer(sc, f, isBelow);
-
-    if (isBelow) {
-      ctx.fillStyle = `rgba(14, 20, 32, ${Math.min(0.36, depthDiff * 0.2)})`;
-      ctx.fillRect(-2000, -2000, 6000, 6000);
+    drawFloorLayer(sc,f,isBelow);
+    if(isBelow){
+      ctx.fillStyle='rgba(14,20,32,'+Math.min(.36,depthDiff*.2)+')';
+      ctx.fillRect(-2000,-2000,6000,6000);
     }
-
     ctx.restore();
   }
 
