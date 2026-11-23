@@ -26,10 +26,9 @@ function rectContains(b,x,y){return x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h;}
 function architectSelectionHit(wx,wy){
  const hit=hitArchitectObjectAt(wx,wy);
  if(hit)return hit;
- const scene=getScene();
  for(let i=state.entities.length-1;i>=0;i--){
   const e=state.entities[i];
-  if(e.sceneId===scene.id&&e.floor===state.currentFloor&&Math.hypot(e.x-wx,e.y-wy)<23)return {kind:'entities',index:i};
+  if(e.sceneId===state.activeSceneId&&e.floor===state.currentFloor&&Math.hypot(e.x-wx,e.y-wy)<23)return {kind:'entities',index:i};
  }
  return null;
 }
