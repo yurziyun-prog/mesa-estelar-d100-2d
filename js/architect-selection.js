@@ -64,7 +64,7 @@ function expandArchitectSelection(seed,includeManual=true){
   if(ref.kind==='entities')continue;
   visited.add(k);result.push(ref);
   if(includeManual&&obj.archGroupId){
-   for(const kind of ['areas','walls','doors','windows','stairs','chests','props']){
+   for(const kind of ['areas','walls','doors','windows','stairs','chests','props','roofOpenings']){
     const arr=floor[kind]||[];
     arr.forEach((p,i)=>{if(p.archGroupId===obj.archGroupId&&!visited.has(kind+':'+i))queue.push({kind,index:i});});
    }
@@ -176,7 +176,7 @@ function finishArchitectSelection(wx,wy){
   const b={x:Math.min(g.x,wx),y:Math.min(g.y,wy),w:Math.abs(wx-g.x),h:Math.abs(wy-g.y)};
   if(b.w>3&&b.h>3){
    const floor=getScene().floors[state.currentFloor],selected=[];
-   for(const kind of ['areas','walls','doors','windows','stairs','chests','props']){
+   for(const kind of ['areas','walls','doors','windows','stairs','chests','props','roofOpenings']){
     for(let i=0;i<(floor[kind]||[]).length;i++){
      const ref={kind,index:i},box=selectionBoundsOne(ref);
      if(box&&box.x>=b.x&&box.y>=b.y&&box.x+box.w<=b.x+b.w&&box.y+box.h<=b.y+b.h)selected.push(ref);
