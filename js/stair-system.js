@@ -53,9 +53,13 @@ function warnMissingStairFloor(scene,index,x,y){
   if(typeof alert==='function')alert(msg);
  }
 }
-function safeStairArrival(scene,targetIndex,x,y,offset){
+function safeStairArrival(scene,targetIndex,x,y,offset,stair=null){
  const floor=scene.floors[targetIndex];
- const candidates=[[x+offset,y+20],[x,y+30],[x,y-30],[x-offset,y+20],[x,y]];
+ const local=[[offset,20],[0,30],[0,-30],[-offset,20],[0,0]];
+ const candidates=local.map(([lx,ly])=>{
+   const point=stair?stairWorld(stair,lx,ly):{x:lx,y:ly};
+   return [x+point.x,y+point.y];
+ });
  const selected=candidates.find(([px,py])=>canMoveTo(targetIndex,px,py));
  if(selected)return selected;
  // 无楼板时，人物站在梯子顶部，不会凭空创建整块地板。
@@ -160,7 +164,7 @@ function transferOnStair(ent,stair,automatic=false){
  // 目的地可以是尚未铺楼板的空层。
  ent.floor=target;
  const offset=stair.dir==='up'?32:-32;
- const landing=safeStairArrival(scene,target,counterpart.stair.x,counterpart.stair.y,offset);
+ const landing=safeStairArrival(scene,target,counterpart.stair.x,counterpart.stair.y,offset,counterpart.stair);
  if(!landing){
    ent.floor=originFloor;
    logEvent('⚠️ A saída da escada está bloqueada; libere o patamar no andar de destino.');
@@ -229,7 +233,6 @@ function advanceStairClimb(ent){
  const progress=Math.max(0,Math.min(1,(performance.now()-climb.start)/climb.duration));
  const eased=progress*progress*(3-2*progress);
  // 动画期间保持当前楼层，人物在台阶上逐渐向上（或向下）移动。
- ent.x=climb.fromX+(stair.x-climb.fromX)*eased;
  const endpoint=stairWorld(stair,0,climb.dir==='down'?31:-31);
  ent.y=climb.fromY+(stair.y+endpoint.y-climb.fromY)*eased;
  ent.x=climb.fromX+(stair.x+endpoint.x-climb.fromX)*eased;
