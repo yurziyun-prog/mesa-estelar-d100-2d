@@ -398,6 +398,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
   // 只将楼下的自然地形和地板作为背景，隐藏门、窗、墙、家具和人物。
   if(isBelow)return;
 
+  if(typeof drawRoofOpenings==='function')drawRoofOpenings(floor);
   floor.stairs.forEach(stair=>drawArchitecturalStair(stair));
 
   // Paredes contínuas por material e espessura. Colisões usam a mesma largura.
