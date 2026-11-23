@@ -168,3 +168,37 @@ function drawArchitectMapGuides(){
  ctx.font='10px system-ui';ctx.fillStyle='#b8c8d4';ctx.fillText('32 unid. = 1 m (escala de projeto)',bx,by+18);
  ctx.restore();
 }
+
+function deleteArchitectSelection(){
+ if(state.mode!=='architect')return false;
+ const refs=architectSelections.length?architectSelections.slice():
+   (selectedMapObject?[selectedMapObject]:[]);
+ if(!refs.length)return false;
+ const floor=getScene().floors[state.currentFloor];
+ const byKind=new Map();
+ for(const ref of refs){
+  if(!byKind.has(ref.kind))byKind.set(ref.kind,new Set());
+  byKind.get(ref.kind).add(ref.index);
+ }
+ const valid=[...byKind].flatMap(([kind,indices])=>
+  [...indices].filter(i=>Number.isInteger(i)&&i>=0&&
+   (kind==='entities'?state.entities:floor[kind])?.[i]!==undefined).map(i=>({kind,index:i})));
+ if(!valid.length)return false;
+ beginEdit();
+ for(const [kind,indices] of byKind){
+  const list=kind==='entities'?state.entities:floor[kind];
+  if(!Array.isArray(list))continue;
+  for(const i of [...indices].sort((a,b)=>b-a)){
+   if(i>=0&&i<list.length)list.splice(i,1);
+  }
+ }
+ architectSelections=[];
+ architectSelectionGesture=null;
+ selectedMapObject=null;
+ state.selectedWallIdx=null;
+ updateArchitectSelectionUI();
+ finishEdit();
+ if(typeof updateUI==='function')updateUI();
+ logEvent('🗑️ '+valid.length+' item(ns) removido(s). Ctrl+Z para desfazer.');
+ return true;
+}
