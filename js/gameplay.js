@@ -1,6 +1,22 @@
 let gmControlledId=null,gmPreviewId=null;
 function getGmControlledEntity(){return gmControlledId?state.entities.find(e=>e.id===gmControlledId&&e.sceneId===state.activeSceneId&&e.floor===state.currentFloor):null;}
 function activeActor(){return state.mode==='gm'?getGmControlledEntity():state.mode==='player'?getSelectedEntity():null;}
+function gmRemoveEntityFromScene(){
+ if(state.mode!=='gm')return false;
+ const ent=state.entities.find(e=>e.id===(gmPreviewId||gmControlledId||state.selectedEntityId)
+  &&e.sceneId===state.activeSceneId&&e.floor===state.currentFloor);
+ if(!ent)return false;
+ beginEdit();
+ // 保留角色及其人物卡，只从当前场景移走，方便主持人下次重新放置。
+ ent.sceneId=null;ent.floor=-999;
+ gmControlledId=null;gmPreviewId=null;
+ if(state.selectedEntityId===ent.id)state.selectedEntityId=null;
+ finishEdit();
+ if(typeof renderGmPullList==='function')renderGmPullList();
+ refreshGmFocus();updateUI();
+ logEvent('📤 '+ent.name+' 已从场景移除（人物卡保留）。Ctrl+Z 可撤销。');
+ return true;
+}
 function gmActors(){return state.entities.filter(e=>e.sceneId===state.activeSceneId&&e.floor===state.currentFloor);}
 function gmCycle(){
  const actors=gmActors();if(!actors.length){logEvent('Sem personagens neste andar.');return;}
