@@ -98,6 +98,7 @@ function drawCustomTileFinish(x,y,w,h,settings){
  }
 }
 function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null) {
+  if(isRoofMaterial(mat)){drawRoofSurface(x,y,w,h,mat);return;}
   if(mat==='kenney_water')mat='water';
   if(mat==='kenney_wood')mat='wood';
   if(isDownloadedMaterial(mat)){drawDownloadedMaterial(x,y,w,h,mat);return;}
