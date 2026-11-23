@@ -306,7 +306,7 @@ function renderGmPullList() {
     });
     const name=document.createElement('span');name.textContent=(ent.icon||'🎭')+' '+ent.name;
     const where=document.createElement('span');where.style='margin-left:auto;font-size:10px;color:var(--text-muted)';
-    where.textContent=here?'Aqui':state.scenes[ent.sceneId]?.name||'Outro';
+    where.textContent=here?'Aqui':ent.sceneId==null?'Reserva':state.scenes[ent.sceneId]?.name||'Outro';
     label.append(input,name,where);box.append(label);
   }
 }
