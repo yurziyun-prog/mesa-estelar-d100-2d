@@ -77,7 +77,9 @@ function stairPathBlocked(floor,stair){
    const v=stairWorld(stair,lx,ly),x=stair.x+v.x,y=stair.y+v.y;
    return (floor.walls||[]).some(w=>distToSegment(x,y,w.x1,w.y1,w.x2,w.y2)<13+(w.width||16)/2)
       ||(floor.doors||[]).some(d=>!d.open&&Math.hypot(d.x-x,d.y-y)<24)
-      ||(floor.windows||[]).some(win=>Math.hypot(win.x-x,win.y-y)<18);
+      ||(floor.windows||[]).some(win=>Math.hypot(win.x-x,win.y-y)<18)
+      ||(floor.roofOpenings||[]).some(o=>o.type==='skylight'
+        &&Math.abs(x-o.x)<o.w/2+8&&Math.abs(y-o.y)<o.h/2+8);
  });
 }
 function safeStairArrival(scene,targetIndex,x,y,offset,stair=null,ignoreId=null){
