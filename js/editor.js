@@ -185,93 +185,16 @@ function applyArchitectAction(wx, wy, isDrag = false) {
     if(!last||Math.hypot(last.x-wx,last.y-wy)>=Math.max(3,stroke.size/6))stroke.points.push({x:wx,y:wy});
     return;
   }
-  if(state.tool==='select'){
-    if(isDrag)return;
-    selectedMapObject=hitArchitectObjectAt(wx,wy);
-    state.selectedWallIdx=selectedMapObject?.kind==='walls'?selectedMapObject.index:null;
-    updateSelectedWallBar();onArchitectSelectionChange();
-    document.getElementById('architectLibrarySelected').textContent=selectedMapObject?
-      'Selecionado: '+selectedMapObject.kind+'. Edite suas propriedades acima.':'Nenhum objeto selecionado.';
-    return;
-  }
-  if (state.tool === 'move') {
-    if (!isDrag) {
-      selectedMapObject = null;
-      // Verifica parede primeiro (extremidade ou corpo)
-      for (let i = 0; i < floor.walls.length; i++) {
-        const w = floor.walls[i];
-        if (Math.hypot(wx - w.x1, wy - w.y1) < 16) {
-          state.selectedWallIdx = i;
-          selectedMapObject = { kind: 'walls', index: i };
-          updateSelectedWallBar();onArchitectSelectionChange();
-          draggedObj = { kind: 'wallEnd', item: w, end: 1 };
-          return;
-        }
-        if (Math.hypot(wx - w.x2, wy - w.y2) < 16) {
-          state.selectedWallIdx = i;
-          updateSelectedWallBar();
-          selectedMapObject = { kind: 'walls', index: i };
-          onArchitectSelectionChange();draggedObj = { kind: 'wallEnd', item: w, end: 2 };
-          return;
-        }
-        if (distToSegment(wx, wy, w.x1, w.y1, w.x2, w.y2) < 12) {
-          state.selectedWallIdx = i;
-          updateSelectedWallBar();
-          selectedMapObject = { kind: 'walls', index: i };
-          draggedObj = { kind: 'wallMove', item: w, lastX: wx, lastY: wy };
-          onArchitectSelectionChange();
-          return;
-        }
-      }
-
-      // Verifica props, portas, janelas, baús, escadas
-      const lists = [
-        { kind: 'props', arr: floor.props },
-        { kind: 'doors', arr: floor.doors },
-        { kind: 'windows', arr: floor.windows },
-        { kind: 'chests', arr: floor.chests },
-        { kind: 'stairs', arr: floor.stairs }
-      ];
-      for (const entry of lists) {
-        const found = entry.arr.find(it => Math.hypot(it.x - wx, it.y - wy) < 28);
-        if (found) {
-          selectedMapObject = { kind: entry.kind, index: entry.arr.indexOf(found) };
-          draggedObj = { kind: 'point', item: found };
-          onArchitectSelectionChange();
-          return;
-        }
-      }
-      const idx = [...floor.areas].map((a, i) => ({a, i})).reverse().find(({a}) => wx >= a.x && wx <= a.x + a.w && wy >= a.y && wy <= a.y + a.h)?.i;
-      if (idx !== undefined) selectedMapObject = {kind:'areas',index:idx};
-      state.selectedWallIdx = null;
-      updateSelectedWallBar();
-    } else if (draggedObj) {
-      if (draggedObj.kind === 'point') {
-        draggedObj.item.x = wx;
-        draggedObj.item.y = wy;
-      } else if (draggedObj.kind === 'wallEnd') {
-        if (draggedObj.end === 1) { draggedObj.item.x1 = wx; draggedObj.item.y1 = wy; }
-        else { draggedObj.item.x2 = wx; draggedObj.item.y2 = wy; }
-      } else if (draggedObj.kind === 'wallMove') {
-        const dx = wx - draggedObj.lastX;
-        const dy = wy - draggedObj.lastY;
-        draggedObj.item.x1 += dx; draggedObj.item.y1 += dy;
-        draggedObj.item.x2 += dx; draggedObj.item.y2 += dy;
-        draggedObj.lastX = wx; draggedObj.lastY = wy;
-      }
-    }
-    return;
-  }
+  if(state.tool==='move'){handleArchitectSelection(wx,wy,isDrag);return;}
 
   if (state.tool === 'floor') {
-    if (!dragStart) dragStart = { x: snapCoord(wx), y: snapCoord(wy) };
-    const ex = snapCoord(wx), ey = snapCoord(wy);
-    previewRect = {
-      x: Math.min(dragStart.x, ex),
-      y: Math.min(dragStart.y, ey),
-      w: Math.max(32, Math.abs(ex - dragStart.x)),
-      h: Math.max(32, Math.abs(ey - dragStart.y)),
-      mat: state.material
+    if (!dragStart)dragStart={x:architectShiftHeld?wx:snapCoord(wx,32),y:architectShiftHeld?wy:snapCoord(wy,32)};
+    const ex=architectShiftHeld?wx:snapCoord(wx,32),ey=architectShiftHeld?wy:snapCoord(wy,32);
+    previewRect={
+      x:Math.min(dragStart.x,ex),y:Math.min(dragStart.y,ey),
+      w:Math.max(architectShiftHeld?1:32,Math.abs(ex-dragStart.x)),
+      h:Math.max(architectShiftHeld?1:32,Math.abs(ey-dragStart.y)),
+      mat:state.material,tile:structuredClone(state.tileConfig||{})
     };
   } else if (state.tool === 'wall') {
     if (!dragStart) dragStart = { x: snapCoord(wx), y: snapCoord(wy) };
@@ -342,12 +265,13 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
   }
 
   if (state.tool === 'floor' && dragStart) {
-    const ex = snapCoord(wx), ey = snapCoord(wy);
-    const x = Math.min(dragStart.x, ex);
-    const y = Math.min(dragStart.y, ey);
-    const w = Math.max(32, Math.abs(ex - dragStart.x));
-    const h = Math.max(32, Math.abs(ey - dragStart.y));
-    floor.areas.push({ x, y, w, h, mat: state.material, ...(state.material==='carpet'?{color:state.propColor}:{}) });
+    const ex=shiftHeld?wx:snapCoord(wx,32),ey=shiftHeld?wy:snapCoord(wy,32);
+    const x=Math.min(dragStart.x,ex),y=Math.min(dragStart.y,ey);
+    const w=Math.max(shiftHeld?1:32,Math.abs(ex-dragStart.x));
+    const h=Math.max(shiftHeld?1:32,Math.abs(ey-dragStart.y));
+    floor.areas.push({x,y,w,h,mat:state.material,
+       ...(state.material==='checker'?{tile:structuredClone(state.tileConfig||{})}:{}),
+       ...(state.material==='carpet'?{color:state.propColor}:{})});
     selectedMapObject = {kind:'areas', index:floor.areas.length - 1};
   } else if (state.tool === 'wall' && dragStart && Math.hypot(wx - dragStart.x, wy - dragStart.y) > 12) {
     const seg = makeOrthoSegment(dragStart.x, dragStart.y, wx, wy);
