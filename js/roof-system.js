@@ -20,11 +20,42 @@ function roofSupportingBounds(floor){
  const right=Math.max(...pieces.map(p=>p.x+p.w)),bottom=Math.max(...pieces.map(p=>p.y+p.h));
  return {x,y,w:right-x,h:bottom-y};
 }
+function roofHasStructuralSupport(floor,rect){
+ const ov=ROOF_OVERHANG+2;
+ const corners=[[rect.x,rect.y],[rect.x+rect.w,rect.y],[rect.x,rect.y+rect.h],[rect.x+rect.w,rect.y+rect.h]];
+ const structural=(floor.areas||[]).filter(a=>!isRoofMaterial(a.mat)&&!['grass','sand','dirt','snow','water','kenney_water','void','cave','mud','carpet'].includes(a.mat));
+ // 楼板必须支撑整个屋顶轮廓，避免悬空的 L 形角落。
+ if(structural.length&&corners.every(([x,y])=>structural.some(a=>pointInArchitectArea(a,x,y,ov))))return true;
+ // 无楼板时，四面墙必须形成近似封闭的矩形。
+ const walls=floor.walls||[];
+ if(walls.length<4)return false;
+ const checks=[
+  {horizontal:true,coord:rect.y,a:rect.x,b:rect.x+rect.w},
+  {horizontal:true,coord:rect.y+rect.h,a:rect.x,b:rect.x+rect.w},
+  {horizontal:false,coord:rect.x,a:rect.y,b:rect.y+rect.h},
+  {horizontal:false,coord:rect.x+rect.w,a:rect.y,b:rect.y+rect.h}
+ ];
+ return checks.every(side=>{
+  const candidates=walls.filter(w=>{
+   const horizontal=Math.abs(w.y2-w.y1)<1,vertical=Math.abs(w.x2-w.x1)<1;
+   return side.horizontal?horizontal&&Math.abs(w.y1-side.coord)<=ov:vertical&&Math.abs(w.x1-side.coord)<=ov;
+  });
+  // 检查边界的四个采样点，拒绝明显断开的墙。
+  return [0.1,0.35,0.65,0.9].every(t=>{
+   const pos=side.a+(side.b-side.a)*t;
+   return candidates.some(w=>{
+     const start=side.horizontal?Math.min(w.x1,w.x2):Math.min(w.y1,w.y2);
+     const end=side.horizontal?Math.max(w.x1,w.x2):Math.max(w.y1,w.y2);
+     return pos>=start-ov&&pos<=end+ov;
+   });
+  });
+ });
+}
 function findRoofSupport(scene,rect){
  ensureFloorLevels(scene);
  const cx=rect.x+rect.w/2,cy=rect.y+rect.h/2;
  const candidates=scene.floors.map((floor,i)=>({floor,i,level:floor.level,bounds:roofSupportingBounds(floor)}))
-   .filter(p=>p.bounds&&pointInArchitectArea(p.bounds,cx,cy,ROOF_OVERHANG))
+   .filter(p=>p.bounds&&pointInArchitectArea(p.bounds,cx,cy,ROOF_OVERHANG)&&roofHasStructuralSupport(p.floor,rect))
    .sort((a,b)=>b.level-a.level);
  return candidates[0]||null;
 }
@@ -41,13 +72,23 @@ function placeArchitectRoof(rect){
  }
  const level=support.level+1,target=floorIndexForLevel(scene,level,true,{x:rect.x,y:rect.y});
  const floor=scene.floors[target];
- floor.areas.push({...rect,mat:state.roofMaterial||'roof_tile',roof:true,
+ const mat=state.roofMaterial||'roof_tile';
+ const pitch=state.roofPitch||(mat==='roof_concrete'?'flat':'gable');
+ floor.areas.push({...rect,mat,roof:true,roofPitch:pitch,
    supportLevel:support.level,roofWalkable:true});
  state.currentFloor=target;updateFloorLabel();
  logEvent('🏠 已在 '+floorName(level)+' 建造屋顶。可以把屋顶当作可行走表面，混凝土屋顶可作为露台。');
  return true;
 }
-function drawRoofSurface(x,y,w,h,mat){
+function setRoofPitch(pitch){
+ if(!['gable','hip','flat'].includes(pitch))return;
+ state.roofPitch=pitch;
+}
+function roofPitchFor(mat,pitch){
+ if(['gable','hip','flat'].includes(pitch))return pitch;
+ return mat==='roof_concrete'?'flat':'gable';
+}
+function drawRoofSurface(x,y,w,h,mat,pitchValue=null){
  ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
  const palettes={
   roof_tile:['#9a493e','#c06d54','#5d3431'],
@@ -86,8 +127,46 @@ function drawRoofSurface(x,y,w,h,mat){
     ctx.beginPath();ctx.moveTo(xx,yy+2);ctx.lineTo(xx+17,yy+7);ctx.stroke();
    }
  }
+ const pitch=roofPitchFor(mat,pitchValue);
+ if(pitch!=='flat'){
+  // 从上往下观察的屋面：屋脊是高点，两侧明暗形成坡度。
+  const across=w>=h;
+  const gradient=across?ctx.createLinearGradient(0,y,0,y+h):ctx.createLinearGradient(x,0,x+w,0);
+  gradient.addColorStop(0,'rgba(245,238,218,.40)');
+  gradient.addColorStop(.47,'rgba(255,255,255,.10)');
+  gradient.addColorStop(.53,'rgba(12,17,22,.28)');
+  gradient.addColorStop(1,'rgba(0,0,0,.45)');
+  ctx.fillStyle=gradient;ctx.fillRect(x,y,w,h);
+  ctx.strokeStyle='rgba(247,222,174,.76)';ctx.lineWidth=3;
+  ctx.beginPath();
+  if(across){ctx.moveTo(x+5,y+h/2);ctx.lineTo(x+w-5,y+h/2);}
+  else{ctx.moveTo(x+w/2,y+5);ctx.lineTo(x+w/2,y+h-5);}
+  ctx.stroke();
+  if(pitch==='hip'){
+   ctx.strokeStyle='rgba(51,39,36,.56)';ctx.lineWidth=2;
+   ctx.beginPath();
+   if(across){
+     const ridge=Math.min(w*.2,h*.5);
+     ctx.moveTo(x,y);ctx.lineTo(x+ridge,y+h/2);ctx.lineTo(x,y+h);
+     ctx.moveTo(x+w,y);ctx.lineTo(x+w-ridge,y+h/2);ctx.lineTo(x+w,y+h);
+   }else{
+     const ridge=Math.min(h*.2,w*.5);
+     ctx.moveTo(x,y);ctx.lineTo(x+w/2,y+ridge);ctx.lineTo(x+w,y);
+     ctx.moveTo(x,y+h);ctx.lineTo(x+w/2,y+h-ridge);ctx.lineTo(x+w,y+h);
+   }
+   ctx.stroke();
+  }
+  ctx.fillStyle='rgba(0,0,0,.18)';
+  ctx.fillRect(x+2,y+h-8,w-4,6);
+ }
  ctx.strokeStyle='rgba(0,0,0,.45)';ctx.lineWidth=6;ctx.strokeRect(x+2,y+2,w-4,h-4);
  ctx.restore();
+}
+// 每次切换室内外平滑过渡，不修改场景数据。
+const roofFadeLevels=new Map();
+function roofCoverageAtActor(area,actor){
+ const margin=Math.min(12,Math.max(1,Math.min(area.w,area.h)/5));
+ return pointInArchitectArea(area,actor.x,actor.y,-margin);
 }
 function drawExternalBuildingTop(){
  if(state.mode==='architect')return;
@@ -95,7 +174,6 @@ function drawExternalBuildingTop(){
  const scene=getScene(),current=floorLevel(scene,actor.floor);
  const higher=scene.floors.filter(f=>f.level>current).sort((a,b)=>a.level-b.level);
  if(!higher.length)return;
- // 从室外看建筑的最上方：有屋顶画屋顶，否则显示最高层现有的楼板。
  const candidates=[];
  for(const floor of higher)for(const area of floor.areas||[]){
   if(['water','void','kenney_water'].includes(area.mat))continue;
@@ -105,10 +183,21 @@ function drawExternalBuildingTop(){
  const highest=Math.max(...candidates.map(e=>e.level));
  const top=candidates.filter(e=>e.level===highest);
  ctx.save();ctx.translate(state.camera.x,state.camera.y);ctx.scale(state.camera.zoom,state.camera.zoom);
- for(const {area} of top){
-  if(pointInArchitectArea(area,actor.x,actor.y,0))continue; // 角色在室内：切开屋顶以展示内部
-  if(isRoofMaterial(area.mat))drawRoofSurface(area.x,area.y,area.w,area.h,area.mat);
+ for(const {area,level} of top){
+  const key=state.activeSceneId+':'+level+':'+area.x+':'+area.y+':'+area.w+':'+area.h;
+  const indoor=roofCoverageAtActor(area,actor);
+  const now=performance.now();
+  let fade=roofFadeLevels.get(key);
+  if(!fade)fade={alpha:indoor?0:1,time:now};
+  const elapsed=Math.min(.12,Math.max(0,(now-fade.time)/1000));
+  fade.time=now;
+  fade.alpha+=((indoor?0:1)-fade.alpha)*Math.min(1,elapsed*7);
+  roofFadeLevels.set(key,fade);
+  if(fade.alpha<.015)continue;
+  ctx.save();ctx.globalAlpha=fade.alpha;
+  if(isRoofMaterial(area.mat))drawRoofSurface(area.x,area.y,area.w,area.h,area.mat,area.roofPitch);
   else drawTexturedArea(area.x,area.y,area.w,area.h,area.mat,area.color,area.tile);
+  ctx.restore();
  }
  ctx.restore();
 }
