@@ -204,6 +204,9 @@ function refreshArchitectProperties(){
  const furniture=Boolean(item?.type)||item?.mat==='carpet'||(!item&&(['furniture','props'].includes(architectCategory)||(architectCategory==='terrain'&&state.material==='carpet')));
  const showColors=kind==='wall'?Boolean(state.wallCustomColor||item?.color):!kind&&furniture;
  document.getElementById('objectColorSettings')?.classList.toggle('hidden',!showColors);
+ const tileSelected=(selectedMapObject?.kind==='areas'&&item?.mat==='checker')||(architectCategory==='terrain'&&state.material==='checker'&&!item);
+ document.getElementById('tileOptions')?.classList.toggle('hidden',!tileSelected);
+ if(tileSelected)syncTileOptions();
  document.getElementById('constructionOptions')?.classList.toggle('hidden',!kind);
  document.getElementById('wallThicknessOptions')?.classList.toggle('hidden',kind!=='wall');
  document.getElementById('stairShapeOptions')?.classList.toggle('hidden',kind!=='stairs');
@@ -266,4 +269,26 @@ function syncLinkedStair(source,key,value){
    if(Math.hypot(stair.x-source.x,stair.y-source.y)<2 && stair.dir!==source.dir)stair[key]=value;
   }
  }
+}
+
+function selectedTileConfig(){
+ const item=selectedArchitectItem();
+ if(item?.mat==='checker')return item.tile||state.tileConfig;
+ return state.tileConfig;
+}
+function syncTileOptions(){
+ const t=selectedTileConfig()||{material:'ceramic',pattern:'checker',size:32,color1:'#667388',color2:'#a9b7bf'};
+ for(const [id,key] of [['tileMaterial','material'],['tilePattern','pattern'],['tileSize','size'],['tileColor1','color1'],['tileColor2','color2']]){
+  const el=document.getElementById(id);if(el&&t[key]!=null)el.value=t[key];
+ }
+ const label=document.getElementById('tileSizeLabel');if(label)label.textContent=t.size||32;
+}
+function setTileOption(key,value){
+ const valid=['material','pattern','size','color1','color2'];if(!valid.includes(key))return;
+ if(key==='size')value=Math.min(96,Math.max(16,Number(value)||32));
+ const item=selectedArchitectItem();
+ beginEdit();
+ if(item?.mat==='checker'){item.tile={...state.tileConfig,...(item.tile||{}),[key]:value};}
+ else state.tileConfig={...state.tileConfig,[key]:value};
+ finishEdit();syncTileOptions();
 }
