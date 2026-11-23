@@ -217,7 +217,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
     if (!isDrag) placeArchitectCharacter(wx,wy);
   } else if (state.tool === 'prop') {
     if (!isDrag) {
-      floor.props.push({ x: wx, y: wy, type: state.propType, rot: state.rotation, color:state.propColor, style: state.propType.startsWith('kenney_')?'downloads':state.buildStyle });
+      floor.props.push({ x: wx, y: wy, type: state.propType, rot: state.rotation, color:state.propColor, style: state.propType.startsWith('kenney_')?'downloads':state.buildStyle,...(isPortableLadder({type:state.propType})?{ladderState:state.propType==='foldingLadder'?'folded':'lying',material:'wood'}:{}) });
       selectedMapObject={kind:'props',index:floor.props.length-1};onArchitectSelectionChange();
     }
   } else if (state.tool === 'chest') {
