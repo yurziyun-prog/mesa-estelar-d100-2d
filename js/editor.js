@@ -201,14 +201,20 @@ function applyArchitectAction(wx, wy, isDrag = false) {
     }
   } else if (state.tool === 'window') {
     if (!isDrag) {
-      const carved = carveOpeningOnWalls(floor, wx, wy, 22);
-      floor.windows.push({ x: carved.x, y: carved.y, orient: carved.orient, style: state.buildStyle,material:state.constructionMaterial||'wood' });
+      const width=state.windowWidth||72;
+      const carved=carveOpeningOnWalls(floor,wx,wy,width/2+2);
+      floor.windows.push({x:carved.x,y:carved.y,orient:carved.orient,width,
+        style:state.buildStyle,material:state.constructionMaterial||'wood'});
+      finishEdit();
     }
   } else if (state.tool === 'door') {
     if (!isDrag) {
       const carved = carveOpeningOnWalls(floor, wx, wy, 34);
-      const door = { x: carved.x, y: carved.y, open: false, keyId: '', orient: carved.orient, material:state.constructionMaterial||'wood', style: state.doorVariant==='doorFuture'?'futurist':state.doorVariant==='doorArabia'?'arabia':state.buildStyle };
+      const door={x:carved.x,y:carved.y,open:false,keyId:'',orient:carved.orient,
+        mechanism:'hinged',hingeSide:'left',swing:'in',lockType:'none',
+        material:state.constructionMaterial||'wood',style:state.buildStyle};
       floor.doors.push(door);
+      finishEdit();
       openLockDialog(door, 'door');
     }
   } else if (state.tool === 'stairs') {
@@ -225,6 +231,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
       const loot = document.getElementById('chestLootInput').value.split(',').map(s => s.trim()).filter(Boolean);
       const chest={ x: wx, y: wy, opened: false, keyId:'', loot, material:state.constructionMaterial||'wood', style: state.chestVariant==='chestFuture'?'futurist':state.buildStyle };
       floor.chests.push(chest);
+      finishEdit();
       openLockDialog(chest, 'chest');
     }
   } else if (state.tool === 'erase') {
@@ -321,11 +328,11 @@ function openLockDialog(item,kind){
   pendingLockItem={item,kind,sceneId:state.activeSceneId,floor:state.currentFloor};
   const d=document.getElementById('lockDialog');
   document.getElementById('lockDialogTitle').textContent=kind==='door'?'Configurar porta':'Configurar baú';
-  document.getElementById('lockDialogHint').textContent=item.style==='futurist'
-    ? 'Porta/baú futurista: código opcional, sem chave física.'
-    : 'Porta/baú Normal ou Arábia: tranca opcional, com chave física.';
-  document.getElementById('lockEnabled').checked=false;
-  document.getElementById('lockValue').value='';
+  document.getElementById('lockDialogHint').textContent='Chave física ou código, independentemente do estilo arquitetônico.';
+  document.getElementById('lockEnabled').checked=Boolean(item.keyId||item.lockCode);
+  document.getElementById('lockValue').value=item.lockCode||item.keyLabel||'';
+  const mode=document.getElementById('lockMode');
+  if(mode)mode.value=item.lockCode?'code':item.keyId?'key':'none';
   const dest=document.getElementById('lockDestination');
   dest.replaceChildren();
   const option=document.createElement('option');option.value='map';option.textContent='🗺️ Posicionar no mapa';dest.append(option);
@@ -337,7 +344,7 @@ function openLockDialog(item,kind){
 }
 function updateLockForm(){
   const on=document.getElementById('lockEnabled').checked;
-  const retro=pendingLockItem?.item.style==='futurist';
+  const retro=document.getElementById('lockMode')?.value==='code';
   document.getElementById('lockOptions').classList.toggle('hidden',!on);
   document.getElementById('keyDestinationBox').classList.toggle('hidden',retro);
   document.getElementById('lockCodeLabel').textContent=retro?'Código de acesso':'Nome da chave';
@@ -347,13 +354,15 @@ function saveLockDialog(confirmLock){
   if(!pendingLockItem)return;
   const {item}=pendingLockItem;
   const on=confirmLock&&document.getElementById('lockEnabled').checked;
-  const retro=item.style==='futurist';
+  const mode=document.getElementById('lockMode')?.value||'none';
+  const retro=mode==='code';
+  beginEdit();
   const value=document.getElementById('lockValue').value.trim();
-  if(!on || !value){item.keyId='';delete item.lockCode;}
-  else if(retro){item.lockCode=value;item.keyId='';}
+  if(!on || mode==='none' || !value){item.keyId='';item.lockType='none';delete item.lockCode;}
+  else if(retro){item.lockCode=value;item.keyId='';item.lockType='code';}
   else{
     const key='chave_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
-    item.keyId=key;delete item.lockCode;
+    item.keyId=key;item.keyLabel=value;item.lockType='key';delete item.lockCode;
     const destination=document.getElementById('lockDestination').value;
     const ent=state.entities.find(e=>e.id===destination);
     if(ent){ent.inventory.push(key);updateUI();logEvent('🔑 '+value+' adicionada ao inventário de '+ent.name+'.');}
@@ -361,6 +370,7 @@ function saveLockDialog(confirmLock){
   }
   document.getElementById('lockDialog').close();
   pendingLockItem=null;
+  finishEdit();
   saveBank();
 }
 function placePendingKey(wx,wy){
