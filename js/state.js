@@ -191,7 +191,7 @@ function init() {
   state = saved ? JSON.parse(saved) : createInitialState();
   migrateFixedTerrain();
   migrateBuildStyles();
-  for(const scene of Object.values(state.scenes||{}))refreshStairDestinationLinks(scene);
+  for(const scene of Object.values(state.scenes||{})){refreshStairDestinationLinks(scene);repairExistingStairLandings(scene);}
   migrateModeScenes();
   migrateD100Characters();
   resizeCanvas();
@@ -372,7 +372,7 @@ function importJSON(e) {
       state = JSON.parse(ev.target.result);
       migrateFixedTerrain();
       migrateBuildStyles();
-  for(const scene of Object.values(state.scenes||{}))refreshStairDestinationLinks(scene);
+  for(const scene of Object.values(state.scenes||{})){refreshStairDestinationLinks(scene);repairExistingStairLandings(scene);}
       migrateModeScenes();
       migrateD100Characters();
       finishEdit();
@@ -407,7 +407,7 @@ function restoreState(serialized){
   state = JSON.parse(serialized);
   migrateFixedTerrain();
   migrateBuildStyles();
-  for(const scene of Object.values(state.scenes||{}))refreshStairDestinationLinks(scene);
+  for(const scene of Object.values(state.scenes||{})){refreshStairDestinationLinks(scene);repairExistingStairLandings(scene);}
   migrateModeScenes();
   migrateD100Characters();
   dragStart = null; previewRect = null; draggedObj = null;
