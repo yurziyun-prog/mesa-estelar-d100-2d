@@ -168,6 +168,7 @@ function transferOnStair(ent,stair,automatic=false){
  if(!counterpart)return false;
  const now=performance.now();
  if(automatic && now<(ent.stairCooldown||0))return false;
+ const originFloor=ent.floor;
  const target=counterpart.index;
  // 兼容旧存档：此前楼梯可能只画出了下层地板，上层没有可走的地面。
  ensureStairLanding(scene,ent.floor,target,stair.x,stair.y);
@@ -175,7 +176,7 @@ function transferOnStair(ent,stair,automatic=false){
  const offset=stair.dir==='up'?32:-32;
  const landing=safeStairArrival(scene,target,counterpart.stair.x,counterpart.stair.y,offset);
  if(!landing){
-   ent.floor=stairLinkedIndex(scene,target,counterpart.stair);
+   ent.floor=originFloor;
    logEvent('⚠️ A saída da escada está bloqueada; libere o patamar no andar de destino.');
    return false;
  }
