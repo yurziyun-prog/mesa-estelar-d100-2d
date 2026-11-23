@@ -74,8 +74,18 @@ function placeArchitectRoof(rect){
  const floor=scene.floors[target];
  const mat=state.roofMaterial||'roof_tile';
  const pitch=state.roofPitch||(mat==='roof_concrete'?'flat':'gable');
- floor.areas.push({...rect,mat,roof:true,roofPitch:pitch,
-   supportLevel:support.level,roofWalkable:true});
+ const height=pitch==='flat'?0:Math.min(6,Math.max(.25,Number(state.roofHeight)||2));
+ const attic=Boolean(state.roofAttic&&pitch!=='flat');
+ const roofId='roof_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);
+ if(attic){
+   // 阁楼是明确的建筑选择；预留边缘以表示屋檐下方的低矮空间。
+   const inset=Math.min(26,Math.min(rect.w,rect.h)*.15);
+   floor.areas.push({x:rect.x+inset,y:rect.y+inset,
+     w:Math.max(1,rect.w-2*inset),h:Math.max(1,rect.h-2*inset),
+     mat:'wood',attic:true,atticRoofId:roofId});
+ }
+ floor.areas.push({...rect,mat,roof:true,roofId,roofPitch:pitch,roofHeight:height,
+   roofAttic:attic,supportLevel:support.level,roofWalkable:pitch==='flat'});
  state.currentFloor=target;updateFloorLabel();
  logEvent('🏠 已在 '+floorName(level)+' 建造屋顶。可以把屋顶当作可行走表面，混凝土屋顶可作为露台。');
  return true;
@@ -87,11 +97,26 @@ function setRoofPitch(pitch){
    beginEdit();obj.roofPitch=pitch;finishEdit();
  }else state.roofPitch=pitch;
 }
+function setRoofHeight(value){
+ const height=Math.min(6,Math.max(0,Number(value)||0));
+ const obj=typeof selectedArchitectItem==='function'?selectedArchitectItem():null;
+ if(obj&&isRoofMaterial(obj.mat)){
+   beginEdit();obj.roofHeight=height;finishEdit();
+ }else state.roofHeight=height;
+}
+function setRoofAttic(enabled){
+ const obj=typeof selectedArchitectItem==='function'?selectedArchitectItem():null;
+ if(obj&&isRoofMaterial(obj.mat)){
+   // 既有屋顶只更改标记；阁楼地板需要建筑师主动新建，避免偷偷改变场景。
+   beginEdit();obj.roofAttic=Boolean(enabled);finishEdit();
+   logEvent('ℹ️ 已更新阁楼选项。既有屋顶下的地板不会自动生成，请使用建筑地板工具铺设。');
+ }else state.roofAttic=Boolean(enabled);
+}
 function roofPitchFor(mat,pitch){
  if(['gable','hip','flat'].includes(pitch))return pitch;
  return mat==='roof_concrete'?'flat':'gable';
 }
-function drawRoofSurface(x,y,w,h,mat,pitchValue=null){
+function drawRoofSurface(x,y,w,h,mat,pitchValue=null,roofHeight=null){
  ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
  const palettes={
   roof_tile:['#9a493e','#c06d54','#5d3431'],
@@ -135,10 +160,11 @@ function drawRoofSurface(x,y,w,h,mat,pitchValue=null){
   // 从上往下观察的屋面：屋脊是高点，两侧明暗形成坡度。
   const across=w>=h;
   const gradient=across?ctx.createLinearGradient(0,y,0,y+h):ctx.createLinearGradient(x,0,x+w,0);
-  gradient.addColorStop(0,'rgba(245,238,218,.40)');
+  const heightRatio=Math.max(.1,Math.min(1,(Number(roofHeight)||2)/4));
+  gradient.addColorStop(0,'rgba(245,238,218,'+(0.18+heightRatio*.3)+')');
   gradient.addColorStop(.47,'rgba(255,255,255,.10)');
   gradient.addColorStop(.53,'rgba(12,17,22,.28)');
-  gradient.addColorStop(1,'rgba(0,0,0,.45)');
+  gradient.addColorStop(1,'rgba(0,0,0,'+(0.19+heightRatio*.39)+')');
   ctx.fillStyle=gradient;ctx.fillRect(x,y,w,h);
   ctx.strokeStyle='rgba(247,222,174,.76)';ctx.lineWidth=3;
   ctx.beginPath();
@@ -198,7 +224,7 @@ function drawExternalBuildingTop(){
   roofFadeLevels.set(key,fade);
   if(fade.alpha<.015)continue;
   ctx.save();ctx.globalAlpha=fade.alpha;
-  if(isRoofMaterial(area.mat))drawRoofSurface(area.x,area.y,area.w,area.h,area.mat,area.roofPitch);
+  if(isRoofMaterial(area.mat))drawRoofSurface(area.x,area.y,area.w,area.h,area.mat,area.roofPitch,area.roofHeight);
   else drawTexturedArea(area.x,area.y,area.w,area.h,area.mat,area.color,area.tile);
   ctx.restore();
  }
