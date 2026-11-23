@@ -93,9 +93,16 @@ function walkableFloor(floor, x, y) {
   return onPaintedGround(floor, x, y) || onPlacedBridge(floor, x, y);
 }
 function openedDoorLeaf(d){
-  if(d.style==='futurist' || !d.open)return null;
-  if(d.orient==='v')return {x1:d.x,y1:d.y-34,x2:d.x+68,y2:d.y-34};
-  return {x1:d.x-34,y1:d.y,x2:d.x-34,y2:d.y-68};
+  const mechanism=d.mechanism||(d.style==='futurist'?'sliding':'hinged');
+  if(mechanism==='sliding'||!d.open)return null;
+  const side=d.hingeSide==='right'?1:-1;
+  const swing=d.swing==='out'?1:-1;
+  if(d.orient==='v'){
+    const hy=d.y+side*34;
+    return {x1:d.x,y1:hy,x2:d.x+68*swing,y2:hy};
+  }
+  const hx=d.x+side*34;
+  return {x1:hx,y1:d.y,x2:hx,y2:d.y+68*swing};
 }
 function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   const floor = getScene().floors[floorIdx];
@@ -111,7 +118,7 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
 
   if (floor.doors.some(d => !d.open && Math.hypot(d.x - nx, d.y - ny) < r + 12)) return false;
   if (floor.doors.some(d=>{const leaf=openedDoorLeaf(d);return leaf&&distToSegment(nx,ny,leaf.x1,leaf.y1,leaf.x2,leaf.y2)<r+8;}))return false;
-  if (floor.windows.some(win => Math.hypot(win.x - nx, win.y - ny) < r + 8)) return false;
+  if (floor.windows.some(win => win.orient==='v'?(Math.abs(nx-win.x)<r+9&&Math.abs(ny-win.y)<(win.width||40)/2+r):(Math.abs(ny-win.y)<r+9&&Math.abs(nx-win.x)<(win.width||40)/2+r))) return false;
   if (floor.chests.some(c => Math.hypot(c.x - nx, c.y - ny) < r + 14)) return false;
 
   const solidProps = ['tree', 'pine', 'fruitTree', 'rock', 'table', 'bookshelf', 'hearth', 'barrel', 'cabinet', 'sofa', 'sofaBlue', 'sofaRed', 'sofaGreen'];
