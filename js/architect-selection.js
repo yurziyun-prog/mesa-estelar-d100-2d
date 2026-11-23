@@ -142,7 +142,8 @@ function handleArchitectSelection(wx,wy,isDrag){
    if(ref.kind==='walls'){
     item.x1=original.x1+dx;item.x2=original.x2+dx;
     item.y1=original.y1+dy;item.y2=original.y2+dy;
-   }else{item.x=original.x+dx;item.y=original.y+dy;}
+   }else{const fromX=item.x,fromY=item.y;item.x=original.x+dx;item.y=original.y+dy;
+    if(ref.kind==='stairs')syncLinkedStairPosition(item,fromX,fromY);}
   }
  }else if(gesture.mode==='resize'){
   const b=gesture.bounds;
@@ -157,7 +158,9 @@ function handleArchitectSelection(wx,wy,isDrag){
     item.x=b.x+(original.x-b.x)*fx;item.y=b.y+(original.y-b.y)*fy;
     item.w=Math.max(1,original.w*fx);item.h=Math.max(1,original.h*fy);
    }else{
+    const fromX=item.x,fromY=item.y;
     item.x=b.x+(original.x-b.x)*fx;item.y=b.y+(original.y-b.y)*fy;
+    if(ref.kind==='stairs')syncLinkedStairPosition(item,fromX,fromY);
     if(ref.kind==='props')item.scale=Math.max(.25,Math.min(4,(original.scale||1)*Math.min(fx,fy)));
     if(ref.kind==='windows'){
       const oldWidth=original.width||40;
