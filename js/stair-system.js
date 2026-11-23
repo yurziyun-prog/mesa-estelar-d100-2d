@@ -210,10 +210,23 @@ function createArchitectStair(wx,wy){
 function refreshStairDestinationLinks(scene){
  ensureFloorLevels(scene);
  for(let i=0;i<scene.floors.length;i++){
-  for(const stair of scene.floors[i].stairs){
+  for(let k=0;k<scene.floors[i].stairs.length;k++){
+   const stair=scene.floors[i].stairs[k];
    if(!Number.isInteger(stair.targetFloor)||!scene.floors[stair.targetFloor]){
     const idx=floorIndexForLevel(scene,floorLevel(scene,i)+(stair.dir==='down'?-1:1));
     if(idx!==-1){stair.targetFloor=idx;stair.targetLevel=floorLevel(scene,idx);}
+   }
+   if(stair.linkId||!Number.isInteger(stair.targetFloor))continue;
+   const peer=scene.floors[stair.targetFloor]?.stairs.find(candidate=>
+     candidate.dir!==stair.dir&&Math.hypot(candidate.x-stair.x,candidate.y-stair.y)<5);
+   if(!peer)continue;
+   // Link old saved pairs once, so editing either floor moves the same stairwell.
+   const id='legacy_stair_'+i+'_'+k+'_'+Math.round(stair.x)+'_'+Math.round(stair.y);
+   stair.linkId=id;peer.linkId=id;
+   const higher=floorLevel(scene,i)>floorLevel(scene,stair.targetFloor)?scene.floors[i]:scene.floors[stair.targetFloor];
+   if(!higher.openings.some(o=>o.stairLinkId===id)){
+     const rect=stairOpeningRect(stair);
+     higher.openings.push({...rect,stairLinkId:id});
    }
   }
  }
