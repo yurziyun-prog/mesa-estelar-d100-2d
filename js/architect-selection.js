@@ -3,6 +3,8 @@
 let architectSelections=[];
 let architectSelectionGesture=null;
 let architectShiftHeld=false;
+let architectCtrlHeld=false;
+let architectContextPosition=null;
 const MAP_UNITS_PER_METER=32; // convenção de projeto: 32 unidades de mundo = 1 m
 function objectForSelection(ref){
  const scene=getScene(),floor=scene?.floors?.[state.currentFloor];
@@ -32,6 +34,62 @@ function architectSelectionHit(wx,wy){
  }
  return null;
 }
+// Expandir componentes ligados geometricamente, preservando cada segmento e suas aberturas.
+const ARCH_CONNECT_EPS=.75;
+function architectSameWall(a,b){
+ return (a.material||'wallMasonry')===(b.material||'wallMasonry') &&
+ (a.color||'')===(b.color||'') &&
+ (a.style||'normal')===(b.style||'normal') &&
+ (a.width||16)===(b.width||16);
+}
+function architectWallsTouch(a,b){
+ const endsA=[[a.x1,a.y1],[a.x2,a.y2]], endsB=[[b.x1,b.y1],[b.x2,b.y2]];
+ // Segmentos só se conectam quando uma extremidade toca o outro segmento.
+ // Nunca unir geometricamente dois lados separados por um vão de porta.
+ return endsA.some(([x,y])=>distToSegment(x,y,b.x1,b.y1,b.x2,b.y2)<=ARCH_CONNECT_EPS) ||
+        endsB.some(([x,y])=>distToSegment(x,y,a.x1,a.y1,a.x2,a.y2)<=ARCH_CONNECT_EPS);
+}
+function architectAreaSignature(a){
+ return JSON.stringify({mat:a.mat||'',color:a.color||'',
+   tile:a.mat==='checker'?(a.tile||state.tileConfig||null):null});
+}
+function architectAreasTouch(a,b){
+ const ax=a.x+a.w,ay=a.y+a.h,bx=b.x+b.w,by=b.y+b.h,e=ARCH_CONNECT_EPS;
+ const overlapX=Math.min(ax,bx)-Math.max(a.x,b.x);
+ const overlapY=Math.min(ay,by)-Math.max(a.y,b.y);
+ return (overlapX>e&&overlapY>=-e)||(overlapY>e&&overlapX>=-e);
+}
+function expandArchitectSelection(seed,includeManual=true){
+ const scene=getScene(),floor=scene.floors[state.currentFloor];
+ const result=[],visited=new Set(),queue=seed.slice();
+ const key=ref=>ref.kind+':'+ref.index;
+ while(queue.length){
+  const ref=queue.shift(),k=key(ref);
+  if(visited.has(k))continue;
+  const obj=objectForSelection(ref);if(!obj)continue;
+  if(ref.kind==='entities' && (obj.sceneId!==state.activeSceneId||obj.floor!==state.currentFloor))continue;
+  visited.add(k);result.push(ref);
+  if(includeManual&&obj.archGroupId){
+   for(const kind of ['areas','walls','doors','windows','stairs','chests','props','entities']){
+    const arr=kind==='entities'?state.entities:floor[kind]||[];
+    arr.forEach((p,i)=>{if(p.archGroupId===obj.archGroupId&&!visited.has(kind+':'+i))queue.push({kind,index:i});});
+   }
+  }
+  if(ref.kind==='walls'){
+   floor.walls.forEach((wall,i)=>{
+    if(!visited.has('walls:'+i)&&architectSameWall(obj,wall)&&architectWallsTouch(obj,wall))queue.push({kind:'walls',index:i});
+   });
+  }else if(ref.kind==='areas'){
+   floor.areas.forEach((area,i)=>{
+    if(!visited.has('areas:'+i)&&architectAreaSignature(obj)===architectAreaSignature(area)&&architectAreasTouch(obj,area))queue.push({kind:'areas',index:i});
+   });
+  }
+ }
+ return result;
+}
+function uniqueArchitectRefs(refs){
+ const keys=new Set();return refs.filter(ref=>{const key=ref.kind+':'+ref.index;if(keys.has(key))return false;keys.add(key);return Boolean(objectForSelection(ref));});
+}
 function updateArchitectSelectionUI(){
  selectedMapObject=architectSelections.length===1&&architectSelections[0].kind!=='entities'?architectSelections[0]:null;
  state.selectedWallIdx=selectedMapObject?.kind==='walls'?selectedMapObject.index:null;
@@ -39,7 +97,7 @@ function updateArchitectSelectionUI(){
  if(typeof onArchitectSelectionChange==='function')onArchitectSelectionChange();
  const label=document.getElementById('architectLibrarySelected');
  if(label&&state.tool==='move')label.textContent=architectSelections.length?
-  architectSelections.length+' item(ns) selecionado(s). Arraste para mover ou use o canto inferior direito para redimensionar.':
+  architectSelections.length+' item(ns) selecionado(s). Ctrl+clique adiciona/remove · botão direito: Agrupar/Desagrupar.':
   'Arraste sobre uma área vazia para selecionar vários objetos.';
 }
 function selectionSnapshot(){
@@ -47,27 +105,41 @@ function selectionSnapshot(){
 }
 function handleArchitectSelection(wx,wy,isDrag){
  if(!isDrag){
+  closeArchitectContextMenu();
+  const hit=architectSelectionHit(wx,wy);
+  if(architectCtrlHeld){
+   if(hit){
+    const component=expandArchitectSelection([hit]);
+    const exists=component.some(ref=>architectSelections.some(x=>x.kind===ref.kind&&x.index===ref.index));
+    const selected=new Set(component.map(ref=>ref.kind+':'+ref.index));
+    architectSelections=exists?architectSelections.filter(ref=>!selected.has(ref.kind+':'+ref.index)):
+      uniqueArchitectRefs([...architectSelections,...component]);
+   }
+   architectSelectionGesture={mode:'ctrl-click'};
+   updateArchitectSelectionUI();
+   return;
+  }
   const b=architectSelectionBounds();
   if(b&&Math.hypot(wx-(b.x+b.w),wy-(b.y+b.h))<Math.max(11,12/state.camera.zoom)){
    architectSelectionGesture={mode:'resize',x:wx,y:wy,bounds:b,items:selectionSnapshot()};
    return;
   }
-  const hit=architectSelectionHit(wx,wy);
-  if(hit?.kind==='areas'&&!architectSelections.some(ref=>ref.kind==='areas'&&ref.index===hit.index)){
-   // Clique simples seleciona o piso; arrastar sobre ele cria seleção por área.
+  const already=hit&&architectSelections.some(x=>x.kind===hit.kind&&x.index===hit.index);
+  if(hit?.kind==='areas'&&!already){
+   // Clique simples seleciona o piso; arrasto começa nova seleção retangular.
    architectSelections=[];
    architectSelectionGesture={mode:'marquee',x:wx,y:wy,x2:wx,y2:wy,clickTarget:hit};
-   updateArchitectSelectionUI();
   }else if(hit){
-   if(!architectSelections.some(s=>s.kind===hit.kind&&s.index===hit.index))architectSelections=[hit];
+   if(!already)architectSelections=expandArchitectSelection([hit]);
    architectSelectionGesture={mode:'move',x:wx,y:wy,items:selectionSnapshot()};
-   updateArchitectSelectionUI();
   }else{
-   architectSelections=[];architectSelectionGesture={mode:'marquee',x:wx,y:wy,x2:wx,y2:wy};updateArchitectSelectionUI();
+   architectSelections=[];
+   architectSelectionGesture={mode:'marquee',x:wx,y:wy,x2:wx,y2:wy};
   }
+  updateArchitectSelectionUI();
   return;
  }
- const gesture=architectSelectionGesture;if(!gesture)return;
+ const gesture=architectSelectionGesture;if(!gesture||gesture.mode==='ctrl-click')return;
  if(gesture.mode==='marquee'){gesture.x2=wx;gesture.y2=wy;return;}
  if(gesture.mode==='move'){
   const dx=wx-gesture.x,dy=wy-gesture.y;
@@ -114,8 +186,8 @@ function finishArchitectSelection(wx,wy){
     const e=state.entities[i];
     if(e.sceneId===state.activeSceneId&&e.floor===state.currentFloor&&rectContains(b,e.x,e.y))selected.push({kind:'entities',index:i});
    }
-   architectSelections=selected;
-  }else if(g.clickTarget)architectSelections=[g.clickTarget];
+   architectSelections=uniqueArchitectRefs(selected.flatMap(ref=>expandArchitectSelection([ref])));
+  }else if(g.clickTarget)architectSelections=expandArchitectSelection([g.clickTarget]);
  }
  updateArchitectSelectionUI();
 }
@@ -200,5 +272,52 @@ function deleteArchitectSelection(){
  finishEdit();
  if(typeof updateUI==='function')updateUI();
  logEvent('🗑️ '+valid.length+' item(ns) removido(s). Ctrl+Z para desfazer.');
+ return true;
+}
+
+function architectGroupSelection(){
+ if(state.mode!=='architect'||architectSelections.length<2)return;
+ const id='archgrp_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);
+ beginEdit();
+ for(const ref of architectSelections){const obj=objectForSelection(ref);if(obj)obj.archGroupId=id;}
+ finishEdit();updateArchitectSelectionUI();closeArchitectContextMenu();
+ logEvent('🔗 '+architectSelections.length+' elementos agrupados. O grupo será salvo no cenário.');
+}
+function architectUngroupSelection(){
+ if(state.mode!=='architect'||!architectSelections.length)return;
+ beginEdit();
+ for(const ref of architectSelections){const obj=objectForSelection(ref);if(obj)delete obj.archGroupId;}
+ finishEdit();updateArchitectSelectionUI();closeArchitectContextMenu();
+ logEvent('🔓 Agrupamento removido dos itens selecionados.');
+}
+function closeArchitectContextMenu(){
+ const node=document.getElementById('architectContextMenu');
+ if(node)node.remove();
+}
+function openArchitectContextMenu(sx,sy,clientX,clientY){
+ if(state.mode!=='architect'||state.tool!=='move')return false;
+ const {wx,wy}=screenToWorld(sx,sy);
+ const clicked=architectSelectionHit(wx,wy);
+ if(clicked&&!architectSelections.some(ref=>ref.kind===clicked.kind&&ref.index===clicked.index)){
+   architectSelections=expandArchitectSelection([clicked]);
+   updateArchitectSelectionUI();
+ }
+ if(!architectSelections.length)return false;
+ closeArchitectContextMenu();
+ const menu=document.createElement('div');
+ menu.id='architectContextMenu';menu.className='architect-context-menu';
+ const grouped=architectSelections.some(ref=>Boolean(objectForSelection(ref)?.archGroupId));
+ const items=[
+  ...(architectSelections.length>1?[['🔗 Agrupar',architectGroupSelection]]:[]),
+  ...(grouped?[['🔓 Desagrupar',architectUngroupSelection]]:[])
+ ];
+ if(!items.length)return false;
+ for(const [label,fn] of items){
+   const btn=document.createElement('button');btn.type='button';btn.textContent=label;
+   btn.addEventListener('click',e=>{e.stopPropagation();fn();});menu.append(btn);
+ }
+ menu.style.left=Math.min(clientX,window.innerWidth-170)+'px';
+ menu.style.top=Math.min(clientY,window.innerHeight-85)+'px';
+ document.body.append(menu);
  return true;
 }
