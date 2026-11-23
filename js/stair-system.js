@@ -18,8 +18,7 @@ function floorIndexForLevel(scene,level,create=false,at=null){
  const floor=createEmptyFloor(null);
  floor.level=level;
  const x=at?.x??400,y=at?.y??320;
- // Um patamar utilizável na criação de um piso que ainda não existe.
- floor.areas.push({x:x-100,y:y-104,w:200,h:208,mat:level<0?'stone':'wood'});
+ // 创建空楼层，不擅自替建筑师铺设地板。
  floor.bounds={x:x-150,y:y-154,w:300,h:308};
  floor.terrainBounds={...floor.bounds};
  scene.floors.push(floor);
@@ -33,55 +32,27 @@ function stairLinkedIndex(scene,sourceIndex,stair){
  if(Number.isInteger(stair.targetLevel))return floorIndexForLevel(scene,stair.targetLevel,false);
  return floorIndexForLevel(scene,floorLevel(scene,sourceIndex)+(stair.dir==='down'?-1:1),false);
 }
-const STRUCTURAL_FLOOR_MATERIALS=new Set(['wood','checker','marble','carpet','stone','cobble','metal','mosaic','bridge']);
-function ensureStairLanding(scene,sourceIndex,targetIndex,x,y){
-  const source=scene.floors[sourceIndex],target=scene.floors[targetIndex];
-  if(!source||!target)return;
-  const contains=(a,px,py)=>px>=a.x&&py>=a.y&&px<=a.x+a.w&&py<=a.y+a.h;
-  const usable=a=>!['water','void','kenney_water'].includes(a.mat);
-  // 地板不能从下层的视觉投影代替上层的真实碰撞。
-  // 目标楼层未铺地板时，建立可行走的建筑地板，不复制墙、门或窗。
-  const existingArea=(target.areas||[]).find(a=>usable(a)&&contains(a,x,y));
-  const footprints=(source.areas||[]).filter(a=>STRUCTURAL_FLOOR_MATERIALS.has(a.mat)&&contains(a,x,y));
-  const biggest=Math.max(0,...footprints.map(a=>a.w*a.h));
-  // 既有小平台而下层有更完整的建筑室内地板时，也补足上层面积。
-  if(existingArea && (existingArea.w*existingArea.h>=biggest||biggest<=0))return;
-  if(footprints.length){
-    for(const a of footprints){
-      const duplicate=target.areas.some(b=>b.mat===a.mat&&Math.abs(b.x-a.x)<1&&Math.abs(b.y-a.y)<1&&Math.abs(b.w-a.w)<1&&Math.abs(b.h-a.h)<1);
-      if(!duplicate)target.areas.push(structuredClone(a));
-    }
-  }else{
-    // 至少保证楼梯出口有一个可以活动的小平台。
-    target.areas.push({x:x-90,y:y-90,w:180,h:180,mat:'wood'});
-  }
+// 旧版本曾自动复制楼板。保留用户保存的现有数据，不再进行此类迁移。
+function repairExistingStairLandings(scene){ensureFloorLevels(scene);}
+function hasBuiltFloorAt(floor,x,y){
+ return (floor?.areas||[]).some(a=>!['water','kenney_water','void','carpet'].includes(a.mat)
+  &&x>=a.x&&x<=a.x+a.w&&y>=a.y&&y<=a.y+a.h);
 }
-function repairExistingStairLandings(scene){
-  ensureFloorLevels(scene);
-  for(let i=0;i<scene.floors.length;i++){
-    for(const stair of scene.floors[i].stairs||[]){
-      const target=stairLinkedIndex(scene,i,stair);
-      if(target>=0)ensureStairLanding(scene,i,target,stair.x,stair.y);
-    }
-  }
+function warnMissingStairFloor(scene,index,x,y){
+ if(!hasBuiltFloorAt(scene.floors[index],x,y)){
+  const msg='⚠️ '+floorName(floorLevel(scene,index))+' 还没有楼板。楼梯仍可安装，人物只能留在梯顶平台；以后可以自行铺设楼板。';
+  logEvent(msg);
+  if(typeof alert==='function')alert(msg);
+ }
 }
 function safeStairArrival(scene,targetIndex,x,y,offset){
-  const floor=scene.floors[targetIndex];
-  const candidates=[
-    [x+offset,y+20],[x,y+30],[x,y-30],
-    [x-offset,y+20],[x+offset,y-25],[x-offset,y-25],[x,y],
-  ];
-  const usable=(px,py)=>canMoveTo(targetIndex,px,py);
-  const selected=candidates.find(([px,py])=>usable(px,py));
-  if(selected)return selected;
-  // 如果出口被新放置的物件占据，就搜索附近合法位置，不能把人物放进墙里。
-  for(let radius=40;radius<=120;radius+=16){
-    for(let angle=0;angle<Math.PI*2;angle+=Math.PI/8){
-      const px=x+Math.cos(angle)*radius,py=y+Math.sin(angle)*radius;
-      if(usable(px,py))return [px,py];
-    }
-  }
-  return null;
+ const floor=scene.floors[targetIndex];
+ const candidates=[[x+offset,y+20],[x,y+30],[x,y-30],[x-offset,y+20],[x,y]];
+ const selected=candidates.find(([px,py])=>canMoveTo(targetIndex,px,py));
+ if(selected)return selected;
+ // 无楼板时，人物站在梯子顶部，不会凭空创建整块地板。
+ if(!hasBuiltFloorAt(floor,x,y))return [x,y];
+ return null;
 }
 function createStairPair(scene,fromLevel,toLevel,x,y,shape,material,style,continuous=false,linkId=''){
  const srcIndex=floorIndexForLevel(scene,fromLevel,true,{x,y});
@@ -95,8 +66,7 @@ function createStairPair(scene,fromLevel,toLevel,x,y,shape,material,style,contin
  const destination={...common,dir:up?'down':'up',targetFloor:srcIndex,targetLevel:fromLevel};
  from.stairs.push(origin);
  to.stairs.push(destination);
- ensureStairLanding(scene,srcIndex,dstIndex,x,y);
- ensureStairLanding(scene,dstIndex,srcIndex,x,y);
+ // 不再自动生成任何地板。
  // O furo é apenas decorativo no piso superior e acompanha o destino.
  const upper=up?to:from;
  if(!upper.openings.some(o=>o.stairLinkId===pairId))
@@ -139,6 +109,10 @@ function createArchitectStair(wx,wy){
   pair.origin.shaftId=shaft;pair.destination.shaftId=shaft;
   level=next;count++;
  }
+ for(let level=start+sign;sign>0?level<=end:level>=end;level+=sign){
+  const idx=floorIndexForLevel(scene,level,false);
+  if(idx>=0)warnMissingStairFloor(scene,idx,wx,wy);
+ }
  updateFloorLabel();
  logEvent('🪜 '+(shape==='continuous'?'Escada contínua':'Escada')+' '+(up?'subindo':'descendo')+' de '+floorName(start)+' até '+floorName(end)+'; ligação nos dois sentidos.');
  return true;
@@ -170,8 +144,7 @@ function transferOnStair(ent,stair,automatic=false){
  if(automatic && now<(ent.stairCooldown||0))return false;
  const originFloor=ent.floor;
  const target=counterpart.index;
- // 兼容旧存档：此前楼梯可能只画出了下层地板，上层没有可走的地面。
- ensureStairLanding(scene,ent.floor,target,stair.x,stair.y);
+ // 目的地可以是尚未铺楼板的空层。
  ent.floor=target;
  const offset=stair.dir==='up'?32:-32;
  const landing=safeStairArrival(scene,target,counterpart.stair.x,counterpart.stair.y,offset);
