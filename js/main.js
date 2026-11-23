@@ -216,8 +216,11 @@ function updateSimulation() {
         const vx = (dx / len) * speed;
         const vy = (dy / len) * speed;
         if(!tryWalkingStair(ent,dx/len,dy/len)){
-          if (canMoveTo(ent.floor, ent.x + vx, ent.y)) ent.x += vx;
-          if (canMoveTo(ent.floor, ent.x, ent.y + vy)) ent.y += vy;
+          const newX=ent.x+vx,newY=ent.y+vy;
+          if(!tryFallThroughStairOpening(ent,newX,newY,dx/len,dy/len)){
+            if (canMoveTo(ent.floor, ent.x + vx, ent.y)) ent.x += vx;
+            if (canMoveTo(ent.floor, ent.x, ent.y + vy)) ent.y += vy;
+          }
         }
         ent.walkingUntil=performance.now()+130;
       }
