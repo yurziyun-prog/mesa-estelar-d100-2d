@@ -278,9 +278,10 @@ function drawExternalBuildingTop(){
  const higher=scene.floors.filter(f=>f.level>current).sort((a,b)=>a.level-b.level);
  if(!higher.length)return;
  const candidates=[];
- for(const floor of higher)for(const area of floor.areas||[]){
-  if(['water','void','kenney_water'].includes(area.mat))continue;
-  candidates.push({area,level:floor.level,floor});
+ for(const floor of higher){
+  const roofs=(floor.areas||[]).filter(a=>a.roof);
+  const surfaces=roofs.length?roofs:(floor.areas||[]).filter(a=>!a.attic&&!['water','void','kenney_water'].includes(a.mat));
+  for(const area of surfaces)candidates.push({area,level:floor.level,floor});
  }
  if(!candidates.length)return;
  const highest=Math.max(...candidates.map(e=>e.level));
