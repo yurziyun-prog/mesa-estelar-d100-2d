@@ -36,7 +36,68 @@ function drawFutureArea(x,y,w,h,mat) {
   ctx.restore();
 }
 
-function drawTexturedArea(x, y, w, h, mat, customColor = null) {
+
+function drawCustomTileFinish(x,y,w,h,settings){
+ const conf={material:'ceramic',pattern:'checker',size:32,color1:'#667388',color2:'#a9b7bf',...(settings||{})};
+ const mat=conf.material,pattern=conf.pattern,size=Math.max(16,Number(conf.size)||32);
+ const a=conf.color1||'#667388',b=conf.color2||'#a9b7bf';
+ // Desenhar em coordenadas globais evita deslocamentos entre áreas adjacentes.
+ ctx.fillStyle=a;ctx.fillRect(x,y,w,h);
+ for(let ty=Math.floor(y/size)*size;ty<y+h;ty+=size){
+  for(let tx=Math.floor(x/size)*size;tx<x+w;tx+=size){
+   const col=Math.round(tx/size),row=Math.round(ty/size),even=(col+row)%2===0;
+   const shade=pattern==='plain'?a:even?a:b;
+   ctx.fillStyle=shade;ctx.fillRect(tx,ty,size,size);
+   ctx.strokeStyle=mat==='marble'?'rgba(243,244,238,.33)':'rgba(13,20,28,.3)';
+   ctx.lineWidth=mat==='metal'?2.5:1.2;
+   ctx.strokeRect(tx+.5,ty+.5,size-1,size-1);
+   if(mat==='marble'){
+     ctx.strokeStyle='rgba(246,244,230,.42)';ctx.lineWidth=1;
+     ctx.beginPath();ctx.moveTo(tx+size*.12,ty+size*.92);
+     ctx.bezierCurveTo(tx+size*.34,ty+size*.58,tx+size*.58,ty+size*.68,tx+size*.89,ty+size*.10);ctx.stroke();
+     ctx.strokeStyle='rgba(31,36,46,.18)';ctx.beginPath();
+     ctx.moveTo(tx+size*.02,ty+size*.7);ctx.lineTo(tx+size*.42,ty+size*.3);ctx.lineTo(tx+size*.66,ty+size*.35);ctx.stroke();
+   }else if(mat==='masonry'){
+     ctx.strokeStyle='rgba(24,29,33,.44)';ctx.lineWidth=2;
+     ctx.beginPath();ctx.moveTo(tx+size*.5,ty);ctx.lineTo(tx+size*.5,ty+size*.5);ctx.moveTo(tx,ty+size*.5);ctx.lineTo(tx+size,ty+size*.5);ctx.stroke();
+     ctx.fillStyle='rgba(255,255,255,.06)';ctx.fillRect(tx+2,ty+2,size-4,3);
+   }else if(mat==='metal'){
+     ctx.fillStyle='rgba(255,255,255,.1)';ctx.fillRect(tx+3,ty+3,size-6,Math.max(2,size*.13));
+     for(const ix of [4,size-5])for(const iy of [4,size-5]){
+       ctx.fillStyle='#354d58';ctx.beginPath();ctx.arc(tx+ix,ty+iy,Math.max(1.4,size*.05),0,Math.PI*2);ctx.fill();
+     }
+   }else if(mat==='parquet'){
+     ctx.strokeStyle='rgba(63,38,22,.47)';ctx.lineWidth=2;
+     const count=Math.max(2,Math.floor(size/10));
+     for(let j=1;j<count;j++){ctx.beginPath();
+       if(even){ctx.moveTo(tx+j*size/count,ty);ctx.lineTo(tx+j*size/count,ty+size);}
+       else {ctx.moveTo(tx,ty+j*size/count);ctx.lineTo(tx+size,ty+j*size/count);}
+       ctx.stroke();
+     }
+     ctx.strokeStyle='rgba(255,233,173,.25)';ctx.lineWidth=.8;ctx.beginPath();
+     ctx.moveTo(tx+4,ty+size*.3);ctx.lineTo(tx+size-4,ty+size*.3);ctx.stroke();
+   }else if(mat==='decorative'){
+     ctx.strokeStyle='rgba(255,236,191,.55)';ctx.lineWidth=1.5;
+     ctx.beginPath();ctx.arc(tx+size/2,ty+size/2,size*.27,0,Math.PI*2);ctx.stroke();
+   }
+   ctx.save();ctx.translate(tx+size/2,ty+size/2);
+   if(pattern==='diagonal'){
+     ctx.strokeStyle='rgba(255,255,255,.42)';ctx.beginPath();ctx.moveTo(-size/2,-size/2);ctx.lineTo(size/2,size/2);ctx.stroke();
+   }else if(pattern==='diamond'){
+     ctx.strokeStyle='rgba(244,225,175,.7)';ctx.lineWidth=2;ctx.beginPath();
+     ctx.moveTo(0,-size*.4);ctx.lineTo(size*.4,0);ctx.lineTo(0,size*.4);ctx.lineTo(-size*.4,0);ctx.closePath();ctx.stroke();
+   }else if(pattern==='rosette'){
+     ctx.strokeStyle='rgba(239,220,171,.8)';ctx.lineWidth=1.5;
+     for(let i=0;i<8;i++){let angle=i*Math.PI/4;ctx.beginPath();ctx.ellipse(Math.cos(angle)*size*.13,Math.sin(angle)*size*.13,size*.13,size*.06,angle,0,Math.PI*2);ctx.stroke();}
+   }else if(pattern==='herringbone'){
+     ctx.strokeStyle='rgba(28,36,42,.35)';ctx.lineWidth=2;
+     ctx.beginPath();ctx.moveTo(-size*.4,0);ctx.lineTo(0,-size*.4);ctx.lineTo(size*.4,0);ctx.moveTo(-size*.4,size*.4);ctx.lineTo(0,0);ctx.lineTo(size*.4,size*.4);ctx.stroke();
+   }
+   ctx.restore();
+  }
+ }
+}
+function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null) {
   if(mat==='kenney_water')mat='water';
   if(mat==='kenney_wood')mat='wood';
   if(isDownloadedMaterial(mat)){drawDownloadedMaterial(x,y,w,h,mat);return;}
@@ -78,21 +139,7 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null) {
       }
     }
   } else if (mat === 'checker') {
-    ctx.fillStyle = '#535c6e';
-    ctx.fillRect(x, y, w, h);
-    const tile = 36;
-    for (let ty = y; ty < y + h; ty += tile) {
-      for (let tx = x; tx < x + w; tx += tile) {
-        const ix = Math.floor((tx - x) / tile);
-        const iy = Math.floor((ty - y) / tile);
-        if ((ix + iy) % 2 === 0) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-          ctx.fillRect(tx, ty, tile, tile);
-        }
-        ctx.strokeStyle = 'rgba(20, 24, 32, 0.25)';
-        ctx.strokeRect(tx, ty, tile, tile);
-      }
-    }
+    drawCustomTileFinish(x,y,w,h,tileConfig);
   } else if (mat === 'carpet') {
     ctx.fillStyle = customColor || '#8c1d28';
     ctx.fillRect(x, y, w, h);
@@ -244,7 +291,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     }
   }
 
-  floor.areas.forEach(a => drawTexturedArea(a.x, a.y, a.w, a.h, a.mat, a.color));
+  floor.areas.forEach(a => drawTexturedArea(a.x, a.y, a.w, a.h, a.mat, a.color, a.tile));
   drawBrushStrokes(floor);
 
   floor.stairs.forEach(stair => {
@@ -707,6 +754,10 @@ function drawSleepingFurniture(p){
   ctx.restore();
 }
 function drawProp(p) {
+  if(p.scale&&p.scale!==1){
+    ctx.save();ctx.translate(p.x,p.y);ctx.scale(p.scale,p.scale);ctx.translate(-p.x,-p.y);
+    drawProp({...p,scale:1});ctx.restore();return;
+  }
   if(isKenneyObject(p.type)){drawKenneyObject(p);return;}
   if(isKenneyRoguelikeObject(p.type)){drawKenneyRoguelikeObject(p);return;}
   if(isSleepingFurniture(p)){drawSleepingFurniture(p);return;}
