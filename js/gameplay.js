@@ -159,6 +159,7 @@ function interactWithBed(ent,bed){
 function interactNearby(entity) {
   const floor = getScene().floors[entity.floor];
   if(entity.sleepPose)return;
+  if(interactPortableLadder(entity))return;
   const nearBed=floor.props.filter(isSleepingFurniture).map(p=>({p,d:Math.hypot(p.x-entity.x,p.y-entity.y)})).sort((a,b)=>a.d-b.d)[0];
   if(nearBed && nearBed.d<90){interactWithBed(entity,nearBed.p);return;}
   const keyIndex=floor.props.findIndex(p=>p.type==='key'&&Math.hypot(p.x-entity.x,p.y-entity.y)<48);
