@@ -452,7 +452,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     ctx.save();
     ctx.translate(win.x, win.y);
     if (win.orient === 'v') ctx.rotate(Math.PI / 2);
-    ctx.fillStyle = isRetroFuture(win) ? 'rgba(55, 210, 226, .6)' : 'rgba(135, 220, 255, 0.45)';
+    ctx.fillStyle=win.color||(isRetroFuture(win)?'rgba(55,210,226,.6)':'rgba(135,220,255,.45)');
     ctx.fillRect(-(win.width||40)/2, -8, win.width||40, 16);
     ctx.strokeStyle = ({wood:'#b9875b',stone:'#a7b3b5',castle:'#90939a',brick:'#a65f49',masonry:'#b4bbbc',metal:'#729bab',rust:'#9a6344',sandstone:'#d7b36f'})[win.material] || (isRetroFuture(win) ? '#dba95d' : isArabia(win) ? '#e0a44e' : '#eaf7ff');
     ctx.lineWidth = 2;
@@ -477,7 +477,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
       // Dois painéis retráteis recolhem-se lateralmente, sem giro.
       const left=d.open?-35:-34,right=d.open?35:34;
       const span=d.open?7:34;
-      ctx.fillStyle=d.color||'#788fa4';ctx.strokeStyle='#182735';ctx.lineWidth=2;
+      ctx.fillStyle=d.color||({wood:'#a5794b',stone:'#9a9f9e',castle:'#7e8382',brick:'#a65b43',masonry:'#b5bbb8',metal:'#829aa8',rust:'#986042',sandstone:'#d3b77a'})[d.material]||'#788fa4';ctx.strokeStyle='#182735';ctx.lineWidth=2;
       ctx.fillRect(left,-8,span,16);ctx.strokeRect(left,-8,span,16);
       ctx.fillRect(right-span,-8,span,16);ctx.strokeRect(right-span,-8,span,16);
       ctx.strokeStyle='#55d5e5';ctx.lineWidth=2;
