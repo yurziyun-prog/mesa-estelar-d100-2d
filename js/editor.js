@@ -53,18 +53,14 @@ function selectProp(prop) {
 }
 
 function changeFloor(delta) {
-  const sc = getScene();
-  const next = state.currentFloor + delta;
-  if (next < 0) return;
-  while (sc.floors.length <= next) sc.floors.push(createEmptyFloor(null));
-  state.currentFloor = next;
-  state.selectedWallIdx = null;
-  updateSelectedWallBar();
-  updateFloorLabel();
+ const scene=getScene(),level=floorLevel(scene,state.currentFloor);
+ const next=floorIndexForLevel(scene,level+delta,state.mode==='architect');
+ if(next<0)return;
+ state.currentFloor=next;state.selectedWallIdx=null;updateSelectedWallBar();updateFloorLabel();
 }
-
-function updateFloorLabel() {
-  document.getElementById('floorLabel').textContent = state.currentFloor === 0 ? '1º (Térreo)' : `${state.currentFloor + 1}º Andar`;
+function updateFloorLabel(){
+ const label=document.getElementById('floorLabel');
+ if(label)label.textContent=floorName(floorLevel(getScene(),state.currentFloor));
 }
 
 // ALINHAMENTO E RECORTE DE PAREDE PARA PORTA / JANELA
@@ -216,14 +212,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
       openLockDialog(door, 'door');
     }
   } else if (state.tool === 'stairs') {
-    if (!isDrag) {
-      floor.stairs.push({ x: wx, y: wy, dir: 'up', label: `→ ${state.currentFloor + 2}º`, style: state.buildStyle, material:state.stairMaterial||'wood',shape:state.stairShape||'straight' });
-      const upperIdx = state.currentFloor + 1;
-      while (getScene().floors.length <= upperIdx) getScene().floors.push(createEmptyFloor(null));
-      const upper = getScene().floors[upperIdx];
-      upper.stairs.push({ x: wx, y: wy, dir: 'down', label: `→ ${state.currentFloor + 1}º`, style: state.buildStyle, material:state.stairMaterial||'wood',shape:state.stairShape||'straight' });
-      upper.openings.push({ x: wx - 36, y: wy - 52, w: 72, h: 104 });
-    }
+    if(!isDrag)createArchitectStair(wx,wy);
   } else if (state.tool === 'character') {
     if (!isDrag) placeArchitectCharacter(wx,wy);
   } else if (state.tool === 'prop') {
