@@ -79,17 +79,17 @@ function stairPathBlocked(floor,stair){
       ||(floor.windows||[]).some(win=>Math.hypot(win.x-x,win.y-y)<18);
  });
 }
-function safeStairArrival(scene,targetIndex,x,y,offset,stair=null){
+function safeStairArrival(scene,targetIndex,x,y,offset,stair=null,ignoreId=null){
  const floor=scene.floors[targetIndex];
  const local=[[offset,20],[0,30],[0,-30],[-offset,20],[0,0]];
  const candidates=local.map(([lx,ly])=>{
    const point=stair?stairWorld(stair,lx,ly):{x:lx,y:ly};
    return [x+point.x,y+point.y];
  });
- const selected=candidates.find(([px,py])=>canMoveTo(targetIndex,px,py)&&stairLandingUnoccupied(scene,targetIndex,px,py));
+ const selected=candidates.find(([px,py])=>canMoveTo(targetIndex,px,py)&&stairLandingUnoccupied(scene,targetIndex,px,py,ignoreId));
  if(selected)return selected;
  // 无楼板时，人物站在梯子顶部，不会凭空创建整块地板。
- if(!hasBuiltFloorAt(floor,x,y)&&stairLandingUnoccupied(scene,targetIndex,x,y))return [x,y];
+ if(!hasBuiltFloorAt(floor,x,y)&&stairLandingUnoccupied(scene,targetIndex,x,y,ignoreId))return [x,y];
  return null;
 }
 function createStairPair(scene,fromLevel,toLevel,x,y,shape,material,style,continuous=false,linkId=''){
@@ -179,6 +179,13 @@ function findStairCounterpart(scene,floorIndex,stair){
   ||target.stairs.find(s=>s.dir!==stair.dir&&Math.hypot(s.x-stair.x,s.y-stair.y)<55);
  return {index:targetIndex,stair:matched||stair};
 }
+function stairRoofHatchAccessible(floor,stair){
+ const roof=(floor.areas||[]).find(a=>a.roof&&Math.abs(stair.x-a.x-a.w/2)<=a.w/2&&Math.abs(stair.y-a.y-a.h/2)<=a.h/2);
+ if(!roof)return true; // 非屋顶楼层不受限制
+ const hatch=(floor.roofOpenings||[]).some(o=>o.type==='hatch'&&Math.hypot(o.x-stair.x,o.y-stair.y)<60)
+  ||(floor.openings||[]).some(o=>o.stairLinkId&&Math.abs(stair.x-o.x-o.w/2)<55&&Math.abs(stair.y-o.y-o.h/2)<55);
+ return hatch;
+}
 function transferOnStair(ent,stair,automatic=false){
  const scene=getScene();
  const counterpart=findStairCounterpart(scene,ent.floor,stair);
@@ -187,10 +194,14 @@ function transferOnStair(ent,stair,automatic=false){
  if(automatic && now<(ent.stairCooldown||0))return false;
  const originFloor=ent.floor;
  const target=counterpart.index;
+ if(!stairRoofHatchAccessible(scene.floors[target],counterpart.stair)){
+  logEvent('⚠️ 目标楼层的屋顶没有楼梯出口。请让建筑师添加 Alçapão。');
+  return false;
+ }
  // 目的地可以是尚未铺楼板的空层。
  ent.floor=target;
  const offset=stair.dir==='up'?32:-32;
- const landing=safeStairArrival(scene,target,counterpart.stair.x,counterpart.stair.y,offset,counterpart.stair);
+ const landing=safeStairArrival(scene,target,counterpart.stair.x,counterpart.stair.y,offset,counterpart.stair,ent.id);
  if(!landing){
    ent.floor=originFloor;
    logEvent('⚠️ A saída da escada está bloqueada; libere o patamar no andar de destino.');
