@@ -27,7 +27,6 @@
   </div>
 
   <div class="top-controls">
-    <button class="btn" onclick="saveBank()">💾 Salvar Banco</button>
     <button class="btn" onclick="exportJSON()">⬇️ JSON</button>
     <button class="btn" onclick="document.getElementById('importFile').click()">⬆️ Importar</button>
     <input type="file" id="importFile" accept=".json" class="hidden" onchange="importJSON(event)" />
@@ -104,7 +103,7 @@
       <div class="card" style="margin-bottom:10px;">
         <div class="section-title">Biblioteca de construção</div>
         <div class="tool-grid">
-          <button class="tool-btn" onclick="openArchitectLibrary('terrain')">🌱 Terrenos e pisos</button>
+          <button class="tool-btn" onclick="openArchitectLibrary('terrain')">🌱 Terrenos</button>
           <button class="tool-btn" onclick="openArchitectLibrary('furniture')">🪑 Móveis</button>
           <button class="tool-btn" onclick="openArchitectLibrary('nature')">🌴 Árvores e natureza</button>
           <button class="tool-btn" onclick="openArchitectLibrary('architecture')">🏛️ Elementos de construção</button>
