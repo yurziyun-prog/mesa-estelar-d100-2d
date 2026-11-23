@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mesa RPG 2D — Arquiteto, Mestre & Jogador</title>
-  <link rel="stylesheet" href="css/style.css?v=spiral-queue-roof-collision-20261123" />
+  <link rel="stylesheet" href="css/style.css?v=stair-wells-and-material-palette-20261123" />
 </head>
 <body>
 
@@ -257,9 +257,11 @@
           <label class="library-hint">Tamanho do módulo: <output id="tileSizeLabel">32</output> unidades
             <input type="range" id="tileSize" min="16" max="96" step="16" value="32" oninput="setTileOption('size',Number(this.value))" style="width:100%"/>
           </label>
+          <div class="library-hint" id="tilePaletteCaption" style="margin:5px 0">Paleta de cerâmica</div>
+          <div id="tileMaterialPalette" class="tile-material-palette" role="group" aria-label="Cores adequadas ao material"></div>
           <div class="row" style="gap:12px;align-items:center">
-            <label class="library-hint">Cor base <input type="color" id="tileColor1" value="#667388" oninput="setTileOption('color1',this.value)"/></label>
-            <label class="library-hint">Cor secundária <input type="color" id="tileColor2" value="#a9b7bf" oninput="setTileOption('color2',this.value)"/></label>
+            <label class="library-hint">Cor base <input type="color" id="tileColor1" value="#667388" disabled/></label>
+            <label class="library-hint">Cor secundária <input type="color" id="tileColor2" value="#a9b7bf" disabled/></label>
           </div>
           <div class="library-hint">Bordas alinhadas a 32 unidades. Segure Shift durante o desenho para precisão livre.</div>
         </div>
@@ -417,21 +419,21 @@
   </aside>
 </div>
 
-<script src="js/d100.js?v=spiral-queue-roof-collision-20261123" defer></script>
-<script src="js/state.js?v=spiral-queue-roof-collision-20261123" defer></script>
-<script src="js/roof-system.js?v=spiral-queue-roof-collision-20261123" defer></script>
-<script src="js/stair-system.js?v=spiral-queue-roof-collision-20261123" defer></script>
-<script src="js/editor.js?v=spiral-queue-roof-collision-20261123" defer></script>
-<script src="js/library.js?v=spiral-queue-roof-collision-20261123" defer></script>
-<script src="js/gameplay.js?v=spiral-queue-roof-collision-20261123" defer></script>
-<script src="js/download-assets.js?v=spiral-queue-roof-collision-20261123" defer></script>
-<script src="js/download-objects.js?v=spiral-queue-roof-collision-20261123" defer></script>
-<script src="js/download-roguelike-objects.js?v=spiral-queue-roof-collision-20261123" defer></script>
-<script src="js/textures.js?v=spiral-queue-roof-collision-20261123" defer></script>
-<script src="js/architect-selection.js?v=spiral-queue-roof-collision-20261123" defer></script>
-<script src="js/portable-ladder.js?v=spiral-queue-roof-collision-20261123" defer></script>
-<script src="js/object-properties.js?v=spiral-queue-roof-collision-20261123" defer></script>
-<script src="js/main.js?v=spiral-queue-roof-collision-20261123" defer></script>
+<script src="js/d100.js?v=stair-wells-and-material-palette-20261123" defer></script>
+<script src="js/state.js?v=stair-wells-and-material-palette-20261123" defer></script>
+<script src="js/roof-system.js?v=stair-wells-and-material-palette-20261123" defer></script>
+<script src="js/stair-system.js?v=stair-wells-and-material-palette-20261123" defer></script>
+<script src="js/editor.js?v=stair-wells-and-material-palette-20261123" defer></script>
+<script src="js/library.js?v=stair-wells-and-material-palette-20261123" defer></script>
+<script src="js/gameplay.js?v=stair-wells-and-material-palette-20261123" defer></script>
+<script src="js/download-assets.js?v=stair-wells-and-material-palette-20261123" defer></script>
+<script src="js/download-objects.js?v=stair-wells-and-material-palette-20261123" defer></script>
+<script src="js/download-roguelike-objects.js?v=stair-wells-and-material-palette-20261123" defer></script>
+<script src="js/textures.js?v=stair-wells-and-material-palette-20261123" defer></script>
+<script src="js/architect-selection.js?v=stair-wells-and-material-palette-20261123" defer></script>
+<script src="js/portable-ladder.js?v=stair-wells-and-material-palette-20261123" defer></script>
+<script src="js/object-properties.js?v=stair-wells-and-material-palette-20261123" defer></script>
+<script src="js/main.js?v=stair-wells-and-material-palette-20261123" defer></script>
 <dialog id="lockDialog" class="lock-dialog">
   <form method="dialog" onsubmit="return false;">
     <h3 id="lockDialogTitle">Configurar tranca</h3>
