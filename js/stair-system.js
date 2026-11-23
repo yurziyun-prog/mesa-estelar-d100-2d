@@ -321,5 +321,11 @@ function advanceStairClimb(ent){
 function tryWalkingStair(ent,dx,dy){
  if(!ent||(!dx&&!dy)||ent.stairClimb)return false;
  const floor=getScene().floors[ent.floor];if(!floor)return false;
- return floor.stairs.some(stair=>beginStairClimb(ent,stair,dx,dy));
+ for(const stair of floor.stairs){
+  if(!stairEntryAllowed(stair,ent,dx,dy))continue;
+  // 在同一楼梯入口排队，而不是走进正在攀爬的人物体内。
+  if(stairBusyForEntity(ent,stair))return true;
+  if(beginStairClimb(ent,stair,dx,dy))return true;
+ }
+ return false;
 }
