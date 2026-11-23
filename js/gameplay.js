@@ -77,6 +77,13 @@ function onPaintedGround(floor, x, y) {
     }
   }
   const painted = [...floor.areas].reverse().find(hit);
+  if(painted?.roof){
+    const pitch=roofPitchFor(painted.mat,painted.roofPitch);
+    if(pitch==='flat')return true;
+    // 斜屋顶不充当水平楼板，仅允许显式铺设的阁楼活动区域。
+    const attic=(floor.areas||[]).some(a=>a.attic&&hit(a)&&(a.atticRoofId===painted.roofId||!painted.roofId));
+    return attic;
+  }
   if (painted) return !['water','kenney_water','void'].includes(painted.mat);
   const b = floor.terrainBounds || floor.bounds;
   if(floor.stairs?.some(s=>Math.abs(s.x-x)<18&&Math.abs(s.y-y)<25))return true;
