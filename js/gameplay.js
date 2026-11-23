@@ -79,6 +79,7 @@ function onPaintedGround(floor, x, y) {
   const painted = [...floor.areas].reverse().find(hit);
   if (painted) return !['water','kenney_water','void'].includes(painted.mat);
   const b = floor.terrainBounds || floor.bounds;
+  if(floor.stairs?.some(s=>Math.abs(s.x-x)<18&&Math.abs(s.y-y)<25))return true;
   return Boolean(floor.baseTerrain && b && hit(b) && floor.baseTerrain !== 'water');
 }
 function onPlacedBridge(floor, x, y) {
