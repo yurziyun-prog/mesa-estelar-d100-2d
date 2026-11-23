@@ -383,6 +383,7 @@ function advanceStairClimb(ent){
 function tryFallThroughStairOpening(ent,nx,ny,dx,dy){
  if(!ent||ent.stairClimb||performance.now()<(ent.stairCooldown||0))return false;
  const scene=getScene(),floor=scene.floors[ent.floor];if(!floor)return false;
+ if(crossesWall(floor,ent.x,ent.y,nx,ny,true))return false;
  for(const stair of floor.stairs||[]){
   if(stair.dir!=='down')continue;
   if(!hasBuiltFloorAt(floor,stair.x,stair.y))continue;

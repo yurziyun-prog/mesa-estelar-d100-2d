@@ -396,6 +396,28 @@ function placePendingKey(wx,wy){
   return true;
 }
 
+function extendWallUp(wall){
+ const scene=getScene(),level=floorLevel(scene,state.currentFloor)+1;
+ const existing=floorIndexForLevel(scene,level);
+ const samePoint=(x,y,a,b)=>Math.hypot(x-a,y-b)<.75;
+ const sameSpan=other=>(
+   samePoint(wall.x1,wall.y1,other.x1,other.y1)&&samePoint(wall.x2,wall.y2,other.x2,other.y2)
+ )||(
+   samePoint(wall.x1,wall.y1,other.x2,other.y2)&&samePoint(wall.x2,wall.y2,other.x1,other.y1)
+ );
+ if(scene.floors[existing]?.walls.some(sameSpan)){
+   logEvent('Já existe uma parede nesse trecho do andar acima.');
+   return;
+ }
+ beginEdit();
+ const target=floorIndexForLevel(scene,level,true,{x:(wall.x1+wall.x2)/2,y:(wall.y1+wall.y2)/2});
+ const extension={...wall,extendedUp:true};
+ delete extension.archGroupId;
+ scene.floors[target].walls.push(extension);
+ finishEdit();
+ logEvent('Parede estendida em 3 m até '+floorName(level)+'.');
+}
+
 function mergeCollinearWalls(floor){
  const walls=floor.walls;let changed=true,passes=0;
  while(changed&&passes++<Math.max(2,walls.length*2)){
@@ -403,7 +425,7 @@ function mergeCollinearWalls(floor){
   for(let i=0;i<walls.length&&!changed;i++){
    const a=walls[i],ah=Math.abs(a.y1-a.y2)<1,av=Math.abs(a.x1-a.x2)<1;
    for(let j=i+1;j<walls.length;j++){
-    const b=walls[j];if((a.style||'normal')!==(b.style||'normal')||(a.material||'wallMasonry')!==(b.material||'wallMasonry')||(a.color||'')!==(b.color||'')||(a.width||16)!==(b.width||16)||(a.archGroupId||'')!==(b.archGroupId||''))continue;
+    const b=walls[j];if((a.style||'normal')!==(b.style||'normal')||(a.material||'wallMasonry')!==(b.material||'wallMasonry')||(a.color||'')!==(b.color||'')||(a.width||16)!==(b.width||16)||(a.archGroupId||'')!==(b.archGroupId||'')||Boolean(a.extendedUp)!==Boolean(b.extendedUp))continue;
     const bh=Math.abs(b.y1-b.y2)<1,bv=Math.abs(b.x1-b.x2)<1;
     if(ah&&bh&&Math.abs(a.y1-b.y1)<1){
      const lo=Math.min(a.x1,a.x2,b.x1,b.x2),hi=Math.max(a.x1,a.x2,b.x1,b.x2);

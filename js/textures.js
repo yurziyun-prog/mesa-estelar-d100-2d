@@ -479,6 +479,34 @@ function lowerOpeningWallSpans(floor) {
  return spans;
 }
 
+function exposedLowerWallSpans(wall, slabs) {
+ const dx=wall.x2-wall.x1,dy=wall.y2-wall.y1,pad=(wall.width||16)/2;
+ let exposed=[[0,1]];
+ for(const slab of slabs){
+   let start=0,end=1;
+   for(const [origin,delta,min,max] of [
+     [wall.x1,dx,slab.x-pad,slab.x+slab.w+pad],
+     [wall.y1,dy,slab.y-pad,slab.y+slab.h+pad]
+   ]){
+     if(!delta){
+       if(origin<min||origin>max){start=1;end=0;break;}
+       continue;
+     }
+     const a=(min-origin)/delta,b=(max-origin)/delta;
+     start=Math.max(start,Math.min(a,b));
+     end=Math.min(end,Math.max(a,b));
+   }
+   if(start>=end)continue;
+   exposed=exposed.flatMap(([a,b])=>start>=b||end<=a?[[a,b]]:[
+     ...(a<start?[[a,start]]:[]),...(b>end?[[end,b]]:[])
+   ]);
+   if(!exposed.length)break;
+ }
+ return exposed.map(([a,b])=>({...wall,
+   x1:wall.x1+a*dx,y1:wall.y1+a*dy,x2:wall.x1+b*dx,y2:wall.y1+b*dy
+ }));
+}
+
 function drawLowerStoreyWallContinuations(sc,upperIndex){
  const upper=sc.floors[upperIndex],level=floorLevel(sc,upperIndex);
  const underIndex=floorIndexForLevel(sc,level-1,false);
@@ -491,7 +519,9 @@ function drawLowerStoreyWallContinuations(sc,upperIndex){
    wallCastle:'#8a8b87',wallMetal:'#a5bdc9',wallRust:'#96715a',wallSandstone:'#d1b381'};
  ctx.save();ctx.lineCap='square';ctx.lineJoin='bevel';
  // Reconstitui visualmente os recortes das portas e janelas vistas de cima.
- const walls = [...beneath.walls, ...lowerOpeningWallSpans(beneath)];
+ const slabs = upper.areas.filter(isStructuralSlab);
+ const walls = [...beneath.walls, ...lowerOpeningWallSpans(beneath)]
+   .flatMap(wall => exposedLowerWallSpans(wall, slabs));
  for(const wall of walls){
    const covered=(upper.walls||[]).some(other=>
      distToSegment(wall.x1,wall.y1,other.x1,other.y1,other.x2,other.y2)<7&&

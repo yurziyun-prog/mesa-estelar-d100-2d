@@ -6,6 +6,10 @@ function isRoofMaterial(mat){return ROOF_TYPES.has(mat);}
 function pointInArchitectArea(a,x,y,pad=0){
  return x>=a.x-pad&&y>=a.y-pad&&x<=a.x+a.w+pad&&y<=a.y+a.h+pad;
 }
+const NON_STRUCTURAL_SURFACES = new Set(['grass','sand','dirt','snow','water','kenney_water','void','cave','mud','carpet']);
+function isStructuralSlab(area){
+ return !area.roof && !isRoofMaterial(area.mat) && !NON_STRUCTURAL_SURFACES.has(area.mat);
+}
 function roofSupportingBounds(floor){
  const pieces=[];
  for(const w of floor.walls||[]){
@@ -13,7 +17,7 @@ function roofSupportingBounds(floor){
     w:Math.abs(w.x2-w.x1),h:Math.abs(w.y2-w.y1)});
  }
  for(const a of floor.areas||[]){
-  if(!isRoofMaterial(a.mat)&&!['grass','sand','dirt','snow','water','kenney_water','void','cave','mud','carpet'].includes(a.mat))pieces.push(a);
+  if(isStructuralSlab(a))pieces.push(a);
  }
  if(!pieces.length)return null;
  const x=Math.min(...pieces.map(p=>p.x)),y=Math.min(...pieces.map(p=>p.y));
@@ -23,7 +27,7 @@ function roofSupportingBounds(floor){
 function roofHasStructuralSupport(floor,rect){
  const ov=ROOF_OVERHANG+2;
  const corners=[[rect.x,rect.y],[rect.x+rect.w,rect.y],[rect.x,rect.y+rect.h],[rect.x+rect.w,rect.y+rect.h]];
- const structural=(floor.areas||[]).filter(a=>!isRoofMaterial(a.mat)&&!['grass','sand','dirt','snow','water','kenney_water','void','cave','mud','carpet'].includes(a.mat));
+ const structural=(floor.areas||[]).filter(isStructuralSlab);
  // 楼板必须支撑整个屋顶轮廓，避免悬空的 L 形角落。
  if(structural.length&&corners.every(([x,y])=>structural.some(a=>pointInArchitectArea(a,x,y,ov))))return true;
  // 无楼板时，四面墙必须形成近似封闭的矩形。
@@ -286,8 +290,28 @@ function drawExternalBuildingTop(){
  if(!candidates.length)return;
  const highest=Math.max(...candidates.map(e=>e.level));
  const top=candidates.filter(e=>e.level===highest);
+ const underSlab=higher.some(floor=>floor.areas.some(area=>
+  isStructuralSlab(area)&&pointInArchitectArea(area,actor.x,actor.y)
+ ) && !(floor.openings||[]).some(opening=>pointInArchitectArea(opening,actor.x,actor.y)));
  ctx.save();ctx.translate(state.camera.x,state.camera.y);ctx.scale(state.camera.zoom,state.camera.zoom);
  for(const {area,level,floor} of top){
+  // Lajes feitas de vários recortes mudam de visibilidade juntas e sem sobrepor o personagem.
+  if(!isRoofMaterial(area.mat)){
+   if(underSlab)continue;
+   ctx.save();
+   for(const opening of floor.openings||[]){
+    ctx.beginPath();
+    ctx.rect(area.x,area.y,area.w,area.h);
+    const x=Math.max(area.x,opening.x),y=Math.max(area.y,opening.y);
+    const right=Math.min(area.x+area.w,opening.x+opening.w);
+    const bottom=Math.min(area.y+area.h,opening.y+opening.h);
+    if(right>x&&bottom>y)ctx.rect(x,y,right-x,bottom-y);
+    ctx.clip('evenodd');
+   }
+   drawTexturedArea(area.x,area.y,area.w,area.h,area.mat,area.color,area.tile);
+   ctx.restore();
+   continue;
+  }
   const key=state.activeSceneId+':'+level+':'+area.x+':'+area.y+':'+area.w+':'+area.h;
   const indoor=roofCoverageAtActor(area,actor);
   const now=performance.now();
@@ -299,10 +323,8 @@ function drawExternalBuildingTop(){
   roofFadeLevels.set(key,fade);
   if(fade.alpha<.015)continue;
   ctx.save();ctx.globalAlpha=fade.alpha;
-  if(isRoofMaterial(area.mat)){
-    drawRoofSurface(area.x,area.y,area.w,area.h,area.mat,area.roofPitch,area.roofHeight);
-    drawRoofOpenings(floor,area);
-  }else drawTexturedArea(area.x,area.y,area.w,area.h,area.mat,area.color,area.tile);
+  drawRoofSurface(area.x,area.y,area.w,area.h,area.mat,area.roofPitch,area.roofHeight);
+  drawRoofOpenings(floor,area);
   ctx.restore();
  }
  ctx.restore();

@@ -132,15 +132,27 @@ function openedDoorLeaf(d){
   const hx=d.x+side*34;
   return {x1:hx,y1:d.y,x2:hx,y2:d.y+68*swing};
 }
+function wallBlocksCharacter(wall,x,y){
+ return distToSegment(x,y,wall.x1,wall.y1,wall.x2,wall.y2)<10+(wall.width||16)/2;
+}
+function crossesWall(floor,x1,y1,x2,y2,extensionsOnly=false){
+ const walls=extensionsOnly?floor.walls.filter(wall=>wall.extendedUp):floor.walls;
+ const steps=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)/4));
+ for(let step=1;step<=steps;step++){
+   const t=step/steps,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;
+   if(walls.some(wall=>wallBlocksCharacter(wall,x,y)))return true;
+ }
+ return false;
+}
 function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   const floor = getScene().floors[floorIdx];
   if (!floor) return false;
   const r = 12;
 
   for (const w of floor.walls) {
-    if (distToSegment(nx, ny, w.x1, w.y1, w.x2, w.y2) < r + (w.width||16)/2 - 2) {
+    if (wallBlocksCharacter(w,nx,ny)) {
       const nearOpenDoor = floor.doors.some(d => d.open && Math.hypot(d.x - nx, d.y - ny) < 38);
-      if (!nearOpenDoor) return false;
+      if (w.extendedUp || !nearOpenDoor) return false;
     }
   }
 
@@ -481,6 +493,7 @@ function tryJumpDownFromUnfinishedFloor(ent,dx,dy){
  const ordered=scene.floors.map((f,i)=>({f,i,level:f.level}))
   .filter(v=>v.level<level).sort((a,b)=>b.level-a.level);
  for(const [px,py] of candidates){
+  if(crossesWall(floor,ent.x,ent.y,px,py))continue;
   for(const target of ordered){
    if(!hasBuiltFloorAt(target.f,px,py)&&!(target.f.baseTerrain&&onPaintedGround(target.f,px,py)))continue;
    if(!canMoveTo(target.i,px,py,true)||
@@ -511,6 +524,7 @@ function attemptJump(ent, dx, dy) {
   for(let d=42;d<=104;d+=8){
     const x=ent.x+ux*d,y=ent.y+uy*d;
     if(!canMoveTo(ent.floor,x,y,true)) continue;
+    if(crossesWall(floor,ent.x,ent.y,x,y,true))continue;
     // Não saltar através de paredes, portas ou objetos sólidos.
     const blocked=[0.25,0.5,0.75].some(t=>{
       const px=ent.x+ux*d*t,py=ent.y+uy*d*t;

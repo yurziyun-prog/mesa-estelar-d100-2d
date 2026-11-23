@@ -309,7 +309,9 @@ function openArchitectContextMenu(sx,sy,clientX,clientY){
  menu.id='architectContextMenu';menu.className='architect-context-menu';
  const grouped=architectSelections.some(ref=>Boolean(objectForSelection(ref)?.archGroupId));
  const single=architectSelections.length===1?architectSelections[0]:null;
+ const wall=clicked?.kind==='walls'?objectForSelection(clicked):null;
  const items=[
+  ...(wall?[['Estender parede +3 m',()=>{closeArchitectContextMenu();extendWallUp(wall);}]]:[]),
   ...(single&&['windows','doors','chests','props','walls','stairs'].includes(single.kind)?[['✏️ Editar propriedades',()=>{closeArchitectContextMenu();editArchitectObject(single);}]]:[]),
   ...(architectSelections.length>1?[['🔗 Agrupar',architectGroupSelection]]:[]),
   ...(grouped?[['🔓 Desagrupar',architectUngroupSelection]]:[])
@@ -320,7 +322,7 @@ function openArchitectContextMenu(sx,sy,clientX,clientY){
    btn.addEventListener('click',e=>{e.stopPropagation();fn();});menu.append(btn);
  }
  menu.style.left=Math.min(clientX,window.innerWidth-170)+'px';
- menu.style.top=Math.min(clientY,window.innerHeight-85)+'px';
  document.body.append(menu);
+ menu.style.top=Math.max(0,Math.min(clientY,window.innerHeight-menu.offsetHeight))+'px';
  return true;
 }
