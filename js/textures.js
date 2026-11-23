@@ -193,6 +193,23 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
     }
     ctx.strokeStyle='rgba(157,117,62,.13)';ctx.lineWidth=1.4;
     for(let gy=y+14;gy<y+h;gy+=24){ctx.beginPath();ctx.moveTo(x,gy);ctx.quadraticCurveTo(x+w/2,gy-7,x+w,gy+2);ctx.stroke();}
+  } else if(mat==='cave'){
+    ctx.fillStyle='#484a48';ctx.fillRect(x,y,w,h);
+    for(let gy=Math.floor(y/27)*27;gy<y+h;gy+=27)for(let gx=Math.floor(x/31)*31;gx<x+w;gx+=31){
+      const n=Math.abs(Math.sin(gx*14.78+gy*5.63)*3472.3)%1;
+      ctx.fillStyle=n>.6?'rgba(141,145,136,.17)':'rgba(19,23,24,.24)';
+      ctx.beginPath();ctx.ellipse(gx+n*15,gy+n*10,5+n*9,3+n*6,n*3,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='rgba(24,26,25,.27)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(gx+4,gy+19);ctx.lineTo(gx+13+n*6,gy+14);ctx.stroke();
+    }
+  } else if(mat==='mud'){
+    ctx.fillStyle='#5d4c36';ctx.fillRect(x,y,w,h);
+    for(let gy=Math.floor(y/24)*24;gy<y+h;gy+=24)for(let gx=Math.floor(x/26)*26;gx<x+w;gx+=26){
+      const n=Math.abs(Math.sin(gx*7.11+gy*23.53)*1981.9)%1;
+      ctx.fillStyle='rgba(116,96,65,.40)';ctx.beginPath();ctx.ellipse(gx+10+n*6,gy+11,9+n*5,3+n*2,.2,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='rgba(185,162,121,.24)';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.ellipse(gx+8,gy+12,5+n*3,2,0,Math.PI,Math.PI*1.9);ctx.stroke();
+    }
   } else if (mat === 'snow') {
     ctx.fillStyle = '#dce6f0';
     ctx.fillRect(x, y, w, h);
@@ -371,6 +388,8 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
 
   floor.areas.forEach(a => drawTexturedArea(a.x, a.y, a.w, a.h, a.mat, a.color, a.tile));
   drawBrushStrokes(floor);
+  // 只将楼下的自然地形和地板作为背景，隐藏门、窗、墙、家具和人物。
+  if(isBelow)return;
 
   floor.stairs.forEach(stair=>drawArchitecturalStair(stair));
 
