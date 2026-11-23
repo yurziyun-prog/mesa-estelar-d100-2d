@@ -300,6 +300,7 @@ function updateUI() {
 function selectPlayerChar(id) {
   const candidate=state.entities.find(e=>e.id===id);
   if(!candidate || candidate.type!=='pc')return;
+  if(candidate.sceneId==null||candidate.floor<0){logEvent('📍 Esse personagem está na reserva. O Mestre deve colocá-lo no mapa primeiro.');return;}
   state.selectedEntityId = id;
   const ent = getSelectedEntity();
   if (ent) {
