@@ -456,21 +456,44 @@ function createGmNpc(){
 
 // 从无楼板的楼梯顶端向下跳：只有下层存在真实、无碰撞的落脚处才允许。
 function tryJumpDownFromUnfinishedFloor(ent,dx,dy){
- const scene=getScene(),upper=scene.floors[ent.floor];
- if(!upper||hasBuiltFloorAt(upper,ent.x,ent.y))return false;
- if(!upper.stairs.some(st=>Math.hypot(st.x-ent.x,st.y-ent.y)<32))return false;
- const destination=floorIndexForLevel(scene,floorLevel(scene,ent.floor)-1,false);
- if(destination<0)return false;
+ const scene=getScene(),floor=scene.floors[ent.floor];
+ if(!floor||ent.stairClimb||performance.now()<(ent.stairCooldown||0))return false;
+ const level=floorLevel(scene,ent.floor);
+ if(level<=Math.min(...scene.floors.map(f=>f.level)))return false;
  const len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
- const landing=[56,40,28,0].map(dist=>[ent.x+ux*dist,ent.y+uy*dist])
-   .find(([x,y])=>canMoveTo(destination,x,y,true));
- if(!landing){logEvent('⚠️ 下层没有安全的跳落位置。');return false;}
- ent.floor=destination;[ent.x,ent.y]=landing;
- ent.jumpStart=performance.now();ent.jumpUntil=ent.jumpStart+380;
- ent.stairTransitionAt=performance.now();ent.stairCooldown=performance.now()+1000;
- state.currentFloor=destination;updateFloorLabel();
- logEvent('↘️ '+ent.name+' 从无楼板的楼梯顶端跳到了下层。');
- return true;
+ const hereHasSlab=hasBuiltFloorAt(floor,ent.x,ent.y);
+ const adjacentShaft=(floor.stairs||[]).some(st=>st.dir==='down'&&Math.hypot(st.x-ent.x,st.y-ent.y)<45);
+ // A real balcony/ledge or stairwell is required. You cannot jump down
+ // through a solid floor merely by pressing Space.
+ const locations=[40,56,72,88,104].map(dist=>[ent.x+ux*dist,ent.y+uy*dist]);
+ const candidates=locations.filter(([px,py])=>!hasBuiltFloorAt(floor,px,py)||(
+   adjacentShaft&&(floor.stairs||[]).some(st=>st.dir==='down'&&Math.hypot(st.x-px,st.y-py)<32)));
+ if(!candidates.length){
+  if(hereHasSlab)return false; // regular horizontal jump still available
+  candidates.push([ent.x,ent.y]);
+ }
+ // The first existing solid lower floor intercepts the fall, so do not
+ // teleport through intermediate slabs. If no safe landing exists, reject.
+ const ordered=scene.floors.map((f,i)=>({f,i,level:f.level}))
+  .filter(v=>v.level<level).sort((a,b)=>b.level-a.level);
+ for(const [px,py] of candidates){
+  for(const target of ordered){
+   if(!hasBuiltFloorAt(target.f,px,py))continue;
+   if(!canMoveTo(target.i,px,py,true)||
+      !stairLandingUnoccupied(scene,target.i,px,py,ent.id))break;
+   const dropped=level-target.level;
+   ent.floor=target.i;ent.x=px;ent.y=py;
+   ent.stairTransitionAt=performance.now();
+   ent.stairCooldown=performance.now()+1000;
+   ent.fallUntil=performance.now()+430;
+   state.currentFloor=target.i;updateFloorLabel();
+   applyFallDamage(ent,dropped,'跳下');
+   logEvent('↘️ '+ent.name+' 从 '+floorName(level)+' 跳到了 '+floorName(target.level)+'。');
+   return true;
+  }
+ }
+ logEvent('⚠️ 下方没有可安全着陆的地板；未执行跨层跳跃。');
+ return false;
 }
 
 // Saltos curtos verificam uma aterrissagem segura; caminhar jamais cruza o vazio.
