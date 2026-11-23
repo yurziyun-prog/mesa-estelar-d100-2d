@@ -175,15 +175,65 @@ function transferOnStair(ent,stair,automatic=false){
  logEvent('🪜 '+ent.name+' chegou ao '+floorName(floorLevel(scene,target))+'.');
  return true;
 }
-function tryWalkingStair(ent,dx,dy){
- if(!ent||!dx&&!dy)return;
- const scene=getScene(),floor=scene.floors[ent.floor];if(!floor)return;
- const now=performance.now();
- if(now<(ent.stairCooldown||0))return;
- // Entrar no núcleo da escada usando movimento, sem exigir E ou marcador textual.
- // A aproximação evita trocar de nível só por estar parado sobre a escada.
- for(const stair of floor.stairs){
-  const d=Math.hypot(ent.x-stair.x,ent.y-stair.y);
-  if(d<19 && transferOnStair(ent,stair,true))break;
+// 对于旧地图，台阶朝向默认与绘图一致：底端 +Y，顶端 -Y。
+// 从侧面穿行不启动攀爬，保留镂空楼梯下方的通道。
+const STAIR_TRAVEL_MS=1050;
+function stairEntryAllowed(stair,ent,dx,dy){
+ const shape=stairVisualShape(stair.shape);
+ const localX=ent.x-stair.x,localY=ent.y-stair.y;
+ if(shape==='spiral'){
+  const near=Math.hypot(localX,localY)<52;
+  return near&&Math.abs(dy)>.6&&(stair.dir==='down'?dy>0:dy<0);
  }
+ if(Math.abs(localX)>27)return false;
+ // 低层往上：从画面下方走向上方；高层往下反之。
+ if(stair.dir==='down')return localY>=-65&&localY<=-22&&dy>.55;
+ return localY>=22&&localY<=65&&dy<-.55;
+}
+function beginStairClimb(ent,stair,dx,dy){
+ if(ent.stairClimb||performance.now()<(ent.stairCooldown||0))return false;
+ const scene=getScene(),counterpart=findStairCounterpart(scene,ent.floor,stair);
+ if(!counterpart)return false;
+ if(!stairEntryAllowed(stair,ent,dx,dy))return false;
+ ent.stairClimb={
+  floor:ent.floor,linkId:stair.linkId||null,x:stair.x,y:stair.y,
+  fromX:ent.x,fromY:ent.y,
+  start:performance.now(),duration:STAIR_TRAVEL_MS,
+  dir:stair.dir,shape:stairVisualShape(stair.shape),
+  target:counterpart.index
+ };
+ ent.facingX=0;ent.facingY=stair.dir==='down'?1:-1;
+ ent.walkingUntil=performance.now()+160;
+ return true;
+}
+function advanceStairClimb(ent){
+ const climb=ent.stairClimb;if(!climb)return false;
+ const scene=getScene(),floor=scene.floors[climb.floor];
+ const stair=floor?.stairs.find(s=>(climb.linkId&&s.linkId===climb.linkId)||
+  (!climb.linkId&&Math.hypot(s.x-climb.x,s.y-climb.y)<5&&s.dir===climb.dir));
+ if(!stair){
+  ent.x=climb.fromX;ent.y=climb.fromY;
+  delete ent.stairClimb;return true;
+ }
+ const progress=Math.max(0,Math.min(1,(performance.now()-climb.start)/climb.duration));
+ const eased=progress*progress*(3-2*progress);
+ // 动画期间保持当前楼层，人物在台阶上逐渐向上（或向下）移动。
+ ent.x=climb.fromX+(stair.x-climb.fromX)*eased;
+ ent.y=climb.fromY+((climb.dir==='down'?stair.y+31:stair.y-31)-climb.fromY)*eased;
+ ent.stairClimbProgress=progress;
+ ent.walkingUntil=performance.now()+140;
+ if(progress>=1){
+  const sourceX=climb.fromX,sourceY=climb.fromY;
+  delete ent.stairClimb;
+  delete ent.stairClimbProgress;
+  if(!transferOnStair(ent,stair,true)){
+   ent.x=sourceX;ent.y=sourceY;ent.stairCooldown=performance.now()+400;
+  }
+ }
+ return true;
+}
+function tryWalkingStair(ent,dx,dy){
+ if(!ent||(!dx&&!dy)||ent.stairClimb)return false;
+ const floor=getScene().floors[ent.floor];if(!floor)return false;
+ return floor.stairs.some(stair=>beginStairClimb(ent,stair,dx,dy));
 }
