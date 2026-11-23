@@ -35,8 +35,16 @@ function stairLinkedIndex(scene,sourceIndex,stair){
 // 旧版本曾自动复制楼板。保留用户保存的现有数据，不再进行此类迁移。
 function repairExistingStairLandings(scene){ensureFloorLevels(scene);}
 function hasBuiltFloorAt(floor,x,y){
- return (floor?.areas||[]).some(a=>!['water','kenney_water','void','carpet'].includes(a.mat)
-  &&x>=a.x&&x<=a.x+a.w&&y>=a.y&&y<=a.y+a.h);
+ if(!floor)return false;
+ const hit=a=>x>=a.x&&x<=a.x+a.w&&y>=a.y&&y<=a.y+a.h;
+ const top=[...(floor.areas||[])].reverse().find(hit);
+ if(!top)return false;
+ if(top.roof){
+   if(roofPitchFor(top.mat,top.roofPitch)==='flat')return true;
+   return (floor.areas||[]).some(a=>a.attic&&hit(a)&&
+     (a.atticRoofId===top.roofId||!top.roofId));
+ }
+ return !['water','kenney_water','void','carpet'].includes(top.mat);
 }
 function warnMissingStairFloor(scene,index,x,y){
  if(!hasBuiltFloorAt(scene.floors[index],x,y)){
