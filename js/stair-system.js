@@ -53,6 +53,32 @@ function warnMissingStairFloor(scene,index,x,y){
   if(typeof alert==='function')alert(msg);
  }
 }
+// 人物卡仍留在银行中；只有同场景、同楼层、真正站在地图上的角色占据出口。
+function stairLandingUnoccupied(scene,floorIndex,x,y,ignoreId=null){
+ return !state.entities?.some(e=>e.id!==ignoreId&&e.sceneId===state.activeSceneId&&e.floor===floorIndex
+  &&Math.hypot(e.x-x,e.y-y)<26);
+}
+function stairBusyForEntity(ent,stair){
+ const sceneId=state.activeSceneId,sourceFloor=ent.floor;
+ return state.entities?.some(e=>e.id!==ent.id&&e.sceneId===sceneId&&e.stairClimb
+  &&e.stairClimb.floor===sourceFloor&&(
+   (stair.linkId&&e.stairClimb.linkId===stair.linkId)||
+   (!stair.linkId&&Math.hypot(e.stairClimb.x-stair.x,e.stairClimb.y-stair.y)<14)
+  ))||false;
+}
+// 把梯身当成立体通道：禁止梯身穿过实体墙或关着的门，但不禁止从下面横向走过。
+function stairPathBlocked(floor,stair){
+ const radius=stairVisualShape(stair.shape)==='spiral'?32:20;
+ const points=stairVisualShape(stair.shape)==='spiral'
+  ?[[0,0],[-radius,0],[radius,0],[0,-radius],[0,radius]]
+  :[[0,-37],[0,0],[0,37]];
+ return points.some(([lx,ly])=>{
+   const v=stairWorld(stair,lx,ly),x=stair.x+v.x,y=stair.y+v.y;
+   return (floor.walls||[]).some(w=>distToSegment(x,y,w.x1,w.y1,w.x2,w.y2)<13+(w.width||16)/2)
+      ||(floor.doors||[]).some(d=>!d.open&&Math.hypot(d.x-x,d.y-y)<24)
+      ||(floor.windows||[]).some(win=>Math.hypot(win.x-x,win.y-y)<18);
+ });
+}
 function safeStairArrival(scene,targetIndex,x,y,offset,stair=null){
  const floor=scene.floors[targetIndex];
  const local=[[offset,20],[0,30],[0,-30],[-offset,20],[0,0]];
@@ -60,10 +86,10 @@ function safeStairArrival(scene,targetIndex,x,y,offset,stair=null){
    const point=stair?stairWorld(stair,lx,ly):{x:lx,y:ly};
    return [x+point.x,y+point.y];
  });
- const selected=candidates.find(([px,py])=>canMoveTo(targetIndex,px,py));
+ const selected=candidates.find(([px,py])=>canMoveTo(targetIndex,px,py)&&stairLandingUnoccupied(scene,targetIndex,px,py));
  if(selected)return selected;
  // 无楼板时，人物站在梯子顶部，不会凭空创建整块地板。
- if(!hasBuiltFloorAt(floor,x,y))return [x,y];
+ if(!hasBuiltFloorAt(floor,x,y)&&stairLandingUnoccupied(scene,targetIndex,x,y))return [x,y];
  return null;
 }
 function createStairPair(scene,fromLevel,toLevel,x,y,shape,material,style,continuous=false,linkId=''){
@@ -221,12 +247,20 @@ function beginStairClimb(ent,stair,dx,dy){
  const scene=getScene(),counterpart=findStairCounterpart(scene,ent.floor,stair);
  if(!counterpart)return false;
  if(!stairEntryAllowed(stair,ent,dx,dy))return false;
+ // 同一梯段同一时间只有一人开始攀爬；其他人继续按移动键即可排队。
+ if(stairBusyForEntity(ent,stair))return false;
+ if(stairPathBlocked(scene.floors[ent.floor],stair)){
+   ent.stairCooldown=performance.now()+750;
+   logEvent('⚠️ 楼梯被墙壁、门或窗挡住，不能开始攀爬。');
+   return false;
+ }
  ent.stairClimb={
   floor:ent.floor,linkId:stair.linkId||null,x:stair.x,y:stair.y,
   fromX:ent.x,fromY:ent.y,
   start:performance.now(),duration:STAIR_TRAVEL_MS,
   dir:stair.dir,shape:stairVisualShape(stair.shape),
-  target:counterpart.index
+  target:counterpart.index,
+  angle:Math.atan2(ent.y-stair.y,ent.x-stair.x)
  };
  const forward=stairWorld(stair,0,stair.dir==='down'?1:-1);
  ent.facingX=forward.x;ent.facingY=forward.y;
@@ -240,14 +274,27 @@ function advanceStairClimb(ent){
   (!climb.linkId&&Math.hypot(s.x-climb.x,s.y-climb.y)<5&&s.dir===climb.dir));
  if(!stair){
   ent.x=climb.fromX;ent.y=climb.fromY;
-  delete ent.stairClimb;return true;
+  delete ent.stairClimb;delete ent.stairClimbProgress;return true;
  }
  const progress=Math.max(0,Math.min(1,(performance.now()-climb.start)/climb.duration));
  const eased=progress*progress*(3-2*progress);
  // 动画期间保持当前楼层，人物在台阶上逐渐向上（或向下）移动。
- const endpoint=stairWorld(stair,0,climb.dir==='down'?31:-31);
- ent.y=climb.fromY+(stair.y+endpoint.y-climb.fromY)*eased;
- ent.x=climb.fromX+(stair.x+endpoint.x-climb.fromX)*eased;
+ if(climb.shape==='spiral'){
+   // 从人物原来的切线位置，沿圆形楼梯绕行；不是沿直线穿过中心柱。
+   const beginning=climb.angle;
+   const winding=climb.dir==='down'?1:-1;
+   const sweep=winding*Math.PI*1.5*eased;
+   const radius=34*(1-eased*.12);
+   const angle=beginning+sweep;
+   ent.x=stair.x+Math.cos(angle)*radius;
+   ent.y=stair.y+Math.sin(angle)*radius;
+   ent.facingX=-Math.sin(angle)*winding;
+   ent.facingY=Math.cos(angle)*winding;
+ }else{
+   const endpoint=stairWorld(stair,0,climb.dir==='down'?31:-31);
+   ent.y=climb.fromY+(stair.y+endpoint.y-climb.fromY)*eased;
+   ent.x=climb.fromX+(stair.x+endpoint.x-climb.fromX)*eased;
+ }
  ent.stairClimbProgress=progress;
  ent.walkingUntil=performance.now()+140;
  if(progress>=1){
