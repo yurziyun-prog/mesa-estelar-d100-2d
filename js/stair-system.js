@@ -123,6 +123,7 @@ function transferOnStair(ent,stair,automatic=false){
  ent.x=counterpart.stair.x+offset;
  ent.y=counterpart.stair.y+20;
  ent.stairCooldown=now+1050;
+ ent.stairTransitionAt=now;
  state.currentFloor=target;updateFloorLabel();
  if(typeof refreshGmFocus==='function')refreshGmFocus();
  logEvent('🪜 '+ent.name+' chegou ao '+floorName(floorLevel(scene,target))+'.');
