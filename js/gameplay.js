@@ -26,11 +26,13 @@ function gmCycle(){
 }
 function gmConfirm(){
  if(!gmPreviewId)return;gmControlledId=gmPreviewId;
+ cameraFollowsActor=true;
  state.selectedEntityId=gmControlledId;refreshGmFocus();updateUI();
  logEvent('👑 Controlando '+(getGmControlledEntity()?.name||'personagem'));
 }
 function gmRelease(){
  gmControlledId=null;gmPreviewId=null;
+ cameraFollowsActor=false;
  refreshGmFocus();logEvent('👑 Mestre: câmera livre.');
 }
 function refreshGmFocus(){
@@ -84,6 +86,7 @@ function setMode(mode) {
   refreshGmSpawnList();
   updateUI();
   refreshGmFocus();
+  centerMap();
 }
 
 function onPaintedGround(floor, x, y) {
@@ -312,6 +315,7 @@ function selectPlayerChar(id) {
   if (ent) {
     state.activeSceneId = ent.sceneId;
     state.currentFloor = ent.floor;
+    cameraFollowsActor = true;
     updateFloorLabel();
     refreshSceneSelect();
   }

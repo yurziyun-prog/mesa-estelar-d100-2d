@@ -449,6 +449,36 @@ function drawArchitecturalStair(stair,overlay=false){
  ctx.restore();
 }
 
+function lowerOpeningWallSpans(floor) {
+ const openings = [
+   ...floor.doors.map(door => ({...door, halfGap:34})),
+   ...floor.windows.map(win => ({...win, halfGap:(win.width||40)/2+2}))
+ ];
+ const spans = [];
+ for(const opening of openings){
+   const vertical = opening.orient==='v';
+   const along = vertical ? opening.y : opening.x;
+   const across = vertical ? opening.x : opening.y;
+   let before, after;
+   for(const wall of floor.walls){
+     const [a,b,c,d] = vertical
+       ? [wall.y1,wall.y2,wall.x1,wall.x2]
+       : [wall.x1,wall.x2,wall.y1,wall.y2];
+     if(Math.abs(c-across)>=2 || Math.abs(d-across)>=2)continue;
+     const start = Math.min(a,b), end = Math.max(a,b);
+     if(end<along && (!before || end>before.edge))before={edge:end,wall};
+     if(start>along && (!after || start<after.edge))after={edge:start};
+   }
+   if(!before || !after ||
+      Math.abs(along-before.edge-opening.halfGap)>12 ||
+      Math.abs(after.edge-along-opening.halfGap)>12)continue;
+   spans.push({...before.wall,...(vertical
+     ? {x1:across,y1:before.edge,x2:across,y2:after.edge}
+     : {x1:before.edge,y1:across,x2:after.edge,y2:across})});
+ }
+ return spans;
+}
+
 function drawLowerStoreyWallContinuations(sc,upperIndex){
  const upper=sc.floors[upperIndex],level=floorLevel(sc,upperIndex);
  const underIndex=floorIndexForLevel(sc,level-1,false);
@@ -460,7 +490,9 @@ function drawLowerStoreyWallContinuations(sc,upperIndex){
  const colors={wallWood:'#906842',wallBrick:'#a56853',wallMasonry:'#a3aaac',
    wallCastle:'#8a8b87',wallMetal:'#a5bdc9',wallRust:'#96715a',wallSandstone:'#d1b381'};
  ctx.save();ctx.lineCap='square';ctx.lineJoin='bevel';
- for(const wall of beneath.walls){
+ // Reconstitui visualmente os recortes das portas e janelas vistas de cima.
+ const walls = [...beneath.walls, ...lowerOpeningWallSpans(beneath)];
+ for(const wall of walls){
    const covered=(upper.walls||[]).some(other=>
      distToSegment(wall.x1,wall.y1,other.x1,other.y1,other.x2,other.y2)<7&&
      distToSegment(wall.x2,wall.y2,other.x1,other.y1,other.x2,other.y2)<7);

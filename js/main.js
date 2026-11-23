@@ -3,6 +3,8 @@ const ctx = canvas.getContext('2d');
 
 function resizeCanvas() {
   const rect = canvas.parentElement.getBoundingClientRect();
+  state.camera.x += (Math.floor(rect.width) - canvas.width) / 2;
+  state.camera.y += (Math.floor(rect.height) - canvas.height) / 2;
   canvas.width = rect.width;
   canvas.height = rect.height;
 }
@@ -13,7 +15,44 @@ let isDragging = false;
 let isPanning = false;
 let draggingEntity = null;
 let draggingProp = null;
-function followCamera(){const e=activeActor();if(!e)return;state.camera.x=canvas.width/2-e.x*state.camera.zoom;state.camera.y=canvas.height/2-e.y*state.camera.zoom;}
+let cameraFollowsActor = false;
+let cameraMapKey = null;
+
+function centerCameraAt(x, y) {
+  state.camera.x = canvas.width / 2 - x * state.camera.zoom;
+  state.camera.y = canvas.height / 2 - y * state.camera.zoom;
+}
+
+function centerMap() {
+  const scene = getScene();
+  if (!scene) return;
+  cameraFollowsActor = false;
+  cameraMapKey = JSON.stringify([state.mode, state.activeSceneId, state.currentFloor]);
+  const level = floorLevel(scene, state.currentFloor);
+  const areas = scene.floors.filter(floor => floor.level <= level).flatMap(floor => [
+    ...(floor.baseTerrain && floor.terrainBounds ? [floor.terrainBounds] : []),
+    ...floor.areas
+  ]);
+  if (!areas.length) areas.push(scene.floors[state.currentFloor].bounds);
+  const left = Math.min(...areas.map(area => area.x));
+  const right = Math.max(...areas.map(area => area.x + area.w));
+  const top = Math.min(...areas.map(area => area.y));
+  const bottom = Math.max(...areas.map(area => area.y + area.h));
+  centerCameraAt((left + right) / 2, (top + bottom) / 2);
+}
+
+function followCamera() {
+  const key = JSON.stringify([state.mode, state.activeSceneId, state.currentFloor]);
+  if (cameraFollowsActor) {
+    const actor = activeActor();
+    if (actor?.sceneId === state.activeSceneId && actor.floor === state.currentFloor) {
+      centerCameraAt(actor.x, actor.y);
+      cameraMapKey = key;
+      return;
+    }
+  }
+  if (key !== cameraMapKey) centerMap();
+}
 let lastMouse = { x: 0, y: 0 };
 
 function screenToWorld(sx, sy) {
@@ -126,6 +165,7 @@ function setupInputs() {
     const sy = e.clientY - rect.top;
 
     if (isPanning) {
+      cameraFollowsActor = false;
       state.camera.x += sx - lastMouse.x;
       state.camera.y += sy - lastMouse.y;
       lastMouse = { x: sx, y: sy };
@@ -173,7 +213,7 @@ function setupInputs() {
     const rect=canvas.getBoundingClientRect(),sx=e.clientX-rect.left,sy=e.clientY-rect.top;
     const wx=(sx-state.camera.x)/prior,wy=(sy-state.camera.y)/prior;
     state.camera.zoom=next;
-    if(activeActor())followCamera();else{state.camera.x=sx-wx*next;state.camera.y=sy-wy*next;}
+    if(cameraFollowsActor)followCamera();else{state.camera.x=sx-wx*next;state.camera.y=sy-wy*next;}
   }, { passive: false });
 }
 
