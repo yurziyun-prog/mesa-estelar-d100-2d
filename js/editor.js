@@ -422,7 +422,7 @@ function mergeCollinearWalls(floor){
 
 function hitArchitectObjectAt(wx,wy){
  const floor=getScene().floors[state.currentFloor];
- for(const kind of ['props','stairs','chests','doors','windows']){
+ for(const kind of ['roofOpenings','props','stairs','chests','doors','windows']){
    const items=floor[kind]||[];
    for(let i=items.length-1;i>=0;i--){
      const item=items[i],radius=kind==='stairs'?50:kind==='props'&&['bed','bedDouble','capsuleBed'].includes(item.type)?50:30;
