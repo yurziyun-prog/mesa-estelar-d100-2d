@@ -294,7 +294,7 @@ function syncLinkedStair(source,key,value){
 
 // Material-specific, curated pairs prevent wood finishes inheriting steel-blue colors.
 const TILE_MATERIAL_PALETTES={
- parquet:[['Carvalho claro','#b99161','#e1bf8e'],['Carvalho natural','#93613b','#b88452'],['Nogueira','#67432e','#936947'],['Madeira escura','#432c21','#6e4b35'],['Mogno','#803c30','#ab644b'],['Bambu','#a99a67','#cfbd80'],['Cerejeira','#aa7158','#d79a79'],['Madeira envelhecida','#746454','#a1917d']],
+ parquet:[['Carvalho claro','#b99161','#e1bf8e'],['Carvalho natural','#93613b','#b88452'],['Nogueira','#67432e','#936947'],['Madeira escura','#432c21','#6e4b35'],['Mogno','#803c30','#ab644b'],['Bambu','#a99a67','#cfbd80'],['Cerejeira','#aa7158','#d79a79'],['Madeira envelhecida','#746454','#a1917d'],['Pinho claro','#caad79','#e8cd9a'],['Cedro','#a46e48','#cb926a'],['Teca','#755139','#a47a53'],['Ipê','#624935','#95704d'],['Ébano','#2d2420','#524036'],['Freixo','#bca885','#ded0ab'],['Carvalho branco','#d1bda0','#f0ddc3'],['Castanheira','#7c5135','#ad8157']],
  metal:[['Aço','#687783','#b2c2cb'],['Ferro escuro','#424a52','#79838a'],['Bronze','#816443','#bd996a'],['Cobre','#946047','#c98c61'],['Metal enferrujado','#764c3b','#b17855']],
  marble:[['Mármore branco','#d4d3cb','#f4f1e9'],['Mármore cinza','#858a92','#c0c3c7'],['Mármore preto','#282d32','#62676b'],['Mármore verde','#456d61','#8db5a2'],['Mármore rosado','#b78f8b','#e4bfaf']],
  masonry:[['Pedra clara','#a7a59b','#d4d0c4'],['Granito','#72777a','#a9afb0'],['Ardósia','#495563','#7c8894'],['Arenito','#aa8d69','#d0b78d'],['Pedra escura','#464745','#777a76']],
