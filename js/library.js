@@ -206,6 +206,11 @@ function selectedConstructionKind(){
 }
 function refreshArchitectProperties(){
  const item=selectedArchitectItem(),kind=selectedConstructionKind();
+ const roofActive=state.tool==='roof'||Boolean(item&&isRoofMaterial(item.mat));
+ const roofControls=document.getElementById('roofOptions');
+ if(roofControls)roofControls.classList.toggle('hidden',!roofActive);
+ const pitchSelect=document.getElementById('roofPitch');
+ if(pitchSelect&&roofActive)pitchSelect.value=roofPitchFor(item?.mat||state.roofMaterial,item?.roofPitch||state.roofPitch);
  const furniture=Boolean(item?.type)||item?.mat==='carpet'||(!item&&(['furniture','props'].includes(architectCategory)||(architectCategory==='furniture'&&state.material==='carpet')));
  const showColors=kind==='wall'?Boolean(state.wallCustomColor||item?.color):!kind&&furniture;
  document.getElementById('objectColorSettings')?.classList.toggle('hidden',!showColors);
