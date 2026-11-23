@@ -97,8 +97,8 @@ function drawCustomTileFinish(x,y,w,h,settings){
   }
  }
 }
-function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null, roofPitch = null) {
-  if(isRoofMaterial(mat)){drawRoofSurface(x,y,w,h,mat,roofPitch);return;}
+function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null, roofPitch = null, roofHeight = null) {
+  if(isRoofMaterial(mat)){drawRoofSurface(x,y,w,h,mat,roofPitch,roofHeight);return;}
   if(mat==='kenney_water')mat='water';
   if(mat==='kenney_wood')mat='wood';
   if(isDownloadedMaterial(mat)){drawDownloadedMaterial(x,y,w,h,mat);return;}
@@ -392,7 +392,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     const inside=actor&&actor.floor===floorIdx&&actor.sceneId===state.activeSceneId
       &&a.roof&&a.roofAttic&&pointInArchitectArea(a,actor.x,actor.y);
     if(inside&&state.mode!=='architect')return; // 阁楼内部不被屋顶贴图覆盖
-    drawTexturedArea(a.x,a.y,a.w,a.h,a.mat,a.color,a.tile,a.roofPitch);
+    drawTexturedArea(a.x,a.y,a.w,a.h,a.mat,a.color,a.tile,a.roofPitch,a.roofHeight);
   });
   drawBrushStrokes(floor);
   // 只将楼下的自然地形和地板作为背景，隐藏门、窗、墙、家具和人物。
