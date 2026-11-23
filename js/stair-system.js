@@ -33,6 +33,37 @@ function stairLinkedIndex(scene,sourceIndex,stair){
  if(Number.isInteger(stair.targetLevel))return floorIndexForLevel(scene,stair.targetLevel,false);
  return floorIndexForLevel(scene,floorLevel(scene,sourceIndex)+(stair.dir==='down'?-1:1),false);
 }
+const STRUCTURAL_FLOOR_MATERIALS=new Set(['wood','checker','marble','carpet','stone','cobble','metal','mosaic','bridge']);
+function ensureStairLanding(scene,sourceIndex,targetIndex,x,y){
+  const source=scene.floors[sourceIndex],target=scene.floors[targetIndex];
+  if(!source||!target)return;
+  const contains=(a,px,py)=>px>=a.x&&py>=a.y&&px<=a.x+a.w&&py<=a.y+a.h;
+  const usable=a=>!['water','void','kenney_water'].includes(a.mat);
+  // 地板不能从下层的视觉投影代替上层的真实碰撞。
+  // 目标楼层未铺地板时，建立可行走的建筑地板，不复制墙、门或窗。
+  const existing=(target.areas||[]).some(a=>usable(a)&&contains(a,x,y));
+  if(existing)return;
+  const footprints=(source.areas||[]).filter(a=>STRUCTURAL_FLOOR_MATERIALS.has(a.mat)&&contains(a,x,y));
+  if(footprints.length){
+    for(const a of footprints){
+      const duplicate=target.areas.some(b=>b.mat===a.mat&&Math.abs(b.x-a.x)<1&&Math.abs(b.y-a.y)<1&&Math.abs(b.w-a.w)<1&&Math.abs(b.h-a.h)<1);
+      if(!duplicate)target.areas.push(structuredClone(a));
+    }
+  }else{
+    // 至少保证楼梯出口有一个可以活动的小平台。
+    target.areas.push({x:x-90,y:y-90,w:180,h:180,mat:'wood'});
+  }
+}
+function safeStairArrival(scene,targetIndex,x,y,offset){
+  const floor=scene.floors[targetIndex];
+  const candidates=[
+    [x+offset,y+20],[x,y+30],[x,y-30],
+    [x-offset,y+20],[x+offset,y-25],[x-offset,y-25],[x,y],
+  ];
+  const usable=(px,py)=>onPaintedGround(floor,px,py)&&!floor.walls.some(w=>distToSegment(px,py,w.x1,w.y1,w.x2,w.y2)<20)
+    &&!floor.doors.some(d=>!d.open&&Math.hypot(px-d.x,py-d.y)<24);
+  return candidates.find(([px,py])=>usable(px,py))||[x,y];
+}
 function createStairPair(scene,fromLevel,toLevel,x,y,shape,material,style,continuous=false,linkId=''){
  const srcIndex=floorIndexForLevel(scene,fromLevel,true,{x,y});
  const dstIndex=floorIndexForLevel(scene,toLevel,true,{x,y});
@@ -45,6 +76,8 @@ function createStairPair(scene,fromLevel,toLevel,x,y,shape,material,style,contin
  const destination={...common,dir:up?'down':'up',targetFloor:srcIndex,targetLevel:fromLevel};
  from.stairs.push(origin);
  to.stairs.push(destination);
+ ensureStairLanding(scene,srcIndex,dstIndex,x,y);
+ ensureStairLanding(scene,dstIndex,srcIndex,x,y);
  // O furo é apenas decorativo no piso superior e acompanha o destino.
  const upper=up?to:from;
  if(!upper.openings.some(o=>o.stairLinkId===pairId))
@@ -117,11 +150,12 @@ function transferOnStair(ent,stair,automatic=false){
  const now=performance.now();
  if(automatic && now<(ent.stairCooldown||0))return false;
  const target=counterpart.index;
+ // 兼容旧存档：此前楼梯可能只画出了下层地板，上层没有可走的地面。
+ ensureStairLanding(scene,ent.floor,target,stair.x,stair.y);
  ent.floor=target;
- // O personagem reaparece no patamar do lado oposto ao sentido da subida.
  const offset=stair.dir==='up'?32:-32;
- ent.x=counterpart.stair.x+offset;
- ent.y=counterpart.stair.y+20;
+ const [arrivalX,arrivalY]=safeStairArrival(scene,target,counterpart.stair.x,counterpart.stair.y,offset);
+ ent.x=arrivalX;ent.y=arrivalY;
  ent.stairCooldown=now+1050;
  ent.stairTransitionAt=now;
  state.currentFloor=target;updateFloorLabel();
