@@ -54,7 +54,12 @@ function handleArchitectSelection(wx,wy,isDrag){
    return;
   }
   const hit=architectSelectionHit(wx,wy);
-  if(hit){
+  if(hit?.kind==='areas'){
+   // Clique simples seleciona o piso; arrastar sobre ele cria seleção por área.
+   architectSelections=[];
+   architectSelectionGesture={mode:'marquee',x:wx,y:wy,x2:wx,y2:wy,clickTarget:hit};
+   updateArchitectSelectionUI();
+  }else if(hit){
    if(!architectSelections.some(s=>s.kind===hit.kind&&s.index===hit.index))architectSelections=[hit];
    architectSelectionGesture={mode:'move',x:wx,y:wy,items:selectionSnapshot()};
    updateArchitectSelectionUI();
@@ -111,7 +116,7 @@ function finishArchitectSelection(wx,wy){
     if(e.sceneId===state.activeSceneId&&e.floor===state.currentFloor&&rectContains(b,e.x,e.y))selected.push({kind:'entities',index:i});
    }
    architectSelections=selected;
-  }
+  }else if(g.clickTarget)architectSelections=[g.clickTarget];
  }
  updateArchitectSelectionUI();
 }
