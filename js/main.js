@@ -59,8 +59,10 @@ function setupInputs() {
     if (e.key === 'Delete' || e.key === 'Backspace') {
       if(state.mode==='architect'){
         if(deleteArchitectSelection()){e.preventDefault();return;}
+      }else if(state.mode==='gm'){
+        if(gmRemoveEntityFromScene()){e.preventDefault();return;}
       }
-      // Del não remove nada nos modos Mestre/Jogador.
+      // O modo Jogador nunca exclui personagens.
     }
     if (e.key.toLowerCase() === 'e' && activeActor()) {
       const ent = activeActor();
