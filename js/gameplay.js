@@ -478,7 +478,7 @@ function tryJumpDownFromUnfinishedFloor(ent,dx,dy){
   .filter(v=>v.level<level).sort((a,b)=>b.level-a.level);
  for(const [px,py] of candidates){
   for(const target of ordered){
-   if(!hasBuiltFloorAt(target.f,px,py))continue;
+   if(!hasBuiltFloorAt(target.f,px,py)&&!(target.f.baseTerrain&&onPaintedGround(target.f,px,py)))continue;
    if(!canMoveTo(target.i,px,py,true)||
       !stairLandingUnoccupied(scene,target.i,px,py,ent.id))break;
    const dropped=level-target.level;
