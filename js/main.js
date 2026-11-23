@@ -212,6 +212,7 @@ function updateSimulation() {
         const vy = (dy / len) * speed;
         if (canMoveTo(ent.floor, ent.x + vx, ent.y)) ent.x += vx;
         if (canMoveTo(ent.floor, ent.x, ent.y + vy)) ent.y += vy;
+        tryWalkingStair(ent,dx,dy);
         ent.walkingUntil=performance.now()+130;
       }
     }
