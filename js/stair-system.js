@@ -61,9 +61,10 @@ function stairLandingUnoccupied(scene,floorIndex,x,y,ignoreId=null){
 function stairBusyForEntity(ent,stair){
  const sceneId=state.activeSceneId,sourceFloor=ent.floor;
  return state.entities?.some(e=>e.id!==ent.id&&e.sceneId===sceneId&&e.stairClimb
-  &&e.stairClimb.floor===sourceFloor&&(
+  &&(
+   // 一段楼梯共享同一 linkId，从两端进入也不能在中途相撞。
    (stair.linkId&&e.stairClimb.linkId===stair.linkId)||
-   (!stair.linkId&&Math.hypot(e.stairClimb.x-stair.x,e.stairClimb.y-stair.y)<14)
+   (!stair.linkId&&e.stairClimb.floor===sourceFloor&&Math.hypot(e.stairClimb.x-stair.x,e.stairClimb.y-stair.y)<14)
   ))||false;
 }
 // 把梯身当成立体通道：禁止梯身穿过实体墙或关着的门，但不禁止从下面横向走过。
