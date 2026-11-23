@@ -424,6 +424,25 @@ function createGmNpc(){
   logEvent('🎭 NPC '+name+' criado. Marque-o na lista de cima e use Colocar.');
 }
 
+// 从无楼板的楼梯顶端向下跳：只有下层存在真实、无碰撞的落脚处才允许。
+function tryJumpDownFromUnfinishedFloor(ent,dx,dy){
+ const scene=getScene(),upper=scene.floors[ent.floor];
+ if(!upper||hasBuiltFloorAt(upper,ent.x,ent.y))return false;
+ if(!upper.stairs.some(st=>Math.hypot(st.x-ent.x,st.y-ent.y)<32))return false;
+ const destination=floorIndexForLevel(scene,floorLevel(scene,ent.floor)-1,false);
+ if(destination<0)return false;
+ const len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
+ const landing=[56,40,28,0].map(dist=>[ent.x+ux*dist,ent.y+uy*dist])
+   .find(([x,y])=>canMoveTo(destination,x,y,true));
+ if(!landing){logEvent('⚠️ 下层没有安全的跳落位置。');return false;}
+ ent.floor=destination;[ent.x,ent.y]=landing;
+ ent.jumpStart=performance.now();ent.jumpUntil=ent.jumpStart+380;
+ ent.stairTransitionAt=performance.now();ent.stairCooldown=performance.now()+1000;
+ state.currentFloor=destination;updateFloorLabel();
+ logEvent('↘️ '+ent.name+' 从无楼板的楼梯顶端跳到了下层。');
+ return true;
+}
+
 // Saltos curtos verificam uma aterrissagem segura; caminhar jamais cruza o vazio.
 function attemptJump(ent, dx, dy) {
   const floor=getScene().floors[ent.floor];
