@@ -50,7 +50,7 @@ function setupInputs() {
         let dx=(keys['d']||keys['arrowright']?1:0)-(keys['a']||keys['arrowleft']?1:0);
         let dy=(keys['s']||keys['arrowdown']?1:0)-(keys['w']||keys['arrowup']?1:0);
         if(!dx&&!dy) {dx=ent.facingX||0;dy=ent.facingY||1;}
-        attemptJump(ent,dx,dy);
+        if(!tryJumpDownFromUnfinishedFloor(ent,dx,dy))attemptJump(ent,dx,dy);
       }
       return;
     }
