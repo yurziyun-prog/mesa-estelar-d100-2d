@@ -184,14 +184,15 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   }
   if(state.tool==='move'){handleArchitectSelection(wx,wy,isDrag);return;}
 
-  if (state.tool === 'floor') {
+  if (state.tool === 'floor' || state.tool === 'roof') {
     if (!dragStart)dragStart={x:architectShiftHeld?wx:snapCoord(wx,32),y:architectShiftHeld?wy:snapCoord(wy,32)};
     const ex=architectShiftHeld?wx:snapCoord(wx,32),ey=architectShiftHeld?wy:snapCoord(wy,32);
     previewRect={
       x:Math.min(dragStart.x,ex),y:Math.min(dragStart.y,ey),
       w:Math.max(architectShiftHeld?1:32,Math.abs(ex-dragStart.x)),
       h:Math.max(architectShiftHeld?1:32,Math.abs(ey-dragStart.y)),
-      mat:state.material,tile:structuredClone(state.tileConfig||{})
+      mat:state.tool==='roof'?(state.roofMaterial||'roof_tile'):state.material,
+      tile:state.tool==='roof'?null:structuredClone(state.tileConfig||{})
     };
   } else if (state.tool === 'wall') {
     if (!dragStart) dragStart = { x: snapCoord(wx), y: snapCoord(wy) };
@@ -266,11 +267,15 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
     return;
   }
 
-  if (state.tool === 'floor' && dragStart) {
+  if ((state.tool === 'floor'||state.tool==='roof') && dragStart) {
     const ex=shiftHeld?wx:snapCoord(wx,32),ey=shiftHeld?wy:snapCoord(wy,32);
     const x=Math.min(dragStart.x,ex),y=Math.min(dragStart.y,ey);
     const w=Math.max(shiftHeld?1:32,Math.abs(ex-dragStart.x));
     const h=Math.max(shiftHeld?1:32,Math.abs(ey-dragStart.y));
+    if(state.tool==='roof'){
+      placeArchitectRoof({x,y,w,h});
+      dragStart=null;previewRect=null;return;
+    }
     floor.areas.push({x,y,w,h,mat:state.material,
        ...(state.material==='checker'?{tile:structuredClone(state.tileConfig||{})}:{}),
        ...(state.material==='carpet'?{color:state.propColor}:{})});
