@@ -204,6 +204,8 @@ function applyArchitectAction(wx, wy, isDrag = false) {
       const seg = makeOrthoSegment(dragStart.x, dragStart.y, wx, wy);
       previewRect = { wallPreview: seg };
     }
+  } else if (state.tool === 'roofOpening') {
+    if(!isDrag)addRoofOpening(wx,wy,state.roofOpeningType||'skylight');
   } else if (state.tool === 'window') {
     if (!isDrag) {
       const width=state.windowWidth||72;
