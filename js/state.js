@@ -250,8 +250,29 @@ function createNewSceneAsArchitect() {
 }
 
 function saveCurrentSceneToBank() {
-  saveBank();
+  if(!saveBank())return;
+  playMapSavedSound();
   logEvent(`💾 Cenário "${getScene().name}" salvo no banco.`);
+}
+function playMapSavedSound(){
+  // Só toca após um salvamento manual concluído, dentro do gesto do usuário.
+  try{
+    const Audio=window.AudioContext||window.webkitAudioContext;
+    if(!Audio)return;
+    const audio=new Audio(),now=audio.currentTime;
+    for(const [index,note] of [523.25,659.25,783.99].entries()){
+      const osc=audio.createOscillator(),gain=audio.createGain();
+      const start=now+index*.075;
+      osc.type='sine';osc.frequency.value=note;
+      gain.gain.setValueAtTime(.0001,start);
+      gain.gain.exponentialRampToValueAtTime(.075,start+.012);
+      gain.gain.exponentialRampToValueAtTime(.0001,start+.18);
+      osc.connect(gain);gain.connect(audio.destination);
+      osc.start(start);osc.stop(start+.19);
+    }
+    // Evita acumular contextos após muitos salvamentos.
+    setTimeout(()=>audio.close().catch(()=>{}),800);
+  }catch(error){console.warn('Som de salvamento indisponível:',error);}
 }
 
 function duplicateCurrentScene() {
@@ -323,8 +344,14 @@ function gmSwitchScene(){
   logEvent('👑 Mestre abriu "'+getScene().name+'" e levou '+moved.length+' personagem(ns). Os desmarcados ficaram nos cenários anteriores.');
 }
 function saveBank() {
-  try { localStorage.setItem('rpg_vtt_aligned_v8', JSON.stringify(state)); logEvent('💾 Cenários salvos neste navegador.'); }
-  catch(error) { alert('Não foi possível salvar: ' + error.message); }
+  try{
+    localStorage.setItem('rpg_vtt_aligned_v8',JSON.stringify(state));
+    logEvent('💾 Cenários salvos neste navegador.');
+    return true;
+  }catch(error){
+    alert('Não foi possível salvar: '+error.message);
+    return false;
+  }
 }
 
 function exportJSON() {
