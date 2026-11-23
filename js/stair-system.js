@@ -68,7 +68,7 @@ function createStairPair(scene,fromLevel,toLevel,x,y,shape,material,style,contin
  const from=scene.floors[srcIndex],to=scene.floors[dstIndex];
  const up=toLevel>fromLevel;
  const pairId=linkId||'stair_'+Date.now().toString(36)+'_'+(++stairTransferSequence);
- const common={x,y,shape,material,style,linkId:pairId,continuous};
+ const common={x,y,shape,material,style,rot:state.rotation||0,linkId:pairId,continuous};
  // A direcionalidade é sempre local ao andar em que a escada está desenhada.
  const origin={...common,dir:up?'up':'down',targetFloor:dstIndex,targetLevel:toLevel};
  const destination={...common,dir:up?'down':'up',targetFloor:srcIndex,targetLevel:fromLevel};
@@ -178,17 +178,27 @@ function transferOnStair(ent,stair,automatic=false){
 // 对于旧地图，台阶朝向默认与绘图一致：底端 +Y，顶端 -Y。
 // 从侧面穿行不启动攀爬，保留镂空楼梯下方的通道。
 const STAIR_TRAVEL_MS=1050;
+function stairLocal(stair,x,y){
+ const angle=(stair.rot||0)*Math.PI/2,c=Math.cos(angle),s=Math.sin(angle);
+ return {x:c*x+s*y,y:-s*x+c*y};
+}
+function stairWorld(stair,x,y){
+ const angle=(stair.rot||0)*Math.PI/2,c=Math.cos(angle),s=Math.sin(angle);
+ return {x:c*x-s*y,y:s*x+c*y};
+}
 function stairEntryAllowed(stair,ent,dx,dy){
  const shape=stairVisualShape(stair.shape);
- const localX=ent.x-stair.x,localY=ent.y-stair.y;
+ const location=stairLocal(stair,ent.x-stair.x,ent.y-stair.y);
+ const movement=stairLocal(stair,dx,dy);
+ const localX=location.x,localY=location.y;
  if(shape==='spiral'){
   const near=Math.hypot(localX,localY)<52;
-  return near&&Math.abs(dy)>.6&&(stair.dir==='down'?dy>0:dy<0);
+  return near&&Math.abs(movement.y)>.6&&(stair.dir==='down'?movement.y>0:movement.y<0);
  }
  if(Math.abs(localX)>27)return false;
  // 低层往上：从画面下方走向上方；高层往下反之。
- if(stair.dir==='down')return localY>=-65&&localY<=-22&&dy>.55;
- return localY>=22&&localY<=65&&dy<-.55;
+ if(stair.dir==='down')return localY>=-65&&localY<=-22&&movement.y>.55;
+ return localY>=22&&localY<=65&&movement.y<-.55;
 }
 function beginStairClimb(ent,stair,dx,dy){
  if(ent.stairClimb||performance.now()<(ent.stairCooldown||0))return false;
@@ -202,7 +212,8 @@ function beginStairClimb(ent,stair,dx,dy){
   dir:stair.dir,shape:stairVisualShape(stair.shape),
   target:counterpart.index
  };
- ent.facingX=0;ent.facingY=stair.dir==='down'?1:-1;
+ const forward=stairWorld(stair,0,stair.dir==='down'?1:-1);
+ ent.facingX=forward.x;ent.facingY=forward.y;
  ent.walkingUntil=performance.now()+160;
  return true;
 }
@@ -219,7 +230,9 @@ function advanceStairClimb(ent){
  const eased=progress*progress*(3-2*progress);
  // 动画期间保持当前楼层，人物在台阶上逐渐向上（或向下）移动。
  ent.x=climb.fromX+(stair.x-climb.fromX)*eased;
- ent.y=climb.fromY+((climb.dir==='down'?stair.y+31:stair.y-31)-climb.fromY)*eased;
+ const endpoint=stairWorld(stair,0,climb.dir==='down'?31:-31);
+ ent.y=climb.fromY+(stair.y+endpoint.y-climb.fromY)*eased;
+ ent.x=climb.fromX+(stair.x+endpoint.x-climb.fromX)*eased;
  ent.stairClimbProgress=progress;
  ent.walkingUntil=performance.now()+140;
  if(progress>=1){
