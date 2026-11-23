@@ -308,6 +308,43 @@ function drawBrushStrokes(floor){
 }
 // Escadas arquitetônicas em perspectiva top-down: patamar, profundidade e sombra.
 // Escada vazada tem degraus parcialmente oclusivos e fundo transparente.
+function drawUpperStairOpening(stair){
+ // On an upper floor the reciprocal "down" stair is a cut-out, not a duplicate
+ // of the opaque, elevated staircase below.
+ const floor=getScene().floors[state.currentFloor];
+ const slab=hasBuiltFloorAt(floor,stair.x,stair.y);
+ const shape=stairVisualShape(stair.shape);
+ const w=shape==='spiral'?82:65,h=shape==='spiral'?82:100;
+ ctx.save();
+ if(shape==='spiral'){
+   ctx.beginPath();ctx.arc(0,0,41,0,Math.PI*2);
+ }else{
+   ctx.beginPath();ctx.rect(-w/2,-h/2,w,h);
+ }
+ ctx.save();ctx.clip();
+ if(slab){
+   const shadow=ctx.createLinearGradient(0,-h/2,0,h/2);
+   shadow.addColorStop(0,'#09111b');shadow.addColorStop(.55,'#23303b');shadow.addColorStop(1,'#111c28');
+   ctx.fillStyle=shadow;ctx.fillRect(-w/2-2,-h/2-2,w+4,h+4);
+   // Lower treads are visible far below the opening, not above the actor.
+   ctx.fillStyle='rgba(146,164,174,.45)';
+   for(let y=-29;y<=27;y+=16)ctx.fillRect(-w/2+9,y,w-18,3);
+ }else{
+   ctx.fillStyle='rgba(7,12,18,.28)';ctx.fillRect(-w/2,-h/2,w,h);
+ }
+ ctx.restore();
+ ctx.lineWidth=5;ctx.strokeStyle=slab?'#536574':'#91a3ac';ctx.stroke();
+ ctx.lineWidth=2;ctx.strokeStyle='#c2d0d2';ctx.stroke();
+ // Near lip provides a visible reference for safe stair descent.
+ ctx.fillStyle='#c1ab7c';
+ if(shape==='spiral'){
+   ctx.beginPath();ctx.arc(0,0,9,0,Math.PI*2);ctx.fill();
+ }else{
+   ctx.fillRect(-w/2+6,-h/2+6,w-12,4);
+   ctx.fillStyle='rgba(255,255,255,.22)';ctx.fillRect(-w/2+5,h/2-11,w-10,3);
+ }
+ ctx.restore();
+}
 function drawArchitecturalStair(stair,overlay=false){
  const shape=stairVisualShape(stair.shape),up=stair.dir!=='down',mat=stair.material||(isRetroFuture(stair)?'metal':'wood');
  const materials={
@@ -318,6 +355,10 @@ function drawArchitecturalStair(stair,overlay=false){
  };
  const [base,lit,edge]=materials[mat]||materials.wood;
  ctx.save();ctx.translate(stair.x,stair.y);ctx.rotate((stair.rot||0)*Math.PI/2);
+ if(stair.dir==='down'){
+   if(!overlay)drawUpperStairOpening(stair);
+   ctx.restore();return;
+ }
  if(overlay&&shape!=='open'){ctx.restore();return;}
  if(!overlay){
    ctx.fillStyle='rgba(0,0,0,.27)';ctx.fillRect(-32+6,-49+7,68,98);
@@ -582,7 +623,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     drawCharacterToken(ent, isBelow);
   });
   // 镂空楼梯对下方人物显示台阶遮挡；攀爬时人物绘制在台阶上方。
-  floor.stairs.filter(s=>stairVisualShape(s.shape)==='open' &&
+  floor.stairs.filter(s=>s.dir!=='down'&&stairVisualShape(s.shape)==='open' &&
     !state.entities.some(e=>e.sceneId===state.activeSceneId&&e.floor===floorIdx&&e.stairClimb &&
       ((e.stairClimb.linkId&&e.stairClimb.linkId===s.linkId)||
        (!e.stairClimb.linkId&&Math.hypot(e.stairClimb.x-s.x,e.stairClimb.y-s.y)<5))))
