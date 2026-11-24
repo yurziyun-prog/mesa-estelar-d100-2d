@@ -481,7 +481,7 @@ function drawLowerStoreyWallContinuations(sc,upperIndex){
      distToSegment(wall.x1,wall.y1,other.x1,other.y1,other.x2,other.y2)<7&&
      distToSegment(wall.x2,wall.y2,other.x1,other.y1,other.x2,other.y2)<7);
    if(covered)continue;
-   const color=wall.color||colors[wall.material]||'#8d9a9f';
+   const color=wall.color||catalogWallPaint(wall)||colors[wall.material]||'#8d9a9f';
    ctx.strokeStyle='rgba(4,9,16,.35)';ctx.lineWidth=(wall.width||16)+8;
    ctx.beginPath();ctx.moveTo(wall.x1+4,wall.y1+4);ctx.lineTo(wall.x2+4,wall.y2+4);ctx.stroke();
    ctx.strokeStyle=color;ctx.lineWidth=(wall.width||16)*.85;
@@ -542,7 +542,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
   const wallBase=(w)=>{
     const colors={wallWood:'#966a40',wallBrick:'#ae6047',wallMasonry:'#adb5b4',wallCastle:'#91918b',
       wallMetal:'#c3d5de',wallRust:'#917762',wallSandstone:'#d8b982'};
-    return w.color||colors[w.material]||(isRetroFuture(w)?'#d1e0e6':isArabia(w)?'#d9b889':'#747c86');
+    return w.color||catalogWallPaint(w)||colors[w.material]||(isRetroFuture(w)?'#d1e0e6':isArabia(w)?'#d9b889':'#747c86');
   };
   for(const group of groups.values()){
     const w=group[0],width=w.width||16;
@@ -562,7 +562,10 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     const dx=w.x2-w.x1,dy=w.y2-w.y1,length=Math.hypot(dx,dy);
     if(!length)return;
     ctx.save();ctx.translate(w.x1,w.y1);ctx.rotate(Math.atan2(dy,dx));
-    if(material==='wallCastle'||material==='wallMasonry'||material==='wallBrick'||material==='wallSandstone'){
+    if(material==='scifiBulkhead'){
+      ctx.fillStyle=w.neonColor||'#38bdf8';
+      ctx.fillRect(2,-1,Math.max(0,length-4),2);
+    }else if(material==='wallCastle'||material==='wallMasonry'||material==='wallBrick'||material==='wallSandstone'){
       const joint=material==='wallBrick'?'rgba(79,36,25,.6)':'rgba(58,59,56,.50)';
       ctx.strokeStyle=joint;ctx.lineWidth=1.5;
       for(let row=-1;row<2;row++){
@@ -965,7 +968,7 @@ function drawProp(p) {
   if(isKenneyObject(p.type)){drawKenneyObject(p);return;}
   if(isKenneyRoguelikeObject(p.type)){drawKenneyRoguelikeObject(p);return;}
   if(isSleepingFurniture(p)){drawSleepingFurniture(p);return;}
-  if(drawExpandedProp(p))return;
+  if(drawCatalogProp(p)||drawExpandedProp(p))return;
   if(p.type==='key'){
     ctx.save();ctx.translate(p.x,p.y);ctx.strokeStyle='#e7be4c';ctx.lineWidth=4;
     ctx.beginPath();ctx.arc(-5,-2,5,0,Math.PI*2);ctx.moveTo(0,0);ctx.lineTo(15,11);ctx.moveTo(9,6);ctx.lineTo(7,11);ctx.moveTo(13,9);ctx.lineTo(11,14);ctx.stroke();

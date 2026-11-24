@@ -124,7 +124,7 @@ function drawBuildingBase(b,floor,preview=false) {
   ctx.stroke();
   ctx.lineWidth=b.wallThickness;
   const colors={stone:'#717987',brick:'#a35e4b',wood:'#90663e',marble:'#cbd3dc'};
-  ctx.strokeStyle=colors[b.wallMaterial]||b.wallColor;
+  ctx.strokeStyle=catalogWallPaint(b)||colors[b.wallMaterial]||b.wallColor;
   ctx.stroke();
   ctx.restore();
 }

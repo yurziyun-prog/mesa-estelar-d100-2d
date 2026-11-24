@@ -69,9 +69,7 @@ function renderArchitectLibrary(){
   'Os novos itens seguem a coleção de construção selecionada, sem modificar os anteriores.';
  const query=(document.getElementById('architectLibrarySearch')?.value||'').toLocaleLowerCase('pt-BR');
  grid.replaceChildren();
- const entries=architectCategory==='terrain'
-  ? TERRAIN_GROUPS.flatMap(([group,items])=>items.map(([id,label])=>[id,'◈',label,'terrain',group]))
-  : ARCHITECT_LIBRARY[architectCategory]||[];
+ const entries=catalogEntries(architectCategory);
  let lastGroup;
  for(const [id,icon,label,kind,group] of entries){
   if(!label.toLocaleLowerCase('pt-BR').includes(query)&&
@@ -88,9 +86,10 @@ function renderArchitectLibrary(){
   const button=document.createElement('button');button.type='button';button.className='library-card';
   const emoji=document.createElement('span');emoji.className='emoji';emoji.textContent=icon;
   const name=document.createElement('span');name.textContent=label;
-  if(kind==='terrain'){
-    button.classList.toggle('active',state.tool==='terrainBrush'&&state.brush.mat===id);
-    button.append(createTerrainThumbnail(id),name);
+  if(kind==='terrain')button.classList.toggle('active',state.tool==='terrainBrush'&&state.brush.mat===id);
+  const thumbnail=catalogThumbnail(kind,id);
+  if(thumbnail){
+    button.append(thumbnail,name);
   }else if(architectCategory==='downloads'){
     const preview=createDownloadThumbnail(id);
     button.append(preview||emoji,name);
@@ -105,7 +104,8 @@ function selectArchitectLibraryItem(id,label,kind){
  if(kind==='terrain'){
   document.getElementById('terrainPaintMaterial').value=id;
   chooseTerrainMaterial(id);
- }else if(kind==='mat')selectMaterial(id);
+ }else if(kind==='wallFinish'){state.wallVariant=id;selectTool('wall');}
+ else if(kind==='mat')selectMaterial(id);
  else if(kind==='prop'||kind==='downloadProp')selectProp(id);
  else if(kind==='tool'){
    if(id==='wall')state.wallVariant=null;

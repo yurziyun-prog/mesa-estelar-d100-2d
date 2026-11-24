@@ -1,5 +1,5 @@
 const canvas = document.getElementById('mapCanvas');
-const ctx = canvas.getContext('2d');
+let ctx = canvas.getContext('2d');
 
 function resizeCanvas() {
   const rect = canvas.parentElement.getBoundingClientRect();
@@ -344,5 +344,6 @@ function render() {
   }
 }
 
+initVisualCatalog();
 initTerrainTools();
 init();

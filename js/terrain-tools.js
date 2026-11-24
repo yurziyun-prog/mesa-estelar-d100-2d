@@ -16,7 +16,18 @@ const TERRAIN_PALETTES = {
     alienMycelium: { base: '#361959', dark: '#1d0b33', mid: '#502682', light: '#733bb5', accent: '#f062fe' },
     alienCrystal:  { base: '#114a5c', dark: '#082933', mid: '#1a6e87', light: '#2d99b8', accent: '#7cf4ff' },
     alienCrimson:  { base: '#8c3123', dark: '#571a11', mid: '#b04332', light: '#d15c47', accent: '#f29479' },
-    alienBlight:   { base: '#2b3830', dark: '#161f19', mid: '#3d5245', light: '#55705f', accent: '#a8ff35' }
+    alienBlight:   { base: '#2b3830', dark: '#161f19', mid: '#3d5245', light: '#55705f', accent: '#a8ff35' },
+  dirtTrail:    { base: '#7d5c3e', dark: '#4a3420', mid: '#967150', light: '#b58e6b', accent: '#69625c' },
+  cobblePath:   { base: '#595550', dark: '#2e2b28', mid: '#757069', light: '#948e85', accent: '#b3aca2' },
+  caveStone:    { base: '#454c54', dark: '#23272c', mid: '#5c6570', light: '#7b8694', accent: '#a8d5e5' },
+  caveFungal:   { base: '#2c2b42', dark: '#181726', mid: '#434166', light: '#6c689e', accent: '#b77dff' },
+  lavaAbyss:    { base: '#d93800', dark: '#261410', mid: '#ff6a00', light: '#ffb703', accent: '#fff3b0' },
+  crystalFloor: { base: '#385870', dark: '#1c2f3d', mid: '#5682a3', light: '#89bce0', accent: '#ccf2ff' },
+  dungeonBrick: { base: '#4f4b46', dark: '#24221f', mid: '#69635c', light: '#857e75', accent: '#4e6338' },
+  tavernWood:   { base: '#784722', dark: '#3d210c', mid: '#91572b', light: '#ad6b39', accent: '#261407' },
+  scifiMetal:   { base: '#49525e', dark: '#262b33', mid: '#606b7a', light: '#7d8a9c', accent: '#38bdf8' },
+  scifiGrate:   { base: '#1e2229', dark: '#0d0f12', mid: '#343b47', light: '#525c6e', accent: '#f59e0b' },
+  cyberFloor:   { base: '#24222e', dark: '#121117', mid: '#363245', light: '#4e4863', accent: '#e879f9' }
   };
 
 const TERRAIN_TILES = new Map();
@@ -303,6 +314,7 @@ function getTerrainTile(mat) {
     }
   }
 
+  drawCatalogFloorDetails(octx,size,mat,p,rand);
   TERRAIN_TILES.set(mat, off);
   return off;
 }
@@ -329,14 +341,14 @@ const TERRAIN_GROUPS = [
 ];
 
 function terrainIsBlocked(mat) {
-  return ['water','kenney_water','swampWater','lava','space','void'].includes(mat);
+  return ['water','kenney_water','swampWater','lava','lavaAbyss','space','void'].includes(mat);
 }
 
 function drawCachedTerrain(mat,x,y,w,h) {
   if(!Object.hasOwn(TERRAIN_PALETTES,mat))return false;
   ctx.fillStyle=getTerrainPattern(ctx,mat);
   ctx.fillRect(x,y,w,h);
-  if(mat==='lava'){
+  if(mat==='lava'||mat==='lavaAbyss'){
     ctx.save();
     ctx.globalAlpha=.05+.04*Math.sin(animTick);
     ctx.fillStyle='#ff841a';

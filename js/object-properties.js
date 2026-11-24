@@ -15,7 +15,10 @@ function editArchitectObject(ref=null){
  const el=id=>document.getElementById(id);
  const put=(id,value)=>{const node=el(id);if(node)node.value=value;};
  put('objectDialogStyle',obj.style||'normal');
- put('objectDialogMaterial',['wood','stone','brick','castle','masonry','metal','rust','sandstone'].includes(obj.material)?obj.material:'wood');
+ const material=kind==='walls'
+   ? Object.keys(CONSTRUCTION_WALL_MATERIALS).find(key=>CONSTRUCTION_WALL_MATERIALS[key]===obj.material)
+   : obj.material;
+ put('objectDialogMaterial',Array.from(el('objectDialogMaterial').options).some(option=>option.value===material)?material:'wood');
  put('objectDialogColor',/^#[0-9a-f]{6}$/i.test(obj.color||'')?obj.color:'#a35d64');
  el('objectDialogUseColor').checked=Boolean(obj.color);
  put('objectDialogWidth',kind==='windows'?(obj.width||40):kind==='doors'?68:kind==='walls'?(obj.width||16):72);
