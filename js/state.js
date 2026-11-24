@@ -5,6 +5,7 @@ function createEmptyFloor(baseTerrain = null) {
     bounds: { x: 80, y: 60, w: 680, h: 480 }, // Mapa inicial compacto e expansível
     areas: [],
     walls: [],
+    buildings: [],
     doors: [],
     windows: [],
     stairs: [],

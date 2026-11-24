@@ -110,6 +110,7 @@ function setupInputs() {
   });
 
   window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+  canvas.addEventListener('mouseleave',()=>{buildingPointer=null;});
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   document.addEventListener('pointerdown',e=>{
     if(!e.target.closest?.('#architectContextMenu'))closeArchitectContextMenu();
@@ -173,6 +174,7 @@ function setupInputs() {
     }
 
     const { wx, wy } = screenToWorld(sx, sy);
+    buildingPointer={x:wx,y:wy};
     if (isDragging && state.mode === 'architect') {
       architectShiftHeld=e.shiftKey;
       architectCtrlHeld=e.ctrlKey||e.metaKey;
@@ -299,7 +301,10 @@ function render() {
     ctx.save();
     ctx.translate(state.camera.x, state.camera.y);
     ctx.scale(state.camera.zoom, state.camera.zoom);
-    if (previewRect.wallPreview) {
+    if(previewRect.building){
+      ctx.globalAlpha=.55;
+      drawBuildingBase(previewRect.building,null,true);
+    } else if (previewRect.wallPreview) {
       ctx.strokeStyle = '#f5b942';
       ctx.lineWidth = 10;
       ctx.beginPath();
@@ -339,4 +344,5 @@ function render() {
   }
 }
 
+initTerrainTools();
 init();

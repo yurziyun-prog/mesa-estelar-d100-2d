@@ -374,12 +374,57 @@ O banco excede o limite de 800 KB.|场景库存档超过 800 KB 上限。
 Ainda não há banco salvo para esta conta.|此账号还没有云端存档。
 Não foi possível abrir o banco na nuvem.|无法打开云端场景库。
 Cópia local salva. Entre para salvar no site.|已保存本地副本。登录后可以保存到网站。
+Edificação / Sala|整间建筑／房间
+Configurar edificação|建筑设置
+Tijolos|砖
+Cor Livre|自定义颜色
+Canto:|圆角
+Incluir piso|铺设地板
+Madeira (Tábuas)|木板
+Tapete|地毯
+Terra Batida|夯土
+Incluir teto|添加屋顶
+Base p/ Andar Superior (Padrão)|上层楼板（默认）
+Telhado de Telhas|瓦屋顶
+Telhado de Palha|茅草屋顶
+Laje de Pedra|石板屋顶
+Mostrar tetos translúcidos|显示半透明屋顶
+Pincel de terreno|地形画笔
+Modo do pincel|画笔模式
+Pincel Redondo|圆形画笔
+Área Retangular|矩形填充
+Spray / Mistura|喷涂／混合
+Solo Base do Mapa|整层基础地形
+Borda:|边缘
+Suave|柔和
+Nítida|清晰
+Difusa|弥散
+Campos e florestas|草地与森林
+Climas extremos|极端地形
+Subsolo e líquidos|地下与液体
+Solos alienígenas|外星地表
+Grama Campestre|原野草地
+Grama Densa|茂密草地
+Savana|稀树草原
+Areia do Deserto|沙漠沙地
+Neve Profunda|深雪
+Gelo Glacial|冰川冰面
+Cascalho|碎石地
+Basalto|玄武岩
+Lava|熔岩
+Água Cristalina|清澈水域
+Água Pantanosa|沼泽水域
+Micélio Violáceo|紫色菌丝
+Solo Cristalino|晶体地表
+Solo Carmesim|赤红地表
+Solo Corrompido|腐化地表
+Escolha um trecho reto e livre da parede.|请选择一段空闲的直墙。
 `.trim().split('\n').map(line=>line.split('|')).filter(([source, translation])=>source && translation));
 
 let siteLanguage = localStorage.getItem('mesa-site-language')==='zh-CN'?'zh-CN':'pt-BR';
 const siteOriginalText = new WeakMap();
 const siteOriginalAttributes = new WeakMap();
-const siteAttributes = ['title','placeholder','aria-label'];
+const siteAttributes = ['title','placeholder','aria-label','label'];
 const siteUserText = '#sceneSelect, #activeSceneTag, #gmSceneTag, #charHeader, [data-user-text]';
 
 function translateSiteText(value) {

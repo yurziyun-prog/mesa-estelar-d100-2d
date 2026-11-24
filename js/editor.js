@@ -70,6 +70,7 @@ function expandCurrentMap() {
 
 function selectTool(tool) {
   state.tool = tool;
+  document.getElementById('buildingOptions').classList.toggle('hidden',tool!=='building');
   if(tool!=='move'&&typeof architectSelections!=='undefined')architectSelections=[];
   if(typeof refreshArchitectProperties==='function')refreshArchitectProperties();
   document.querySelectorAll('#architectTools [data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === tool));
@@ -211,6 +212,12 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   const floor = getScene().floors[state.currentFloor];
   // Colocar objetos não altera a extensão do terreno-base.
 
+  if(state.tool==='building'){
+    dragStart ||= {x:snapCoord(wx),y:snapCoord(wy)};
+    previewRect={building:buildingFromDrag(wx,wy)};
+    return;
+  }
+  if(state.tool==='terrainBrush'){applyTerrainBrush(floor,wx,wy,isDrag);return;}
   if(state.tool==='brush'){
     if(!floor.brushStrokes)floor.brushStrokes=[];
     const brush=state.brush||{shape:'redondo',size:32,texture:'solida',mat:'grass'};
@@ -246,15 +253,17 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   } else if (state.tool === 'window') {
     if (!isDrag) {
       const width=state.windowWidth||72;
-      const carved=carveOpeningOnWalls(floor,wx,wy,width/2+2);
-      floor.windows.push({x:carved.x,y:carved.y,orient:carved.orient,width,
+      const carved=architectOpeningPosition(floor,wx,wy,width/2+2);
+      if(!carved)return;
+      floor.windows.push({...carved,width,
         style:state.buildStyle,material:state.constructionMaterial||'wood'});
       finishEdit();
     }
   } else if (state.tool === 'door') {
     if (!isDrag) {
-      const carved = carveOpeningOnWalls(floor, wx, wy, 34);
-      const door={x:carved.x,y:carved.y,open:false,keyId:'',orient:carved.orient,
+      const carved = architectOpeningPosition(floor,wx,wy,34);
+      if(!carved)return;
+      const door={...carved,open:false,keyId:'',
         mechanism:'hinged',hingeSide:'left',swing:'in',lockType:'none',
         material:state.constructionMaterial||'wood',style:state.buildStyle};
       floor.doors.push(door);
@@ -279,6 +288,11 @@ function applyArchitectAction(wx, wy, isDrag = false) {
       openLockDialog(chest, 'chest');
     }
   } else if (state.tool === 'erase') {
+    if(eraseBuilding(getScene(),floor,wx,wy))return;
+    for(const stroke of floor.brushStrokes||[]){
+      stroke.points=stroke.points.filter(point=>Math.hypot(point.x-wx,point.y-wy)>Math.max(18,stroke.size/2));
+    }
+    if(floor.brushStrokes)floor.brushStrokes=floor.brushStrokes.filter(stroke=>stroke.points.length);
     floor.areas = floor.areas.filter(a => !(wx >= a.x && wx <= a.x + a.w && wy >= a.y && wy <= a.y + a.h));
     floor.props = floor.props.filter(p => Math.hypot(p.x - wx, p.y - wy) > 26);
     floor.chests = floor.chests.filter(c => Math.hypot(c.x - wx, c.y - wy) > 26);
@@ -290,9 +304,28 @@ function applyArchitectAction(wx, wy, isDrag = false) {
 }
 
 function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
+  if(window.activeBrushStroke?.terrain)delete window.activeBrushStroke.last;
   window.activeBrushStroke=null;
   const floor = getScene().floors[state.currentFloor];
 
+  if(state.tool==='building'&&dragStart){
+    if(Math.hypot(wx-dragStart.x,wy-dragStart.y)>12)placeBuilding(getScene(),state.currentFloor,buildingFromDrag(wx,wy));
+    dragStart=null;previewRect=null;
+    return;
+  }
+  if(state.tool==='terrainBrush'){
+    if(dragStart){
+      const x=Math.min(dragStart.x,wx),y=Math.min(dragStart.y,wy);
+      const w=Math.abs(wx-dragStart.x),h=Math.abs(wy-dragStart.y);
+      if(w>0&&h>0){
+        floor.areas.push({x,y,w,h,mat:state.brush.mat});
+        expandFloorToInclude(floor,x,y);
+        expandFloorToInclude(floor,x+w,y+h);
+      }
+    }
+    dragStart=null;previewRect=null;
+    return;
+  }
   if(state.tool==='move'){
     finishArchitectSelection(wx,wy);
     dragStart=null;previewRect=null;draggedObj=null;

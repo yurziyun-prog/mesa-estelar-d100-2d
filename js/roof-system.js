@@ -8,10 +8,10 @@ function pointInArchitectArea(a,x,y,pad=0){
 }
 const NON_STRUCTURAL_SURFACES = new Set(['grass','sand','dirt','snow','water','kenney_water','void','cave','mud','carpet','forest','space']);
 function isStructuralSlab(area){
- return !area.roof && !isRoofMaterial(area.mat) && !NON_STRUCTURAL_SURFACES.has(area.mat);
+ return !area.roof && !isRoofMaterial(area.mat) && !NON_STRUCTURAL_SURFACES.has(area.mat) && !Object.hasOwn(TERRAIN_PALETTES,area.mat);
 }
 function roofSupportingBounds(floor){
- const pieces=[];
+ const pieces=[...(floor.buildings||[])];
  for(const w of floor.walls||[]){
   pieces.push({x:Math.min(w.x1,w.x2),y:Math.min(w.y1,w.y2),
     w:Math.abs(w.x2-w.x1),h:Math.abs(w.y2-w.y1)});
@@ -31,6 +31,8 @@ function roofHasStructuralSupport(floor,rect){
  // 楼板必须支撑整个屋顶轮廓，避免悬空的 L 形角落。
  if(structural.length&&corners.every(([x,y])=>structural.some(a=>pointInArchitectArea(a,x,y,ov))))return true;
  // 无楼板时，四面墙必须形成近似封闭的矩形。
+ if((floor.buildings||[]).some(building=>corners.every(([x,y])=>
+  buildingDistance(x,y,building)<=ov)))return true;
  const walls=floor.walls||[];
  if(walls.length<4)return false;
  const checks=[
@@ -284,7 +286,7 @@ function drawExternalBuildingTop(){
  const candidates=[];
  for(const floor of higher){
   const roofs=(floor.areas||[]).filter(a=>a.roof);
-  const surfaces=roofs.length?roofs:(floor.areas||[]).filter(a=>!a.attic&&!['water','void','kenney_water'].includes(a.mat));
+  const surfaces=roofs.length?roofs:(floor.areas||[]).filter(a=>!a.attic&&!a.fromBuildingId&&!terrainIsBlocked(a.mat));
   for(const area of surfaces)candidates.push({area,level:floor.level,floor});
  }
  if(!candidates.length)return;

@@ -114,7 +114,7 @@ function drawCustomTileFinish(x,y,w,h,settings){
   }
  }
 }
-function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null, roofPitch = null, roofHeight = null, viewport = null) {
+function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null, roofPitch = null, roofHeight = null) {
   if(isRoofMaterial(mat)){drawRoofSurface(x,y,w,h,mat,roofPitch,roofHeight);return;}
   if(mat==='kenney_water')mat='water';
   if(mat==='kenney_wood')mat='wood';
@@ -124,17 +124,13 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
   ctx.rect(x, y, w, h);
   ctx.clip();
 
-  const left = viewport ? Math.max(x, viewport.x - 64) : x;
-  const right = viewport ? Math.min(x+w, viewport.x+viewport.w+64) : x+w;
-  const top = viewport ? Math.max(y, viewport.y - 64) : y;
-  const bottom = viewport ? Math.min(y+h, viewport.y+viewport.h+64) : y+h;
-
+  if(drawCachedTerrain(mat,x,y,w,h)){ctx.restore();return;}
   if (mat === 'space' || mat === 'forest') {
     const space=mat==='space', cell=space?48:38;
     ctx.fillStyle=space?'#101529':'#29482e';
     ctx.fillRect(x,y,w,h);
-    for(let gy=Math.floor(top/cell)*cell;gy<bottom;gy+=cell){
-      for(let gx=Math.floor(left/cell)*cell;gx<right;gx+=cell){
+    for(let gy=Math.floor(y/cell)*cell;gy<y+h;gy+=cell){
+      for(let gx=Math.floor(x/cell)*cell;gx<x+w;gx+=cell){
         const n=Math.abs(Math.sin(gx*12.9898+gy*78.233)*43758.5453)%1;
         const px=gx+cell*n,py=gy+cell*((n*23)%1);
         ctx.fillStyle=space?(n>.83?'#c9daff':'#757f9f'):(n>.5?'#365a36':'#24402a');
@@ -142,18 +138,6 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
         ctx.arc(px,py,space?1+n:12+n*10,0,Math.PI*2);
         ctx.fill();
       }
-    }
-  } else if (mat === 'grass') {
-    ctx.fillStyle='#4e7540';ctx.fillRect(x,y,w,h);
-    const cell=13, sx=Math.floor(left/cell)*cell,sy=Math.floor(top/cell)*cell;
-    for(let gy=sy;gy<bottom;gy+=cell) for(let gx=sx;gx<right;gx+=cell){
-      const n=Math.sin(gx*12.9898+gy*78.233)*43758.5453;
-      const f=n-Math.floor(n);
-      ctx.strokeStyle=f>.55?'rgba(148,187,94,.30)':'rgba(28,73,31,.32)';
-      ctx.lineWidth=f>.7?1.7:1.0;
-      const xx=gx+f*10, yy=gy+((f*43)%10);
-      ctx.beginPath();ctx.moveTo(xx,yy+4);ctx.lineTo(xx-2,yy-2-f*3);
-      ctx.moveTo(xx,yy+4);ctx.lineTo(xx+3,yy-1-f*2);ctx.stroke();
     }
   } else if (mat === 'wood') {
     // Tábuas contínuas com veios e pregos; malha fixa no mundo, sem emendas entre áreas.
@@ -187,19 +171,6 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
     ctx.strokeStyle = '#c99b32';
     ctx.lineWidth = 3;
     ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
-  } else if (mat === 'water') {
-    // Água contínua, sem padrões amarelos vindos dos cantos de tiles externos.
-    ctx.fillStyle='#218fbd';ctx.fillRect(x,y,w,h);
-    const sw=58,sh=39;
-    for(let gy=Math.floor(top/sh)*sh;gy<bottom;gy+=sh){
-      for(let gx=Math.floor(left/sw)*sw;gx<right;gx+=sw){
-        const shift=Math.sin(animTick*.7+gx*.021+gy*.034)*6;
-        ctx.strokeStyle='rgba(169,234,238,.20)';ctx.lineWidth=1.8;
-        ctx.beginPath();ctx.moveTo(gx+6+shift,gy+14);ctx.quadraticCurveTo(gx+sw*.48,gy+8+shift*.2,gx+sw-7+shift,gy+14);ctx.stroke();
-        ctx.strokeStyle='rgba(10,90,131,.15)';ctx.lineWidth=3;
-        ctx.beginPath();ctx.moveTo(gx+14-shift*.4,gy+24);ctx.quadraticCurveTo(gx+31,gy+29,gx+sw-4,gy+24);ctx.stroke();
-      }
-    }
   } else if (mat === 'bridge') {
     ctx.fillStyle = '#824d24';
     ctx.fillRect(x, y, w, h);
@@ -212,44 +183,6 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
     ctx.fillStyle = '#4f2c10';
     ctx.fillRect(x, y, w, 6);
     ctx.fillRect(x, y + h - 6, w, 6);
-  } else if (mat === 'dirt') {
-    ctx.fillStyle = '#6b4b32';
-    ctx.fillRect(x, y, w, h);
-    ctx.fillStyle = 'rgba(40, 22, 10, 0.25)';
-    for (let dy = y + 14 + 28*Math.floor((top-y)/28); dy < bottom; dy += 28) {
-      for (let dx = x + 14 + 32*Math.floor((left-x)/32); dx < right; dx += 32) {
-        ctx.beginPath(); ctx.arc(dx, dy, 2.5, 0, Math.PI * 2); ctx.fill();
-      }
-    }
-  } else if (mat === 'sand') {
-    ctx.fillStyle='#dac38c';ctx.fillRect(x,y,w,h);
-    for(let gy=Math.floor(top/11)*11;gy<bottom;gy+=11)for(let gx=Math.floor(left/11)*11;gx<right;gx+=11){
-      const n=Math.sin(gx*13.17+gy*8.91)*18437.12,f=n-Math.floor(n);
-      ctx.fillStyle=f>.5?'rgba(255,248,213,.30)':'rgba(137,96,48,.16)';
-      ctx.fillRect(gx+f*7,gy+f*6,f>.8?3:1.4,1.4);
-    }
-    ctx.strokeStyle='rgba(157,117,62,.13)';ctx.lineWidth=1.4;
-    for(let gy=y+14+24*Math.floor((top-y)/24);gy<bottom;gy+=24){ctx.beginPath();ctx.moveTo(x,gy);ctx.quadraticCurveTo(x+w/2,gy-7,x+w,gy+2);ctx.stroke();}
-  } else if(mat==='cave'){
-    ctx.fillStyle='#484a48';ctx.fillRect(x,y,w,h);
-    for(let gy=Math.floor(top/27)*27;gy<bottom;gy+=27)for(let gx=Math.floor(left/31)*31;gx<right;gx+=31){
-      const n=Math.abs(Math.sin(gx*14.78+gy*5.63)*3472.3)%1;
-      ctx.fillStyle=n>.6?'rgba(141,145,136,.17)':'rgba(19,23,24,.24)';
-      ctx.beginPath();ctx.ellipse(gx+n*15,gy+n*10,5+n*9,3+n*6,n*3,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle='rgba(24,26,25,.27)';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(gx+4,gy+19);ctx.lineTo(gx+13+n*6,gy+14);ctx.stroke();
-    }
-  } else if(mat==='mud'){
-    ctx.fillStyle='#5d4c36';ctx.fillRect(x,y,w,h);
-    for(let gy=Math.floor(top/24)*24;gy<bottom;gy+=24)for(let gx=Math.floor(left/26)*26;gx<right;gx+=26){
-      const n=Math.abs(Math.sin(gx*7.11+gy*23.53)*1981.9)%1;
-      ctx.fillStyle='rgba(116,96,65,.40)';ctx.beginPath();ctx.ellipse(gx+10+n*6,gy+11,9+n*5,3+n*2,.2,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle='rgba(185,162,121,.24)';ctx.lineWidth=1.5;
-      ctx.beginPath();ctx.ellipse(gx+8,gy+12,5+n*3,2,0,Math.PI,Math.PI*1.9);ctx.stroke();
-    }
-  } else if (mat === 'snow') {
-    ctx.fillStyle = '#dce6f0';
-    ctx.fillRect(x, y, w, h);
   } else if (mat === 'marble') {
     ctx.fillStyle = '#c6cdd8';
     ctx.fillRect(x, y, w, h);
@@ -289,7 +222,8 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
 
 
 function brushPointInside(stroke,point,x,y,index){
- const r=stroke.size/2,dx=x-point.x,dy=y-point.y;
+ const r=stroke.size*(stroke.terrain&&stroke.shape==='spray'?.18:1)/2,dx=x-point.x,dy=y-point.y;
+ if(stroke.terrain)return dx*dx+dy*dy<=r*r;
  const hash=Math.abs(Math.sin((x+index*13)*12.37+y*7.33))*100;
  if(stroke.shape==='quadrado')return Math.abs(dx)<=r && Math.abs(dy)<=r;
  if(stroke.shape==='irregular')return dx*dx+dy*dy<r*r*(.8+.32*Math.sin(Math.atan2(dy,dx)*7+hash));
@@ -299,6 +233,7 @@ function brushPointInside(stroke,point,x,y,index){
 function drawBrushStrokes(floor){
  for(const stroke of (floor.brushStrokes||[])){
   if(!stroke.points?.length)continue;
+  if(stroke.terrain){drawTerrainStroke(stroke);continue;}
   const r=stroke.size/2;
   for(let pi=0;pi<stroke.points.length;pi++){
    const p=stroke.points[pi];ctx.save();ctx.beginPath();
@@ -351,8 +286,7 @@ function drawUpperStairOpening(stair){
    ctx.save();ctx.rotate(-(stair.rot||0)*Math.PI/2);ctx.translate(-stair.x,-stair.y);
    if(lower.terrainBounds&&lower.baseTerrain){
      const b=lower.terrainBounds;
-     drawTexturedArea(b.x,b.y,b.w,b.h,lower.baseTerrain,null,null,null,null,
-       {x:stair.x-60,y:stair.y-60,w:120,h:120});
+     drawTexturedArea(b.x,b.y,b.w,b.h,lower.baseTerrain);
    }
    for(const area of lower.areas||[]){
      drawTexturedArea(area.x,area.y,area.w,area.h,area.mat,area.color,area.tile,area.roofPitch,area.roofHeight);
@@ -564,9 +498,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
   // Área inicial compacta e expansível
   if (floor.terrainBounds && floor.baseTerrain) {
     const b = floor.terrainBounds;
-    const {a:zoom,e:offsetX,f:offsetY}=ctx.getTransform();
-    drawTexturedArea(b.x,b.y,b.w,b.h,floor.baseTerrain,null,null,null,null,
-      {x:-offsetX/zoom,y:-offsetY/zoom,w:canvas.width/zoom,h:canvas.height/zoom});
+    drawTexturedArea(b.x,b.y,b.w,b.h,floor.baseTerrain);
   }
   if (floor.bounds) {
     const b = floor.bounds;
@@ -584,9 +516,13 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     const inside=actor&&actor.floor===floorIdx&&actor.sceneId===state.activeSceneId
       &&a.roof&&a.roofAttic&&pointInArchitectArea(a,actor.x,actor.y);
     if(inside&&state.mode!=='architect')return; // 阁楼内部不被屋顶贴图覆盖
+    ctx.save();
+    if(a.fromBuildingId){traceBuilding(a);ctx.clip();}
     drawTexturedArea(a.x,a.y,a.w,a.h,a.mat,a.color,a.tile,a.roofPitch,a.roofHeight);
+    ctx.restore();
   });
   drawBrushStrokes(floor);
+  for(const building of floor.buildings||[])drawBuildingBase(building,floor);
   // 只将楼下的自然地形和地板作为背景，隐藏门、窗、墙、家具和人物。
   if(isBelow)return;
 
@@ -763,6 +699,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
       ((e.stairClimb.linkId&&e.stairClimb.linkId===s.linkId)||
        (!e.stairClimb.linkId&&Math.hypot(e.stairClimb.x-s.x,e.stairClimb.y-s.y)<5))))
     .forEach(s=>drawArchitecturalStair(s,true));
+  drawBuildingRoofs(floor,floorIdx);
 }
 
 function drawCharacterToken(ent, isBelow) {

@@ -93,10 +93,12 @@ function onPaintedGround(floor, x, y) {
   const hit = (a) => x >= a.x && x <= a.x+a.w && y >= a.y && y <= a.y+a.h;
   for(const stroke of [...(floor.brushStrokes||[])].reverse()){
     for(let i=stroke.points.length-1;i>=0;i--){
-      if(brushPointInside(stroke,stroke.points[i],x,y,i))return !['water','kenney_water','void'].includes(stroke.mat);
+      if(brushPointInside(stroke,stroke.points[i],x,y,i))return !terrainIsBlocked(stroke.mat);
     }
   }
-  const painted = [...floor.areas].reverse().find(hit);
+  const building=(floor.buildings||[]).findLast(b=>b.hasFloor&&buildingDistance(x,y,b)<=0);
+  if(building)return !terrainIsBlocked(building.floorMaterial);
+  const painted = [...floor.areas].reverse().find(a=>hit(a)&&(!a.fromBuildingId||buildingDistance(x,y,a)<=0));
   if(painted?.roof){
     const pitch=roofPitchFor(painted.mat,painted.roofPitch);
     if(pitch==='flat')return true;
@@ -104,10 +106,10 @@ function onPaintedGround(floor, x, y) {
     const attic=(floor.areas||[]).some(a=>a.attic&&hit(a)&&(a.atticRoofId===painted.roofId||!painted.roofId));
     return attic&&atticHeadroomAt(painted,x,y)>=1.8;
   }
-  if (painted) return !['water','kenney_water','void'].includes(painted.mat);
+  if (painted) return !terrainIsBlocked(painted.mat);
   const b = floor.terrainBounds || floor.bounds;
   if(floor.stairs?.some(s=>Math.abs(s.x-x)<18&&Math.abs(s.y-y)<25))return true;
-  return Boolean(floor.baseTerrain && b && hit(b) && !['water','space','void'].includes(floor.baseTerrain));
+  return Boolean(floor.baseTerrain && b && hit(b) && !terrainIsBlocked(floor.baseTerrain));
 }
 function onPlacedBridge(floor, x, y) {
   return floor.props.some(p => {
@@ -140,7 +142,7 @@ function crossesWall(floor,x1,y1,x2,y2,extensionsOnly=false){
  const steps=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)/4));
  for(let step=1;step<=steps;step++){
    const t=step/steps,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;
-   if(walls.some(wall=>wallBlocksCharacter(wall,x,y)))return true;
+   if(buildingWallBlocks(floor,x,y)||walls.some(wall=>wallBlocksCharacter(wall,x,y)))return true;
  }
  return false;
 }
@@ -148,6 +150,7 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   const floor = getScene().floors[floorIdx];
   if (!floor) return false;
   const r = 12;
+  if(buildingWallBlocks(floor,nx,ny))return false;
 
   for (const w of floor.walls) {
     if (wallBlocksCharacter(w,nx,ny)) {

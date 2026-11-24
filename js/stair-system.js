@@ -78,14 +78,15 @@ function repairExistingStairLandings(scene){ensureFloorLevels(scene);}
 function hasBuiltFloorAt(floor,x,y){
  if(!floor)return false;
  const hit=a=>x>=a.x&&x<=a.x+a.w&&y>=a.y&&y<=a.y+a.h;
- const top=[...(floor.areas||[])].reverse().find(hit);
+ if((floor.buildings||[]).some(b=>b.hasFloor&&buildingDistance(x,y,b)<=0))return true;
+ const top=[...(floor.areas||[])].reverse().find(a=>hit(a)&&(!a.fromBuildingId||buildingDistance(x,y,a)<=0));
  if(!top)return false;
  if(top.roof){
    if(roofPitchFor(top.mat,top.roofPitch)==='flat')return true;
    return (floor.areas||[]).some(a=>a.attic&&hit(a)&&
      (a.atticRoofId===top.roofId||!top.roofId));
  }
- return !['water','kenney_water','void','carpet'].includes(top.mat);
+ return !terrainIsBlocked(top.mat)&&top.mat!=='carpet';
 }
 function warnMissingStairFloor(scene,index,x,y){
  if(!hasBuiltFloorAt(scene.floors[index],x,y)){

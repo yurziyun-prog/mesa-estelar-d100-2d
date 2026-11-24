@@ -56,6 +56,7 @@ function renderArchitectLibrary(){
  const grid=document.getElementById('architectLibraryGrid');if(!grid)return;
  const brush=document.getElementById('brushSettings'),create=document.getElementById('createSettings'),search=document.getElementById('architectLibrarySearch');
  refreshArchitectProperties();
+ document.getElementById('terrainBrushControls').classList.toggle('hidden',architectCategory!=='terrain');
  if(brush)brush.classList.toggle('hidden',architectCategory!=='brush');
  if(create)create.classList.toggle('hidden',architectCategory!=='create');
  if(search)search.classList.toggle('hidden',['brush','create'].includes(architectCategory));
@@ -68,10 +69,22 @@ function renderArchitectLibrary(){
   'Os novos itens seguem a coleção de construção selecionada, sem modificar os anteriores.';
  const query=(document.getElementById('architectLibrarySearch')?.value||'').toLocaleLowerCase('pt-BR');
  grid.replaceChildren();
- for(const [id,icon,label,kind] of (ARCHITECT_LIBRARY[architectCategory]||[])){
+ const entries=architectCategory==='terrain'
+  ? TERRAIN_GROUPS.flatMap(([group,items])=>items.map(([id,label])=>[id,'◈',label,'terrain',group]))
+  : ARCHITECT_LIBRARY[architectCategory]||[];
+ let lastGroup;
+ for(const [id,icon,label,kind,group] of entries){
   if(!label.toLocaleLowerCase('pt-BR').includes(query)&&
      !translateSiteText(label).toLocaleLowerCase().includes(query))continue;
   if(!isItemInBuildCollection(id,architectCategory))continue;
+  if(group&&group!==lastGroup){
+    const heading=document.createElement('div');
+    heading.className='section-title';
+    heading.style.gridColumn='1 / -1';
+    heading.textContent=group;
+    grid.append(heading);
+    lastGroup=group;
+  }
   const button=document.createElement('button');button.type='button';button.className='library-card';
   const emoji=document.createElement('span');emoji.className='emoji';emoji.textContent=icon;
   const name=document.createElement('span');name.textContent=label;
@@ -86,7 +99,10 @@ function renderArchitectLibrary(){
 function selectArchitectLibraryItem(id,label,kind){
  architectCharacterTemplate=null;
  selectedMapObject=null;
- if(kind==='mat')selectMaterial(id);
+ if(kind==='terrain'){
+  document.getElementById('terrainPaintMaterial').value=id;
+  chooseTerrainMaterial(id);
+ }else if(kind==='mat')selectMaterial(id);
  else if(kind==='prop'||kind==='downloadProp')selectProp(id);
  else if(kind==='tool'){
    if(id==='wall')state.wallVariant=null;
