@@ -86,6 +86,7 @@ function setMode(mode) {
   refreshGmSpawnList();
   updateUI();
   refreshGmFocus();
+  document.getElementById('plantWind').value=String(state.windStrength??.35);
   centerMap();
 }
 
@@ -97,6 +98,8 @@ function onPaintedGround(floor, x, y) {
       if(brushPointInside(stroke,stroke.points[i],x,y,i))return !terrainIsBlocked(stroke.mat);
     }
   }
+  const cave=(floor.caves||[]).findLast(c=>insideCave(c,x,y));
+  if(cave)return !terrainIsBlocked(cave.ground);
   const building=(floor.buildings||[]).findLast(b=>b.hasFloor&&buildingDistance(x,y,b)<=0);
   if(building)return !terrainIsBlocked(building.floorMaterial);
   const painted = [...floor.areas].reverse().find(a=>hit(a)&&(!a.fromBuildingId||buildingDistance(x,y,a)<=0));
@@ -143,7 +146,7 @@ function crossesWall(floor,x1,y1,x2,y2,extensionsOnly=false){
  const steps=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)/4));
  for(let step=1;step<=steps;step++){
    const t=step/steps,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;
-   if(buildingWallBlocks(floor,x,y)||walls.some(wall=>wallBlocksCharacter(wall,x,y)))return true;
+   if(caveWallBlocks(floor,x,y)||buildingWallBlocks(floor,x,y)||walls.some(wall=>wallBlocksCharacter(wall,x,y)))return true;
  }
  return false;
 }
@@ -151,7 +154,7 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   const floor = getScene().floors[floorIdx];
   if (!floor) return false;
   const r = 12;
-  if(buildingWallBlocks(floor,nx,ny))return false;
+  if(caveWallBlocks(floor,nx,ny)||buildingWallBlocks(floor,nx,ny))return false;
 
   for (const w of floor.walls) {
     if (wallBlocksCharacter(w,nx,ny)) {
@@ -166,7 +169,8 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   if (floor.chests.some(c => Math.hypot(c.x - nx, c.y - ny) < r + 14)) return false;
 
   if(floor.props.some(p=>(catalogPropIsSolid(p.type)||mesaFurnitureById.has(p.type)||furnitureFinishById.has(p.type))&&Math.hypot(p.x-nx,p.y-ny)<r+19*(p.scale||1)))return false;
-  const solidProps = ['tree', 'pine', 'fruitTree', 'rock', 'table', 'bookshelf', 'hearth', 'barrel', 'cabinet', 'sofa', 'sofaBlue', 'sofaRed', 'sofaGreen'];
+  if(floor.props.some(p=>plantTrunkRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+plantTrunkRadius(p.type)*(p.scale||1)))return false;
+  const solidProps = ['rock', 'table', 'bookshelf', 'hearth', 'barrel', 'cabinet', 'sofa', 'sofaBlue', 'sofaRed', 'sofaGreen'];
   if (floor.props.some(p => solidProps.includes(p.type) && Math.hypot(p.x - nx, p.y - ny) < r + 14*(p.scale||1))) return false;
   if (floor.props.some(p => isKenneyObject(p.type) && KENNEY_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17*(p.scale||1)))return false;
   if (floor.props.some(p => isKenneyRoguelikeObject(p.type) && KENNEY_ROGUELIKE_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17*(p.scale||1)))return false;

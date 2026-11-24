@@ -70,6 +70,7 @@ function expandCurrentMap() {
 
 function selectTool(tool) {
   state.tool = tool;
+  document.getElementById('caveOptions').classList.toggle('hidden',tool!=='caveRoom');
   document.getElementById('buildingOptions').classList.toggle('hidden',tool!=='building');
   if(tool!=='move'&&typeof architectSelections!=='undefined')architectSelections=[];
   if(typeof refreshArchitectProperties==='function')refreshArchitectProperties();
@@ -212,6 +213,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   const floor = getScene().floors[state.currentFloor];
   // Colocar objetos não altera a extensão do terreno-base.
 
+  if(state.tool==='caveRoom'||state.tool==='caveWall'){applyCaveTool(wx,wy,isDrag);return;}
   if(state.tool==='building'){
     dragStart ||= {x:snapCoord(wx),y:snapCoord(wy)};
     previewRect={building:buildingFromDrag(wx,wy)};
@@ -288,7 +290,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
       openLockDialog(chest, 'chest');
     }
   } else if (state.tool === 'erase') {
-    if(eraseBuilding(getScene(),floor,wx,wy))return;
+    if(eraseCave(floor,wx,wy)||eraseBuilding(getScene(),floor,wx,wy))return;
     for(const stroke of floor.brushStrokes||[]){
       stroke.points=stroke.points.filter(point=>Math.hypot(point.x-wx,point.y-wy)>Math.max(18,stroke.size/2));
     }
@@ -308,6 +310,11 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
   window.activeBrushStroke=null;
   const floor = getScene().floors[state.currentFloor];
 
+  if((state.tool==='caveRoom'||state.tool==='caveWall')&&dragStart){
+    finishCaveTool(floor,wx,wy);
+    dragStart=null;previewRect=null;
+    return;
+  }
   if(state.tool==='building'&&dragStart){
     if(Math.hypot(wx-dragStart.x,wy-dragStart.y)>12)placeBuilding(getScene(),state.currentFloor,buildingFromDrag(wx,wy));
     dragStart=null;previewRect=null;

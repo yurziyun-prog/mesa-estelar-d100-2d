@@ -420,6 +420,16 @@ Solo Cristalino|晶体地表
 Solo Carmesim|赤红地表
 Solo Corrompido|腐化地表
 Escolha um trecho reto e livre da parede.|请选择一段空闲的直墙。
+Caverna|洞穴
+Solo interno|洞内地形
+Cobertura externa|洞顶岩层
+Sem cobertura|无洞顶
+Entrada|入口
+Sul|南
+Leste|东
+Norte|北
+Oeste|西
+Sem entrada|无入口
 `.trim().split('\n').map(line=>line.split('|')).filter(([source, translation])=>source && translation));
 
 let siteLanguage = localStorage.getItem('mesa-site-language')==='zh-CN'?'zh-CN':'pt-BR';

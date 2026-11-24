@@ -529,6 +529,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     ctx.restore();
   });
   drawBrushStrokes(floor);
+  for(const cave of floor.caves||[])drawCaveBase(cave);
   for(const building of floor.buildings||[])drawBuildingBase(building,floor);
   // 只将楼下的自然地形和地板作为背景，隐藏门、窗、墙、家具和人物。
   if(isBelow)return;
@@ -539,7 +540,19 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
 
   // Paredes contínuas por material e espessura. Colisões usam a mesma largura.
   const walls=floor.walls;
-  function wallPath(w){ctx.moveTo(w.x1,w.y1);ctx.lineTo(w.x2,w.y2);}
+  function wallPath(w,offset=0){
+    ctx.moveTo(w.x1+offset,w.y1+offset);
+    if(w.material==='caveRock'){
+      const dx=w.x2-w.x1,dy=w.y2-w.y1,length=Math.hypot(dx,dy);
+      const seed=(w.x1+w.y1)*.07;
+      for(let dist=9;dist<length;dist+=9){
+        const wobble=Math.sin(dist*.28+seed)*(w.width||16)*.24;
+        ctx.lineTo(w.x1+offset+dx*dist/length-dy/length*wobble,
+          w.y1+offset+dy*dist/length+dx/length*wobble);
+      }
+    }
+    ctx.lineTo(w.x2+offset,w.y2+offset);
+  }
   const groups=new Map();
   for(const w of walls){
     const key=(w.style||'normal')+'|'+(w.material||'wallMasonry')+'|'+(w.width||16)+'|'+(w.color||'');
@@ -554,12 +567,11 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
   for(const group of groups.values()){
     const w=group[0],width=w.width||16;
     for(const [extra,color,offset] of [[9,'rgba(0,0,0,.28)',4],[5,'#313440',0],[0,wallBase(w),0]]){
-      ctx.save();ctx.lineCap='square';ctx.lineJoin='bevel';
+      ctx.save();ctx.lineCap=w.material==='caveRock'?'round':'square';ctx.lineJoin='bevel';
       ctx.strokeStyle=color;ctx.lineWidth=width+extra;
       ctx.beginPath();
       for(const line of group){
-        if(offset){ctx.moveTo(line.x1+offset,line.y1+offset);ctx.lineTo(line.x2+offset,line.y2+offset);}
-        else wallPath(line);
+        wallPath(line,offset);
       }
       ctx.stroke();ctx.restore();
     }
@@ -689,7 +701,10 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     ctx.strokeRect(c.x - 5, c.y - 4, 10, 8);
   });
 
-  floor.props.forEach(p => {drawProp(p);drawFireEffect(p);});
+  floor.props.forEach(p => {
+    if(plantTypes.has(p.type))drawPlantBase(p);
+    else{drawProp(p);drawFireEffect(p);}
+  });
   if(state.mode==='architect'&&!isBelow&&typeof selectedMapObject!=='undefined'&&selectedMapObject){
     const sel=floor[selectedMapObject.kind]?.[selectedMapObject.index];
     if(sel&&sel.x!==undefined&&sel.y!==undefined){
@@ -709,7 +724,11 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
       ((e.stairClimb.linkId&&e.stairClimb.linkId===s.linkId)||
        (!e.stairClimb.linkId&&Math.hypot(e.stairClimb.x-s.x,e.stairClimb.y-s.y)<5))))
     .forEach(s=>drawArchitecturalStair(s,true));
+  const viewer=activeActor();
+  const underCanopy=viewer?.floor===floorIdx&&viewer.sceneId===state.activeSceneId?viewer:null;
+  for(const p of floor.props)if(plantTypes.has(p.type))drawPlantCanopy(p,underCanopy);
   drawBuildingRoofs(floor,floorIdx);
+  drawCaveRoofs(floor,floorIdx);
 }
 
 function drawCharacterToken(ent, isBelow) {
@@ -967,6 +986,7 @@ function drawSleepingFurniture(p){
   ctx.restore();
 }
 function drawProp(p) {
+  if(drawPlant(p))return;
   if(p.scale&&p.scale!==1){
     ctx.save();ctx.translate(p.x,p.y);ctx.scale(p.scale,p.scale);ctx.translate(-p.x,-p.y);
     drawProp({...p,scale:1});ctx.restore();return;

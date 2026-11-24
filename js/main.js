@@ -301,7 +301,12 @@ function render() {
     ctx.save();
     ctx.translate(state.camera.x, state.camera.y);
     ctx.scale(state.camera.zoom, state.camera.zoom);
-    if(previewRect.building){
+    if(previewRect.cave){
+      ctx.globalAlpha=.64;drawCaveBase(previewRect.cave);
+    }else if(previewRect.caveWall){
+      ctx.strokeStyle=getTerrainPattern(ctx,'caveStone');ctx.lineWidth=state.wallWidth||16;
+      ctx.lineCap='round';ctx.lineJoin='round';cavePath(previewRect.caveWall);ctx.stroke();
+    }else if(previewRect.building){
       ctx.globalAlpha=.55;
       drawBuildingBase(previewRect.building,null,true);
     } else if (previewRect.wallPreview) {
@@ -347,5 +352,6 @@ function render() {
 initVisualCatalog();
 initMesaImports();
 initTerrainFinishes();
+initPlantCatalog();
 initTerrainTools();
 init();

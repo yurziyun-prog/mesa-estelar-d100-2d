@@ -77,6 +77,7 @@ function applyFallDamage(ent,levels,reason='queda'){
 function repairExistingStairLandings(scene){ensureFloorLevels(scene);}
 function hasBuiltFloorAt(floor,x,y){
  if(!floor)return false;
+ if((floor.caves||[]).some(c=>insideCave(c,x,y)&&!terrainIsBlocked(c.ground)))return true;
  const hit=a=>x>=a.x&&x<=a.x+a.w&&y>=a.y&&y<=a.y+a.h;
  if((floor.buildings||[]).some(b=>b.hasFloor&&buildingDistance(x,y,b)<=0))return true;
  const top=[...(floor.areas||[])].reverse().find(a=>hit(a)&&(!a.fromBuildingId||buildingDistance(x,y,a)<=0));
@@ -117,7 +118,7 @@ function stairPathBlocked(floor,stair){
   :[[0,-37],[0,0],[0,37]];
  return points.some(([lx,ly])=>{
    const v=stairWorld(stair,lx,ly),x=stair.x+v.x,y=stair.y+v.y;
-   return (floor.walls||[]).some(w=>distToSegment(x,y,w.x1,w.y1,w.x2,w.y2)<13+(w.width||16)/2)
+   return caveWallBlocks(floor,x,y)||(floor.walls||[]).some(w=>distToSegment(x,y,w.x1,w.y1,w.x2,w.y2)<13+(w.width||16)/2)
       ||(floor.doors||[]).some(d=>!d.open&&Math.hypot(d.x-x,d.y-y)<24)
       ||(floor.windows||[]).some(win=>Math.hypot(win.x-x,win.y-y)<18)
       ||(floor.roofOpenings||[]).some(o=>o.type==='skylight'

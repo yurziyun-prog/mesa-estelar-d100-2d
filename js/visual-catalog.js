@@ -322,7 +322,7 @@ function catalogEntries(category){
    ...[...finishTextures].map(([id,[label]])=>[id,'',label,'mat','Pisos texturizados']),
    ...[['bridgeMetal','Ponte metálica'],['bridgeMarble','Ponte de mármore'],['bridgeStone','Ponte de pedra']].map(([id,label])=>[id,'',label,'mat','Pisos texturizados']),
    ...catalogFloors.slice(6).map(([id,label])=>[id,'',label,'mat','Pisos texturizados'])];
- if(category==='nature')return [...entries,...catalogNature.map(([id,label])=>[id,'',label,'prop'])];
+ if(category==='nature')return [...entries,...extraPlantIds.map(id=>[id,'',plantTypes.get(id)[0],'prop']),...catalogNature.map(([id,label])=>[id,'',label,'prop'])];
  if(category==='furniture')return [...entries,...furnitureFinishes.map(([id,label])=>[id,'',label,'prop','Materiais de mesa e cadeira']),...MESA_FURNITURE.map(([id,label])=>[id,'',label,'prop','Móveis do Mesa Estelar']),...catalogProps.flatMap(([group,,props])=>props.map(([id,label])=>[id,'',label,'prop',group]))];
  return entries;
 }

@@ -401,3 +401,19 @@ html[lang="zh-CN"] .tool-btn {
 html[lang="zh-CN"] .section-title {
   letter-spacing: normal;
 }
+
+#caveOptions:not(.hidden) {
+  display: grid;
+  gap: 7px;
+}
+
+#caveOptions label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+#gmTools label:has(#plantWind) {
+  display: grid;
+  gap: 4px;
+}
