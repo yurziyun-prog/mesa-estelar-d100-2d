@@ -250,10 +250,20 @@ function createNewSceneAsArchitect(terrain='grass', width=540, length=400) {
   logEvent(`🏛️ Novo cenário criado: "${name}".`);
 }
 
-function saveCurrentSceneToBank() {
+async function saveCurrentSceneToBank() {
   if(!saveBank())return;
-  playMapSavedSound();
-  logEvent(`💾 Cenário "${getScene().name}" salvo no banco.`);
+  if(!mesaCloud?.auth.currentUser){
+    openMesaCloud();
+    setMesaCloudStatus('Cópia local salva. Entre para salvar no site.');
+    return;
+  }
+  if(!await runMesaCloudBank('save')){
+    openMesaCloud();
+    return;
+  }
+  const button=document.getElementById('saveMapButton');
+  button.textContent='✓ Salvo no site';
+  setTimeout(()=>{button.textContent='💾 Salvar mapa';},2500);
 }
 function playMapSavedSound(){
   // Só toca após um salvamento manual concluído, dentro do gesto do usuário.

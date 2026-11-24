@@ -30,7 +30,7 @@
     <select id="siteLanguage" class="ctrl" aria-label="Idioma / 语言" onchange="setSiteLanguage(this.value)">
       <option value="pt-BR">Português</option><option value="zh-CN">中文</option>
     </select>
-    <button class="btn" onclick="document.getElementById('cloudBankDialog').showModal()">☁️ Nuvem</button>
+    <button class="btn" onclick="openMesaCloud()">☁️ Nuvem</button>
     <button class="btn" onclick="centerMap()" title="Centralizar o mapa na área de jogo">Centralizar mapa</button>
     <button class="btn" onclick="exportJSON()">⬇️ JSON</button>
     <button class="btn" onclick="document.getElementById('importFile').click()">⬆️ Importar</button>
@@ -56,7 +56,7 @@
           <button class="btn btn-gold" onclick="openTerrainDialog(true)">+ Criar</button>
         </div>
         <div class="row" style="margin-bottom:0;">
-          <button class="btn btn-primary" style="flex:1;" onclick="saveCurrentSceneToBank()">💾 Salvar neste navegador</button>
+          <button id="saveMapButton" class="btn btn-primary" style="flex:1;" onclick="saveCurrentSceneToBank()">💾 Salvar mapa</button>
           <button class="btn" onclick="duplicateCurrentScene()">📄 Duplicar</button>
         </div>
       </div>
@@ -426,7 +426,7 @@
 </div>
 
 <script src="js/d100.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/state.js?v=terrain-cloud-20261124" defer></script>
+<script src="js/state.js?v=mesa-firebase-20261124" defer></script>
 <script src="js/roof-system.js?v=terrain-cloud-20261124" defer></script>
 <script src="js/stair-system.js?v=slab-wall-extension-20261124" defer></script>
 <script src="js/editor.js?v=terrain-cloud-20261124" defer></script>
@@ -439,8 +439,8 @@
 <script src="js/architect-selection.js?v=slab-wall-extension-20261124" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/i18n.js?v=terrain-cloud-20261124" defer></script>
-<script src="js/cloud-bank.js?v=terrain-cloud-20261124" defer></script>
+<script src="js/i18n.js?v=mesa-firebase-20261124" defer></script>
+<script src="js/cloud-bank.js?v=mesa-firebase-20261124" defer></script>
 <script src="js/main.js?v=map-center-20261124" defer></script>
 <dialog id="lockDialog" class="lock-dialog">
   <form method="dialog" onsubmit="return false;">
@@ -509,18 +509,24 @@
   </form>
 </dialog>
 <dialog id="cloudBankDialog" class="lock-dialog">
-  <form onsubmit="event.preventDefault()">
+  <form id="cloudLoginForm" onsubmit="loginMesaCloud(event)">
     <h3>Banco na nuvem</h3>
-    <p>Use um repositório privado inicializado no GitHub e um token de acesso restrito a esse repositório, com permissão de leitura e escrita em Contents.</p>
-    <label>Repositório privado <input id="cloudRepository" class="ctrl" placeholder="usuario/repositorio" autocomplete="off" required></label>
-    <label>Token do GitHub <input id="cloudToken" class="ctrl" type="password" autocomplete="off" required></label>
-    <p role="status" id="cloudStatus"></p>
-    <div class="row">
-      <button type="button" class="btn" onclick="document.getElementById('cloudBankDialog').close()">Fechar</button>
-      <button type="button" class="btn" onclick="runCloudBank('load')">Abrir da nuvem</button>
-      <button type="button" class="btn btn-primary" onclick="runCloudBank('save')">Salvar na nuvem</button>
-    </div>
+    <p>Entre com o mesmo e-mail e senha do Mesa Estelar D100.</p>
+    <label>E-mail <input id="cloudEmail" class="ctrl" type="email" autocomplete="username" required></label>
+    <label>Senha <input id="cloudPassword" class="ctrl" type="password" autocomplete="current-password" required></label>
+    <div class="row"><button type="submit" class="btn btn-primary">Entrar</button></div>
   </form>
+  <div id="cloudAccountControls" hidden>
+    <h3>Banco na nuvem</h3>
+    <p id="cloudAccountEmail" data-user-text></p>
+    <div class="row">
+      <button type="button" class="btn" onclick="runMesaCloudBank('load')">Abrir da nuvem</button>
+      <button type="button" class="btn btn-primary" onclick="runMesaCloudBank('save')">Salvar na nuvem</button>
+      <button type="button" class="btn" onclick="logoutMesaCloud()">Sair</button>
+    </div>
+  </div>
+  <p role="status" id="cloudStatus"></p>
+  <button type="button" class="btn" onclick="document.getElementById('cloudBankDialog').close()">Fechar</button>
 </dialog>
 </body>
 </html>

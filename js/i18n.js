@@ -15,7 +15,6 @@ Banco de Cenários|场景库
 Nome do novo cenário...|新场景名称…
 Criar|创建
 Configurar novo cenário|设置新场景
-Salvar neste navegador|保存到本浏览器
 Duplicar|复制
 Trocar Cenário|切换场景
 Colocar|放置
@@ -302,27 +301,15 @@ Goblin|哥布林
 Esqueleto|骷髅
 Lobo|狼
 Dragão|龙
-Use um repositório privado inicializado no GitHub e um token de acesso restrito a esse repositório, com permissão de leitura e escrita em Contents.|请使用已初始化的 GitHub 私有仓库，以及仅限此仓库、拥有 Contents 读写权限的访问令牌。
-Repositório privado|私有仓库
-Token do GitHub|GitHub 访问令牌
 Fechar|关闭
 Abrir da nuvem|从云端打开
 Salvar na nuvem|保存到云端
-Preencha o repositório e o token.|请填写仓库和访问令牌。
-Conectando ao GitHub…|正在连接 GitHub…
-Não foi possível acessar o repositório privado.|无法访问此私有仓库。
-Escolha um repositório privado.|请选择私有仓库。
-Não foi possível consultar o banco na nuvem.|无法读取云端场景库。
-Este repositório ainda não tem um banco salvo.|此仓库尚无场景存档。
 O banco na nuvem é inválido.|云端存档格式无效。
 Abrir este banco no lugar do banco atual? Você pode desfazer com Ctrl+Z.|用此存档替换当前场景库？可按 Ctrl+Z 撤销。
 Abertura cancelada.|已取消打开。
 Banco aberto da nuvem.|已打开云端存档。
 Banco salvo na nuvem.|已保存到云端。
 A versão na nuvem mudou. Abra o banco da nuvem antes de sobrescrevê-lo.|云端版本已变更。覆盖前请先打开云端存档。
-O GitHub recusou a gravação. Confira se o repositório foi inicializado e se a versão mudou.|GitHub 拒绝写入。请检查仓库是否已初始化，以及云端版本是否已更新。
-Falha ao salvar. Verifique a permissão de escrita em Contents.|保存失败。请确认令牌拥有 Contents 写入权限。
-O banco excede o limite de 950 KB.|存档超过 950 KB 上限。
 Modo Arquiteto • Paredes retas alinhadas • Porta/Janela abre vão na parede • R: Rotacionar|建筑师模式 · 墙体自动对齐 · 门窗在墙上开洞 · R 旋转
 Modo Mestre • Escolha personagens prontos ou marque existentes e clique em Colocar • Arraste no mapa|主持人模式 · 勾选角色并点击放置 · 在地图上拖动角色
 Modo Jogador • WASD/Setas: Mover • E ou Clique próximo: Portas, baús e escadas|玩家模式 · WASD／方向键移动 · 按 E 或点击附近的门、宝箱和楼梯
@@ -359,6 +346,34 @@ Cerca|围栏
 Árvore|树
 Fogueira|篝火
 Escadaria decorativa|装饰楼梯
+
+Salvar mapa|保存地图
+Salvo no site|已保存到网站
+Entre com o mesmo e-mail e senha do Mesa Estelar D100.|请使用 Mesa Estelar D100 的邮箱和密码登录。
+E-mail|邮箱
+Senha|密码
+Entrar|登录
+Sair|退出账号
+Conectando ao Mesa Estelar…|正在连接 Mesa Estelar…
+Não foi possível conectar ao Firebase.|无法连接 Firebase。
+E-mail ou senha incorretos.|邮箱或密码错误。
+Informe um e-mail válido.|请输入有效的邮箱地址。
+Esta conta está desativada.|此账号已停用。
+Muitas tentativas. Tente novamente mais tarde.|尝试次数过多，请稍后重试。
+O Firebase recusou o acesso ao banco desta conta.|Firebase 拒绝访问此账号的场景库。
+O Firebase está indisponível. Tente novamente.|Firebase 暂不可用，请重试。
+Não foi possível concluir a operação no Firebase.|Firebase 操作未能完成。
+Entrando…|正在登录…
+Conta conectada. Agora você pode salvar ou abrir seu banco.|已登录，可以保存或打开云端场景库。
+Conta desconectada.|已退出账号。
+Abra sua conta no Mesa Estelar principal antes de salvar aqui.|请先在 Mesa Estelar 主站开通账号，再回来保存。
+Salvando no site…|正在保存到网站…
+Buscando o banco salvo…|正在读取已保存的场景库…
+Entre com sua conta do Mesa Estelar.|请登录你的 Mesa Estelar 账号。
+O banco excede o limite de 800 KB.|场景库存档超过 800 KB 上限。
+Ainda não há banco salvo para esta conta.|此账号还没有云端存档。
+Não foi possível abrir o banco na nuvem.|无法打开云端场景库。
+Cópia local salva. Entre para salvar no site.|已保存本地副本。登录后可以保存到网站。
 `.trim().split('\n').map(line=>line.split('|')));
 
 let siteLanguage = localStorage.getItem('mesa-site-language')==='zh-CN'?'zh-CN':'pt-BR';

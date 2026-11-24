@@ -1,110 +1,169 @@
-const CLOUD_BANK_FILE = 'mesa-estelar-bank.json';
+// Reuse the main Mesa Estelar Firebase app configuration and account.
+const mesaFirebaseConfig = {
+  apiKey: 'AIzaSyDw_DB5qhwyqPI7_q6NgVA-U90atRGJ4mQ',
+  authDomain: 'd100-mesa-estelar.firebaseapp.com',
+  projectId: 'd100-mesa-estelar',
+  appId: '1:1000414403401:web:fae7d2feaad04cc8bd9898'
+};
+const mesaCloudDialog = document.getElementById('cloudBankDialog');
+const mesaCloudStatus = document.getElementById('cloudStatus');
+let mesaCloud = null;
+let mesaCloudConnection = null;
 
-function encodeCloudBank(text) {
-  const bytes = new TextEncoder().encode(text);
-  if (bytes.length > 950000) throw Error('O banco excede o limite de 950 KB.');
-  let binary = '';
-  for (let offset = 0; offset < bytes.length; offset += 8192) {
-    binary += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
-  }
-  return btoa(binary);
+function setMesaCloudStatus(message) {
+  mesaCloudStatus.textContent = message;
 }
 
-function decodeCloudBank(content) {
-  return new TextDecoder('utf-8', {fatal:true}).decode(
-    Uint8Array.from(atob(content.replace(/\s/g, '')), char => char.charCodeAt(0))
-  );
+function refreshMesaCloudAccount(user) {
+  document.getElementById('cloudLoginForm').hidden = Boolean(user);
+  document.getElementById('cloudAccountControls').hidden = !user;
+  document.getElementById('cloudAccountEmail').textContent = user?.email || '';
 }
 
-async function runCloudBank(action) {
-  const dialog = document.getElementById('cloudBankDialog');
-  const form = dialog.querySelector('form');
-  if (!form.reportValidity() || dialog.dataset.busy) return;
-  const repo = document.getElementById('cloudRepository').value.trim();
-  const token = document.getElementById('cloudToken').value.trim();
-  const status = document.getElementById('cloudStatus');
-  if (!/^[A-Za-z0-9-]+\/[A-Za-z0-9_.-]+$/.test(repo) || !token) {
-    status.textContent = 'Preencha o repositório e o token.';
-    return;
-  }
+function connectMesaCloud() {
+  if (mesaCloudConnection) return mesaCloudConnection;
+  mesaCloudConnection = Promise.all([
+    import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'),
+    import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js'),
+    import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js')
+  ]).then(async ([appSdk, authSdk, storeSdk]) => {
+    const app = appSdk.initializeApp(mesaFirebaseConfig, 'mesa-estelar-2d');
+    const auth = authSdk.getAuth(app);
+    const db = storeSdk.getFirestore(app);
+    await auth.authStateReady();
+    mesaCloud = {auth, db, authSdk, storeSdk};
+    authSdk.onAuthStateChanged(auth, refreshMesaCloudAccount);
+    refreshMesaCloudAccount(auth.currentUser);
+    return mesaCloud;
+  }).catch(error => {
+    mesaCloudConnection = null;
+    throw error;
+  });
+  return mesaCloudConnection;
+}
 
-  dialog.dataset.busy = 'true';
-  status.textContent = 'Conectando ao GitHub…';
-  const endpoint = 'https://api.github.com/repos/' + repo.split('/').map(encodeURIComponent).join('/');
-  const revisionKey = 'mesa-cloud-revision:' + repo.toLowerCase();
-  const headers = {Authorization:'Bearer ' + token, Accept:'application/vnd.github+json'};
+function openMesaCloud() {
+  if (!mesaCloudDialog.open) mesaCloudDialog.showModal();
+  if (mesaCloud) return;
+  setMesaCloudStatus('Conectando ao Mesa Estelar…');
+  connectMesaCloud().then(() => {
+    if (!mesaCloudDialog.dataset.busy) setMesaCloudStatus('');
+  }).catch(() => setMesaCloudStatus('Não foi possível conectar ao Firebase.'));
+}
+
+async function mesaCloudAction(action) {
+  if (mesaCloudDialog.dataset.busy) return false;
+  mesaCloudDialog.dataset.busy = 'true';
   try {
-    const response = await fetch(endpoint, {headers, cache:'no-store'});
-    if (!response.ok) throw Error('Não foi possível acessar o repositório privado.');
-    if (!(await response.json()).private) throw Error('Escolha um repositório privado.');
-    const url = endpoint + '/contents/' + CLOUD_BANK_FILE;
-    const fileResponse = await fetch(url, {headers, cache:'no-store'});
-    if (!fileResponse.ok && fileResponse.status !== 404) throw Error('Não foi possível consultar o banco na nuvem.');
-    const file = fileResponse.ok ? await fileResponse.json() : null;
-
-    if (action === 'load') {
-      if (!file) throw Error('Este repositório ainda não tem um banco salvo.');
-      if (file.type !== 'file' || file.encoding !== 'base64') throw Error('O banco na nuvem é inválido.');
-      const serialized = decodeCloudBank(file.content);
-      const incoming = JSON.parse(serialized);
-      if (!incoming.scenes?.[incoming.activeSceneId] || !Array.isArray(incoming.entities) ||
-          !Object.values(incoming.scenes).every(scene => Array.isArray(scene.floors) && scene.floors.length)) {
-        throw Error('O banco na nuvem é inválido.');
-      }
-      if (!confirm(translateSiteText('Abrir este banco no lugar do banco atual? Você pode desfazer com Ctrl+Z.'))) {
-        status.textContent = 'Abertura cancelada.';
-        return;
-      }
-      finishEdit();
-      const backup = snapshotState();
-      beginEdit();
-      try {
-        restoreState(serialized);
-        localStorage.setItem('rpg_vtt_aligned_v8', snapshotState());
-      } catch {
-        restoreState(backup);
-        finishEdit();
-        throw Error('O banco na nuvem é inválido.');
-      }
-      finishEdit();
-      localStorage.setItem(revisionKey, file.sha);
-      localStorage.setItem('mesa-cloud-repository', repo);
-      status.textContent = 'Banco aberto da nuvem.';
-      return;
-    }
-
-    if (file && file.sha !== localStorage.getItem(revisionKey)) {
-      throw Error('A versão na nuvem mudou. Abra o banco da nuvem antes de sobrescrevê-lo.');
-    }
-    const serialized = snapshotState();
-    const content = encodeCloudBank(serialized);
-    const saved = await fetch(url, {
-      method:'PUT',
-      headers:{...headers, 'Content-Type':'application/json'},
-      body:JSON.stringify({message:'Salvar banco Mesa Estelar', content, ...(file ? {sha:file.sha} : {})})
-    });
-    if (saved.status === 409 || saved.status === 422) {
-      throw Error('O GitHub recusou a gravação. Confira se o repositório foi inicializado e se a versão mudou.');
-    }
-    if (!saved.ok) throw Error('Falha ao salvar. Verifique a permissão de escrita em Contents.');
-    const result = await saved.json();
-    status.textContent = 'Banco salvo na nuvem.';
-    try {
-      localStorage.setItem('rpg_vtt_aligned_v8', serialized);
-      localStorage.setItem(revisionKey, result.content.sha);
-      localStorage.setItem('mesa-cloud-repository', repo);
-    } catch {
-      status.textContent = 'Banco salvo na nuvem. A cópia local não pôde ser salva.';
-    }
-    playMapSavedSound();
+    const cloud = await connectMesaCloud();
+    return await action(cloud);
   } catch (error) {
-    status.textContent = error.message;
+    const messages = {
+      'auth/invalid-credential': 'E-mail ou senha incorretos.',
+      'auth/invalid-email': 'Informe um e-mail válido.',
+      'auth/user-disabled': 'Esta conta está desativada.',
+      'auth/too-many-requests': 'Muitas tentativas. Tente novamente mais tarde.',
+      'permission-denied': 'O Firebase recusou o acesso ao banco desta conta.',
+      'unavailable': 'O Firebase está indisponível. Tente novamente.'
+    };
+    setMesaCloudStatus(messages[error.code] || error.bankMessage || 'Não foi possível concluir a operação no Firebase.');
+    return false;
   } finally {
-    delete dialog.dataset.busy;
+    delete mesaCloudDialog.dataset.busy;
   }
 }
 
-document.getElementById('cloudRepository').value = localStorage.getItem('mesa-cloud-repository') || '';
-document.getElementById('cloudBankDialog').addEventListener('close', () => {
-  document.getElementById('cloudToken').value = '';
+function mesaBankError(bankMessage) {
+  return Object.assign(new Error(bankMessage), {bankMessage});
+}
+
+function loginMesaCloud(event) {
+  event.preventDefault();
+  const password = document.getElementById('cloudPassword');
+  const credentials = [document.getElementById('cloudEmail').value.trim(), password.value];
+  password.value = '';
+  setMesaCloudStatus('Entrando…');
+  return mesaCloudAction(async ({auth, authSdk}) => {
+    await authSdk.signInWithEmailAndPassword(auth, ...credentials);
+    setMesaCloudStatus('Conta conectada. Agora você pode salvar ou abrir seu banco.');
+  });
+}
+
+function logoutMesaCloud() {
+  return mesaCloudAction(async ({auth, authSdk}) => {
+    await authSdk.signOut(auth);
+    setMesaCloudStatus('Conta desconectada.');
+  });
+}
+
+function writeMesaBank(db, store, ref, expected, bank) {
+  return store.runTransaction(db, async transaction => {
+    const profile = await transaction.get(ref);
+    if (!profile.exists()) throw mesaBankError('Abra sua conta no Mesa Estelar principal antes de salvar aqui.');
+    if ((profile.data().mesaEstelar2dBank?.revision || null) !== expected) {
+      throw mesaBankError('A versão na nuvem mudou. Abra o banco da nuvem antes de sobrescrevê-lo.');
+    }
+    transaction.update(ref, {mesaEstelar2dBank:bank});
+  });
+}
+
+function runMesaCloudBank(action) {
+  setMesaCloudStatus(action === 'save' ? 'Salvando no site…' : 'Buscando o banco salvo…');
+  return mesaCloudAction(async ({auth, db, storeSdk:store}) => {
+    const user = auth.currentUser;
+    if (!user) throw mesaBankError('Entre com sua conta do Mesa Estelar.');
+    const ref = store.doc(db, 'usuarios', user.uid);
+    const revisionKey = 'mesa-firebase-bank-revision:' + user.uid;
+    if (action === 'save') {
+      const snapshot = snapshotState();
+      if (new TextEncoder().encode(snapshot).length > 800000) {
+        throw mesaBankError('O banco excede o limite de 800 KB.');
+      }
+      const revision = crypto.randomUUID();
+      await writeMesaBank(db, store, ref, localStorage.getItem(revisionKey), {revision, snapshot});
+      setMesaCloudStatus('Banco salvo na nuvem.');
+      try {
+        localStorage.setItem('rpg_vtt_aligned_v8', snapshot);
+        localStorage.setItem(revisionKey, revision);
+      } catch {
+        setMesaCloudStatus('Banco salvo na nuvem. A cópia local não pôde ser salva.');
+      }
+      logEvent('💾 Banco salvo na nuvem.');
+      playMapSavedSound();
+      return true;
+    }
+
+    const profile = await store.getDocFromServer(ref);
+    const bank = profile.data()?.mesaEstelar2dBank;
+    if (!bank) throw mesaBankError('Ainda não há banco salvo para esta conta.');
+    const incoming = JSON.parse(bank.snapshot);
+    if (!incoming.scenes?.[incoming.activeSceneId] || !Array.isArray(incoming.entities) ||
+        !Object.values(incoming.scenes).every(scene => Array.isArray(scene.floors) && scene.floors.length)) {
+      throw mesaBankError('O banco na nuvem é inválido.');
+    }
+    if (!confirm(translateSiteText('Abrir este banco no lugar do banco atual? Você pode desfazer com Ctrl+Z.'))) {
+      setMesaCloudStatus('Abertura cancelada.');
+      return false;
+    }
+    finishEdit();
+    const previous = snapshotState();
+    beginEdit();
+    try {
+      restoreState(bank.snapshot);
+      localStorage.setItem('rpg_vtt_aligned_v8', snapshotState());
+      localStorage.setItem(revisionKey, bank.revision);
+    } catch {
+      restoreState(previous);
+      throw mesaBankError('Não foi possível abrir o banco na nuvem.');
+    } finally {
+      finishEdit();
+    }
+    setMesaCloudStatus('Banco aberto da nuvem.');
+    return true;
+  });
+}
+
+mesaCloudDialog.addEventListener('close', () => {
+  document.getElementById('cloudPassword').value = '';
 });
+connectMesaCloud().catch(() => {});
