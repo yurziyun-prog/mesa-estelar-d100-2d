@@ -374,7 +374,7 @@ O banco excede o limite de 800 KB.|场景库存档超过 800 KB 上限。
 Ainda não há banco salvo para esta conta.|此账号还没有云端存档。
 Não foi possível abrir o banco na nuvem.|无法打开云端场景库。
 Cópia local salva. Entre para salvar no site.|已保存本地副本。登录后可以保存到网站。
-`.trim().split('\n').map(line=>line.split('|')));
+`.trim().split('\n').map(line=>line.split('|')).filter(([source, translation])=>source && translation));
 
 let siteLanguage = localStorage.getItem('mesa-site-language')==='zh-CN'?'zh-CN':'pt-BR';
 const siteOriginalText = new WeakMap();
@@ -385,18 +385,20 @@ const siteUserText = '#sceneSelect, #activeSceneTag, #gmSceneTag, #charHeader, [
 function translateSiteText(value) {
   if(siteLanguage!=='zh-CN')return value;
   const text=value.trim();
+  if(!text)return value;
   const prefix=text.match(/^[^\p{L}\p{N}]+\s*/u)?.[0]||'';
   const key=text.slice(prefix.length);
   const floor=key.match(/^(\d+)º (Andar|Subterrâneo)$/);
   const part=key.match(/^(RPG Base|Roguelike|Kenney) · (.+)$/);
   const selection=key.match(/^Selecionado: (.+) • Clique no mapa para colocar\.$/);
   const stats=key.match(/^Personagens: (\d+) · NPCs\/criaturas: (\d+) · Total no banco: (\d+) · Cenário: (.+)$/);
-  const translated=SITE_ZH.get(text) || (SITE_ZH.has(key)?prefix+SITE_ZH.get(key):null)
+  const label=SITE_ZH.get(key);
+  const translated=SITE_ZH.get(text) || (label?prefix+label:null)
     || (floor?(floor[2]==='Andar'?floor[1]+'楼':'地下'+floor[1]+'层'):null)
     || (part&&SITE_ZH.has(part[2])?part[1]+' · '+SITE_ZH.get(part[2]):null)
     || (selection?'已选：'+translateSiteText(selection[1])+' · 点击地图放置。':null)
     || (stats?`角色：${stats[1]} · NPC／生物：${stats[2]} · 库中总数：${stats[3]} · 场景：${stats[4]}`:null);
-  return translated ? value.replace(text,translated) : value;
+  return translated ? value.replace(text,()=>translated) : value;
 }
 
 function translateSiteNode(node) {
