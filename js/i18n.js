@@ -434,6 +434,16 @@ Níveis da caverna|洞穴层数
 Direção dos níveis|楼层延伸方向
 Para baixo|向下
 Para cima|向上
+Tipo de construção|建筑类型
+Sala|房间
+Ferramenta da caverna|洞穴工具
+Pincel redondo de caverna|圆形洞穴画笔
+Adicionar / mover porta|添加／移动洞口门
+Adicionar / mover janela|添加／移动洞窗
+Selar abertura|封闭洞口
+Raio do pincel|画笔半径
+Largura da abertura|开口宽度
+A entrada fica na borda do primeiro ponto do traço. Arraste uma abertura para movê-la.|入口位于第一笔起点的外缘。拖动开口即可移动。
 `.trim().split('\n').map(line=>line.split('|')).filter(([source, translation])=>source && translation));
 
 let siteLanguage = localStorage.getItem('mesa-site-language')==='zh-CN'?'zh-CN':'pt-BR';

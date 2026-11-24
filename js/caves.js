@@ -14,52 +14,24 @@ function insideCave(cave,x,y){
  return inside;
 }
 
-function caveEdges(cave){
- return cave.points.map((point,i)=>[point,cave.points[(i+1)%cave.points.length],i])
-  .filter(([, ,i])=>i!==cave.entrance);
-}
-
 function caveWallBlocks(floor,x,y){
- return (floor.caves||[]).some(cave=>caveEdges(cave).some(([a,b])=>
+ return (floor.caves||[]).some(cave=>caveWallPieces(cave,true).some(([a,b])=>
   distToSegment(x,y,a.x,a.y,b.x,b.y)<cave.thickness/2+10));
 }
 
-function caveFromDrag(a,x,y){
- const left=Math.min(a.x,x),top=Math.min(a.y,y);
- const read=id=>document.getElementById(id).value;
- const levels=Number(read('caveLevels'))||1;
- const w=Math.max(levels>1?290:115,Math.abs(x-a.x)),h=Math.max(levels>1?240:103,Math.abs(y-a.y));
- const entry={right:0,bottom:6,left:12,top:18}[read('caveEntrance')];
- const cx=left+w/2,cy=top+h/2;
- const points=[];
- for(let i=0;i<24;i++){
-   const angle=(i-.5)*Math.PI/12;
-   const r=1+Math.sin(i*2.39)*.105+Math.cos(i*1.61)*.048;
-   points.push({x:cx+Math.cos(angle)*w/2*r,y:cy+Math.sin(angle)*h/2*r});
- }
- if(entry!==undefined){
-   const angle=entry*Math.PI/12;
-   const [xMid,yMid]=[cx+Math.cos(angle)*w/2,cy+Math.sin(angle)*h/2];
-   const dx=-Math.sin(angle)*28,dy=Math.cos(angle)*28;
-   points[entry]={x:xMid-dx,y:yMid-dy};
-   points[(entry+1)%24]={x:xMid+dx,y:yMid+dy};
-   // Afastar os vértices vizinhos da boca mesmo em cavernas estreitas.
-   for(const [index,sign] of [[(entry+23)%24,-1],[(entry+2)%24,1]]){
-     const p=points[index],tangent=-Math.sin(angle)*(p.x-xMid)+Math.cos(angle)*(p.y-yMid);
-     if(tangent*sign<36){
-       p.x+=-Math.sin(angle)*(36*sign-tangent);
-       p.y+=Math.cos(angle)*(36*sign-tangent);
-     }
-   }
- }
- return {points,entrance:entry??-1,thickness:state.wallWidth||16,
-   ground:read('caveGround'),wall:read('caveWall'),roof:read('caveRoof')||read('caveWall')};
+function currentCaveBrushRadius(){
+ const levels=Number(document.getElementById('caveLevels').value)||1;
+ const radius=Number(document.getElementById('caveBrushRadius').value)||110;
+ return Math.max(levels>1?106:65,radius);
 }
 
 function applyCaveTool(x,y,isDrag){
  if(state.tool==='caveRoom'){
-   dragStart ||= {x,y};
-   previewRect={cave:caveFromDrag(dragStart,x,y)};
+   dragStart ||= {x,y,points:[{x,y}]};
+   if(document.getElementById('caveEditMode').value!=='paint')return;
+   const radius=currentCaveBrushRadius();
+   sampleCaveBrush(dragStart.points,x,y,Math.max(8,radius/6));
+   previewRect={caveBrush:{points:dragStart.points,radius}};
  }else{
    if(!isDrag||!dragStart)dragStart={points:[{x,y}]};
    const points=dragStart.points,last=points.at(-1);
@@ -78,9 +50,14 @@ function applyCaveTool(x,y,isDrag){
 
 function finishCaveTool(floor,x,y){
  if(state.tool==='caveRoom'){
-   if(Math.hypot(x-dragStart.x,y-dragStart.y)<=12)return;
-   const cave=caveFromDrag(dragStart,x,y);
-   placeCaveStack(getScene(),state.currentFloor,cave,Number(document.getElementById('caveLevels').value)||1,
+   if(document.getElementById('caveEditMode').value!=='paint'){
+     editCaveOpening(floor,dragStart,x,y);
+     return;
+   }
+   const radius=currentCaveBrushRadius();
+   sampleCaveBrush(dragStart.points,x,y,4);
+   const cave=buildPaintedCave(dragStart.points,radius);
+   if(cave)placeCaveStack(getScene(),state.currentFloor,cave,Number(document.getElementById('caveLevels').value)||1,
      Number(document.getElementById('caveLevelDirection').value)||-1);
    return;
  }
@@ -95,11 +72,14 @@ function finishCaveTool(floor,x,y){
 
 function placeCaveStack(scene,index,cave,levels,direction){
  const level=floorLevel(scene,index),id=crypto.randomUUID(),bounds=caveBounds(cave);
- const x=bounds.x+bounds.w/2,y=bounds.y+bounds.h/2;
+ const middle={x:bounds.x+bounds.w/2,y:bounds.y+bounds.h/2};
+ const candidates=[middle,...(cave.points.map(point=>({x:(point.x+middle.x)/2,y:(point.y+middle.y)/2})))];
+ const clearance=p=>insideCave(cave,p.x,p.y)?closestCaveBoundary(cave,p.x,p.y).distance:-1;
+ const {x,y}=candidates.reduce((best,p)=>clearance(p)>clearance(best)?p:best,middle);
  for(let i=0;i<levels;i++){
    const at=level+i*direction;
    const target=scene.floors[floorIndexForLevel(scene,at,true,{x,y})];
-   (target.caves ||= []).push({...cave,stackId:id,entrance:i===0?cave.entrance:-1});
+   (target.caves ||= []).push({...cave,stackId:id,entrance:i===0?cave.entrance:-1,openings:i===0?caveOpenings(cave):[]});
    for(const point of cave.points)expandFloorToInclude(target,point.x,point.y);
    if(i>0){
      const pair=createStairPair(scene,at-direction,at,x+(i%2?-42:42),y,'open','stone','normal');
@@ -132,11 +112,12 @@ function drawCaveBase(cave){
  ctx.save();
  ctx.lineJoin='round';ctx.lineCap='round';
  ctx.beginPath();
- for(const [a,b] of caveEdges(cave)){ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);}
+ for(const [a,b] of caveWallPieces(cave,false)){ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);}
  ctx.strokeStyle='rgba(0,0,0,.4)';ctx.lineWidth=cave.thickness+9;ctx.stroke();
  ctx.lineWidth=cave.thickness;ctx.strokeStyle=getTerrainPattern(ctx,cave.wall);
  ctx.stroke();
  ctx.restore();
+ for(const opening of caveOpenings(cave))drawCaveOpening(opening);
 }
 
 function drawCaveMountain(cave,roof){
@@ -159,13 +140,7 @@ function drawCaveMountain(cave,roof){
    ctx.fillStyle=light;ctx.fill();
    ctx.lineWidth=2+depth*2;ctx.strokeStyle='rgba(26,28,34,.56)';ctx.stroke();
  }
- if(cave.entrance>=0){
-   const a=cave.points[cave.entrance],end=cave.points[(cave.entrance+1)%cave.points.length];
-   const x=(a.x+end.x)/2,y=(a.y+end.y)/2;
-   ctx.translate(x,y);ctx.rotate(Math.atan2(end.y-a.y,end.x-a.x));
-   ctx.fillStyle='#15191f';ctx.beginPath();ctx.ellipse(0,0,25,12,0,0,Math.PI*2);ctx.fill();
-   ctx.strokeStyle='#828078';ctx.lineWidth=3;ctx.stroke();
- }
+ for(const entrance of caveOpenings(cave))drawCaveOpening(entrance);
  ctx.restore();
 }
 
@@ -185,7 +160,7 @@ function drawCaveRoofs(floor,index){
 }
 
 function eraseCave(floor,x,y){
- const cave=(floor.caves||[]).findLast(c=>caveEdges(c).some(([a,b])=>
+ const cave=(floor.caves||[]).findLast(c=>caveWallPieces(c,true).some(([a,b])=>
   distToSegment(x,y,a.x,a.y,b.x,b.y)<c.thickness/2+5));
  if(!cave)return false;
  const scene=getScene();
@@ -197,4 +172,33 @@ function eraseCave(floor,x,y){
    level.openings=level.openings.filter(opening=>!links.has(opening.stairLinkId));
  }
  return true;
+}
+
+
+function drawCaveOpening(opening){
+ ctx.save();ctx.translate(opening.x,opening.y);ctx.rotate(opening.angle);
+ const r=opening.width/2;
+ ctx.fillStyle=opening.kind==='window'?'#313c45':opening.open?'#241f1a':'#584331';
+ ctx.beginPath();ctx.ellipse(0,0,r,10,0,0,Math.PI*2);ctx.fill();
+ ctx.strokeStyle='#9a9588';ctx.lineWidth=2;ctx.stroke();
+ if(opening.kind==='window'){
+   ctx.strokeStyle='#aab6b2';
+   for(let x=-r+8;x<r-5;x+=10){
+     ctx.beginPath();ctx.moveTo(x,-6);ctx.lineTo(x,6);ctx.stroke();
+   }
+ }else if(!opening.open){
+   ctx.fillStyle='#b79b61';ctx.fillRect(r*.57,-2,4,4);
+ }
+ ctx.restore();
+}
+
+function drawCaveBrushPreview(brush){
+ ctx.save();ctx.globalAlpha=.58;
+ ctx.fillStyle=getTerrainPattern(ctx,document.getElementById('caveGround').value);
+ ctx.beginPath();
+ for(const p of brush.points){
+   ctx.moveTo(p.x+brush.radius,p.y);
+   ctx.arc(p.x,p.y,brush.radius,0,Math.PI*2);
+ }
+ ctx.fill();ctx.restore();
 }

@@ -304,7 +304,9 @@ function render() {
     ctx.save();
     ctx.translate(state.camera.x, state.camera.y);
     ctx.scale(state.camera.zoom, state.camera.zoom);
-    if(previewRect.cave){
+    if(previewRect.caveBrush){
+      drawCaveBrushPreview(previewRect.caveBrush);
+    }else if(previewRect.cave){
       ctx.globalAlpha=.64;drawCaveBase(previewRect.cave);
     }else if(previewRect.caveWall){
       ctx.strokeStyle=getTerrainPattern(ctx,'caveStone');ctx.lineWidth=state.wallWidth||16;
@@ -356,5 +358,6 @@ initVisualCatalog();
 initMesaImports();
 initTerrainFinishes();
 initPlantCatalog();
+initGeologyCatalog();
 initTerrainTools();
 init();

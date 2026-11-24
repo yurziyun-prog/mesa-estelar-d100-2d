@@ -68,13 +68,19 @@ function expandCurrentMap() {
   logEvent(`📐 Área do ${state.currentFloor + 1}º andar expandida.`);
 }
 
+function selectBuildingKind(){
+  selectTool(document.getElementById('buildingKind').value);
+}
+
 function selectTool(tool) {
   state.tool = tool;
+  document.getElementById('buildingKindOptions').classList.toggle('hidden',!['building','caveRoom'].includes(tool));
+  if(['building','caveRoom'].includes(tool))document.getElementById('buildingKind').value=tool;
   document.getElementById('caveOptions').classList.toggle('hidden',tool!=='caveRoom');
   document.getElementById('buildingOptions').classList.toggle('hidden',tool!=='building');
   if(tool!=='move'&&typeof architectSelections!=='undefined')architectSelections=[];
   if(typeof refreshArchitectProperties==='function')refreshArchitectProperties();
-  document.querySelectorAll('#architectTools [data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === tool));
+  document.querySelectorAll('#architectTools [data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === tool||(tool==='caveRoom'&&b.dataset.tool==='building')));
 }
 
 function openCategoryMenu(cat) { openArchitectLibrary(cat === 'trees' ? 'nature' : cat); }
@@ -278,7 +284,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
     if (!isDrag) placeArchitectCharacter(wx,wy);
   } else if (state.tool === 'prop') {
     if (!isDrag) {
-      floor.props.push({ x: wx, y: wy, type: state.propType, rot: state.rotation, color:state.propColor, style: state.propType.startsWith('kenney_')?'downloads':state.buildStyle,...(isPortableLadder({type:state.propType})?{ladderState:state.propType==='foldingLadder'?'folded':'lying',material:'wood'}:{}) });
+      floor.props.push({ ...newGeologyVariant(floor,state.propType), x: wx, y: wy, type: state.propType, rot: state.rotation, color:state.propColor, style: state.propType.startsWith('kenney_')?'downloads':state.buildStyle,...(isPortableLadder({type:state.propType})?{ladderState:state.propType==='foldingLadder'?'folded':'lying',material:'wood'}:{}) });
       selectedMapObject={kind:'props',index:floor.props.length-1};onArchitectSelectionChange();
     }
   } else if (state.tool === 'chest') {

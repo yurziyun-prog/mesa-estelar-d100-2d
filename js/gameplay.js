@@ -170,7 +170,8 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
 
   if(floor.props.some(p=>(catalogPropIsSolid(p.type)||mesaFurnitureById.has(p.type)||furnitureFinishById.has(p.type))&&Math.hypot(p.x-nx,p.y-ny)<r+19*(p.scale||1)))return false;
   if(floor.props.some(p=>plantTrunkRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+plantTrunkRadius(p.type)*(p.scale||1)))return false;
-  const solidProps = ['rock', 'table', 'bookshelf', 'hearth', 'barrel', 'cabinet', 'sofa', 'sofaBlue', 'sofaRed', 'sofaGreen'];
+  if(floor.props.some(p=>geologyPropRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+geologyPropRadius(p.type)*(p.scale||1)))return false;
+  const solidProps = ['table', 'bookshelf', 'hearth', 'barrel', 'cabinet', 'sofa', 'sofaBlue', 'sofaRed', 'sofaGreen'];
   if (floor.props.some(p => solidProps.includes(p.type) && Math.hypot(p.x - nx, p.y - ny) < r + 14*(p.scale||1))) return false;
   if (floor.props.some(p => isKenneyObject(p.type) && KENNEY_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17*(p.scale||1)))return false;
   if (floor.props.some(p => isKenneyRoguelikeObject(p.type) && KENNEY_ROGUELIKE_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17*(p.scale||1)))return false;
@@ -220,7 +221,7 @@ function interactWithBed(ent,bed){
 function interactNearby(entity) {
   const floor = getScene().floors[entity.floor];
   if(entity.sleepPose)return;
-  if(interactPortableLadder(entity))return;
+  if(interactCaveDoor(floor,entity)||interactPortableLadder(entity))return;
   const nearBed=floor.props.filter(isSleepingFurniture).map(p=>({p,d:Math.hypot(p.x-entity.x,p.y-entity.y)})).sort((a,b)=>a.d-b.d)[0];
   if(nearBed && nearBed.d<90){interactWithBed(entity,nearBed.p);return;}
   const keyIndex=floor.props.findIndex(p=>p.type==='key'&&Math.hypot(p.x-entity.x,p.y-entity.y)<48);
