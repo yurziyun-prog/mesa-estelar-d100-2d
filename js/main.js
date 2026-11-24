@@ -345,5 +345,6 @@ function render() {
 }
 
 initVisualCatalog();
+initMesaImports();
 initTerrainTools();
 init();

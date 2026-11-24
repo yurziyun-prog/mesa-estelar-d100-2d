@@ -92,6 +92,7 @@ function setMode(mode) {
 function onPaintedGround(floor, x, y) {
   const hit = (a) => x >= a.x && x <= a.x+a.w && y >= a.y && y <= a.y+a.h;
   for(const stroke of [...(floor.brushStrokes||[])].reverse()){
+    if(stroke.mesaScatter)continue;
     for(let i=stroke.points.length-1;i>=0;i--){
       if(brushPointInside(stroke,stroke.points[i],x,y,i))return !terrainIsBlocked(stroke.mat);
     }
@@ -164,7 +165,7 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   if (floor.windows.some(win => win.orient==='v'?(Math.abs(nx-win.x)<r+9&&Math.abs(ny-win.y)<(win.width||40)/2+r):(Math.abs(ny-win.y)<r+9&&Math.abs(nx-win.x)<(win.width||40)/2+r))) return false;
   if (floor.chests.some(c => Math.hypot(c.x - nx, c.y - ny) < r + 14)) return false;
 
-  if(floor.props.some(p=>catalogPropIsSolid(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+19*(p.scale||1)))return false;
+  if(floor.props.some(p=>(catalogPropIsSolid(p.type)||mesaFurnitureById.has(p.type))&&Math.hypot(p.x-nx,p.y-ny)<r+19*(p.scale||1)))return false;
   const solidProps = ['tree', 'pine', 'fruitTree', 'rock', 'table', 'bookshelf', 'hearth', 'barrel', 'cabinet', 'sofa', 'sofaBlue', 'sofaRed', 'sofaGreen'];
   if (floor.props.some(p => solidProps.includes(p.type) && Math.hypot(p.x - nx, p.y - ny) < r + 14*(p.scale||1))) return false;
   if (floor.props.some(p => isKenneyObject(p.type) && KENNEY_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17*(p.scale||1)))return false;

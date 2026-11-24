@@ -341,10 +341,11 @@ const TERRAIN_GROUPS = [
 ];
 
 function terrainIsBlocked(mat) {
-  return ['water','kenney_water','swampWater','lava','lavaAbyss','space','void'].includes(mat);
+  return ['water','kenney_water','swampWater','lava','lavaAbyss','mesaShallows','space','void'].includes(mat);
 }
 
 function drawCachedTerrain(mat,x,y,w,h) {
+  if(drawMesaTerrain(mat,x,y,w,h))return true;
   if(!Object.hasOwn(TERRAIN_PALETTES,mat))return false;
   ctx.fillStyle=getTerrainPattern(ctx,mat);
   ctx.fillRect(x,y,w,h);
@@ -391,6 +392,7 @@ function applyTerrainBrush(floor,x,y,isDrag) {
     return;
   }
   const size=Number(document.getElementById('terrainPaintSize').value);
+  if(mode==='mesaScatter'){addMesaScatterPoint(floor,x,y,isDrag,size);return;}
   const softness=Number(document.getElementById('terrainPaintEdge').value);
   let stroke=window.activeBrushStroke;
   if(!isDrag||!stroke){
@@ -436,7 +438,7 @@ function drawTerrainStroke(stroke) {
     trace(size*(1+stroke.softness)+2);
     ctx.fill();
   }
-  ctx.fillStyle=getTerrainPattern(ctx,stroke.mat);
+  ctx.fillStyle=mesaTerrainPaint(stroke.mat)||getTerrainPattern(ctx,stroke.mat);
   for(const [diameter,alpha] of [[size*(1+stroke.softness),stroke.softness*.6],[size,1]]){
     if(!alpha)continue;
     ctx.globalAlpha=alpha;
