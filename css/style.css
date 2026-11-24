@@ -380,3 +380,11 @@
 .tile-palette-option:hover{transform:translateY(-1px);border-color:#d3dfec;}
 .tile-palette-option.active{outline:2px solid #f5c15b;outline-offset:1px;border-color:#1b2431;}
 #tileColor1:disabled,#tileColor2:disabled{opacity:.8;cursor:not-allowed;}
+
+.terrain-preview {
+  width:32px;
+  height:32px;
+  flex:0 0 32px;
+  border:1px solid rgba(255,255,255,.3);
+  border-radius:4px;
+}

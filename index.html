@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mesa RPG 2D — Arquiteto, Mestre & Jogador</title>
-  <link rel="stylesheet" href="css/style.css?v=terrain-cloud-20261124" />
+  <link rel="stylesheet" href="css/style.css?v=tactile-terrain-20261124" />
 </head>
 <body>
 
@@ -261,7 +261,7 @@
           <div class="section-title">Pincel de terreno</div>
           <div class="row"><select id="terrainPaintMaterial" class="ctrl" aria-label="Terreno" onchange="chooseTerrainMaterial(this.value)"></select></div>
           <div class="row"><select id="terrainPaintMode" class="ctrl" aria-label="Modo do pincel" onchange="chooseTerrainMaterial(document.getElementById('terrainPaintMaterial').value)">
-            <option value="round">Pincel Redondo</option><option value="rect">Área Retangular</option><option value="spray">Spray / Mistura</option><option value="fill">Solo Base do Mapa</option>
+            <option value="round">Pincel Redondo</option><option value="square">Pincel Quadrado</option><option value="rect">Área Retangular</option><option value="spray">Spray / Mistura</option><option value="fill">Solo Base do Mapa</option>
           </select></div>
           <div class="row"><label for="terrainPaintSize">Tamanho:</label><input id="terrainPaintSize" type="range" min="20" max="180" value="64" oninput="chooseTerrainMaterial(document.getElementById('terrainPaintMaterial').value)"></div>
           <div class="row"><label for="terrainPaintEdge">Borda:</label><select id="terrainPaintEdge" class="ctrl" onchange="chooseTerrainMaterial(document.getElementById('terrainPaintMaterial').value)">
@@ -491,18 +491,18 @@
 <script src="js/roof-system.js?v=building-terrain-20261124" defer></script>
 <script src="js/stair-system.js?v=building-terrain-20261124" defer></script>
 <script src="js/editor.js?v=building-terrain-20261124" defer></script>
-<script src="js/library.js?v=building-terrain-20261124" defer></script>
+<script src="js/library.js?v=tactile-terrain-20261124" defer></script>
 <script src="js/gameplay.js?v=building-terrain-20261124" defer></script>
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/textures.js?v=building-terrain-20261124" defer></script>
+<script src="js/textures.js?v=tactile-terrain-20261124" defer></script>
 <script src="js/architect-selection.js?v=slab-wall-extension-20261124" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/i18n.js?v=building-terrain-20261124" defer></script>
+<script src="js/i18n.js?v=tactile-terrain-20261124" defer></script>
 <script src="js/cloud-bank.js?v=mesa-firebase-20261124" defer></script>
-<script src="js/terrain-tools.js?v=building-terrain-20261124" defer></script>
+<script src="js/terrain-tools.js?v=tactile-terrain-20261124" defer></script>
 <script src="js/building.js?v=building-terrain-20261124" defer></script>
 <script src="js/main.js?v=building-terrain-20261124" defer></script>
 <dialog id="lockDialog" class="lock-dialog">

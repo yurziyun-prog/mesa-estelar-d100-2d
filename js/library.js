@@ -88,7 +88,10 @@ function renderArchitectLibrary(){
   const button=document.createElement('button');button.type='button';button.className='library-card';
   const emoji=document.createElement('span');emoji.className='emoji';emoji.textContent=icon;
   const name=document.createElement('span');name.textContent=label;
-  if(architectCategory==='downloads'){
+  if(kind==='terrain'){
+    button.classList.toggle('active',state.tool==='terrainBrush'&&state.brush.mat===id);
+    button.append(createTerrainThumbnail(id),name);
+  }else if(architectCategory==='downloads'){
     const preview=createDownloadThumbnail(id);
     button.append(preview||emoji,name);
   }else button.append(emoji,name);

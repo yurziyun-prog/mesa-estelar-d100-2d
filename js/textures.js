@@ -223,9 +223,9 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
 
 function brushPointInside(stroke,point,x,y,index){
  const r=stroke.size*(stroke.terrain&&stroke.shape==='spray'?.18:1)/2,dx=x-point.x,dy=y-point.y;
+ if(stroke.shape==='quadrado')return Math.abs(dx)<=r && Math.abs(dy)<=r;
  if(stroke.terrain)return dx*dx+dy*dy<=r*r;
  const hash=Math.abs(Math.sin((x+index*13)*12.37+y*7.33))*100;
- if(stroke.shape==='quadrado')return Math.abs(dx)<=r && Math.abs(dy)<=r;
  if(stroke.shape==='irregular')return dx*dx+dy*dy<r*r*(.8+.32*Math.sin(Math.atan2(dy,dx)*7+hash));
  if(stroke.shape==='spray')return dx*dx+dy*dy<r*r && hash%1>.28;
  return dx*dx+dy*dy<=r*r;

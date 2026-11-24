@@ -392,6 +392,7 @@ Mostrar tetos translúcidos|显示半透明屋顶
 Pincel de terreno|地形画笔
 Modo do pincel|画笔模式
 Pincel Redondo|圆形画笔
+Pincel Quadrado|方形画笔
 Área Retangular|矩形填充
 Spray / Mistura|喷涂／混合
 Solo Base do Mapa|整层基础地形
