@@ -14,6 +14,12 @@ const plantTypes=new Map([
 const extraPlantIds=['winterTree','deadTree','alienPodTree','alienFanTree','alienShelfTree'];
 const plantCanopies=new Map();
 const plantBases=new Map();
+const illustratedCanopies=new Map([
+ ['tree',0],['fruitTree',0],['pine',1],['palm',2],
+ ['alienPodTree',3],['alienShelfTree',4],['alienFanTree',5]
+]);
+const overheadCanopyArt=new Image();
+overheadCanopyArt.src='assets/nature/overhead-canopies.webp';
 const plantTallKinds=new Set(['oak','pine','palm','winter','dead','pods','fan','discs']);
 
 function plantTrunkRadius(type){
@@ -141,13 +147,20 @@ function drawPlantCanopy(p,actor=null){
  const [, ,radius,kind]=plantTypes.get(p.type);
  if(kind==='dead'||kind==='winter')return;
  if(plantTallKinds.has(kind)&&actor&&Math.hypot(actor.x-p.x,actor.y-p.y)<radius*.79*(p.scale||1))return;
- const art=makePlantCanopy(p.type),size=art.width/2;
+ const sprite=illustratedCanopies.get(p.type);
+ const hasArt=sprite!==undefined&&overheadCanopyArt.complete&&overheadCanopyArt.naturalWidth>0;
+ const art=hasArt?overheadCanopyArt:makePlantCanopy(p.type);
+ const size=hasArt?(radius+7)*2:art.width/2;
  const wind=ctx.canvas===canvas&&!terrainMotionPreference.matches?(state.windStrength??.35):0;
  const phase=performance.now()/1000*2+p.x*.055+p.y*.024;
  beginPlantTransform(p);
  ctx.rotate(Math.sin(phase)*wind*.065);
  ctx.translate(Math.sin(phase)*wind*4,Math.cos(phase*.83)*wind*2);
- ctx.drawImage(art,-size/2,-size/2,size,size);
+ if(hasArt){
+   const w=art.naturalWidth/3,h=art.naturalHeight/2;
+   ctx.drawImage(art,(sprite%3)*w,Math.floor(sprite/3)*h,w,h,-size/2,-size/2,size,size);
+   if(p.type==='fruitTree')for(const [x,y] of [[-13,-13],[10,-8],[7,10],[-14,7]])plantDisc(ctx,x,y,2.4,'#e97757');
+ }else ctx.drawImage(art,-size/2,-size/2,size,size);
  ctx.restore();
 }
 
@@ -158,6 +171,12 @@ function drawPlant(p){
 }
 
 function initPlantCatalog(){
+ overheadCanopyArt.addEventListener('load',()=>{
+   for(const key of catalogThumbnailCache.keys()){
+     if(illustratedCanopies.has(key.split(':')[1]))catalogThumbnailCache.delete(key);
+   }
+   if(architectCategory==='nature')renderArchitectLibrary();
+ },{once:true});
  for(const [id,[label,zh]] of plantTypes)SITE_ZH.set(label,zh);
  SITE_ZH.set('Vento na vegetação','植被风力');
  SITE_ZH.set('Sem vento','无风');

@@ -298,6 +298,9 @@ function drawUpperStairOpening(stair){
    for(const area of lower.areas||[]){
      drawTexturedArea(area.x,area.y,area.w,area.h,area.mat,area.color,area.tile,area.roofPitch,area.roofHeight);
    }
+   for(const cave of lower.caves||[]){
+     if(insideCave(cave,stair.x,stair.y))drawCaveBase(cave);
+   }
    for(const prop of lower.props||[]){
      if(Math.hypot(prop.x-stair.x,prop.y-stair.y)<90)drawProp(prop);
    }

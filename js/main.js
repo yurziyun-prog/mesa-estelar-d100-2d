@@ -278,17 +278,20 @@ function render() {
   // Isso preserva os níveis antigos e permite subterrâneos anexados ao fim da lista.
   ensureFloorLevels(sc);
   const currentLevel=floorLevel(sc,state.currentFloor);
+  const interior=viewerCave(sc.floors[state.currentFloor],state.currentFloor);
   const visible=sc.floors.map((floor,i)=>({i,level:floor.level}))
     .filter(item=>item.level<=currentLevel)
     .sort((a,b)=>a.level-b.level);
   for(const entry of visible){
     const f=entry.i,isBelow=f!==state.currentFloor;
+    if(interior&&isBelow)continue;
     const depthDiff=currentLevel-entry.level;
     ctx.save();
     ctx.translate(state.camera.x,state.camera.y);
     ctx.scale(state.camera.zoom,state.camera.zoom);
     // Os pisos inferiores e suas paredes projetadas usam as mesmas coordenadas.
     // A sombra distingue a profundidade sem deslocar as bordas do piso.
+    if(interior){cavePath(interior.points,true);ctx.clip();}
     drawFloorLayer(sc,f,isBelow);
     if(isBelow){
       ctx.fillStyle='rgba(14,20,32,'+Math.min(.36,depthDiff*.2)+')';
@@ -326,7 +329,7 @@ function render() {
     ctx.restore();
   }
 
-  drawExternalBuildingTop();
+  if(!interior)drawExternalBuildingTop();
   const ambientColors = {
     dawn: 'rgba(255, 160, 90, 0.13)',
     day: 'rgba(0, 0, 0, 0)',

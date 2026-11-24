@@ -430,6 +430,10 @@ Leste|东
 Norte|北
 Oeste|西
 Sem entrada|无入口
+Níveis da caverna|洞穴层数
+Direção dos níveis|楼层延伸方向
+Para baixo|向下
+Para cima|向上
 `.trim().split('\n').map(line=>line.split('|')).filter(([source, translation])=>source && translation));
 
 let siteLanguage = localStorage.getItem('mesa-site-language')==='zh-CN'?'zh-CN':'pt-BR';
