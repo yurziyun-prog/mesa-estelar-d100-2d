@@ -304,7 +304,10 @@ function render() {
     ctx.save();
     ctx.translate(state.camera.x, state.camera.y);
     ctx.scale(state.camera.zoom, state.camera.zoom);
-    if(previewRect.caveBrush){
+    if(previewRect.curve){
+      ctx.lineWidth=state.wallWidth||16;ctx.strokeStyle='#f5c373';ctx.lineCap='round';
+      cavePath(previewRect.curve);ctx.stroke();
+    }else if(previewRect.caveBrush){
       drawCaveBrushPreview(previewRect.caveBrush);
     }else if(previewRect.cave){
       ctx.globalAlpha=.64;drawCaveBase(previewRect.cave);
@@ -342,6 +345,7 @@ function render() {
     ctx.fillStyle = ambientColors[state.timeOfDay];
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
+  renderSceneryLights(sc.floors[state.currentFloor],interior);
   drawArchitectSelectionHUD();
   drawArchitectMapGuides();
   const actor=activeActor();
@@ -359,5 +363,6 @@ initMesaImports();
 initTerrainFinishes();
 initPlantCatalog();
 initGeologyCatalog();
+initSceneryCatalog();
 initTerrainTools();
 init();

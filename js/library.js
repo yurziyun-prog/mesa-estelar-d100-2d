@@ -227,6 +227,7 @@ function selectedConstructionKind(){
  if(kind==='walls')return 'wall';
  if(kind==='stairs')return 'stairs';
  if(['doors','chests','windows'].includes(kind))return kind;
+ if(state.tool==='curvedWall')return 'wall';
  if(architectCategory==='architecture'&&['wall','caveWall','stairs','door','chest','window'].includes(state.tool))return state.tool==='caveWall'?'wall':state.tool;
  return null;
 }
@@ -266,7 +267,7 @@ function changeConstructionMaterial(material){
  if(!CONSTRUCTION_WALL_MATERIALS[material])return;
  const kind=selectedConstructionKind(),item=selectedArchitectItem();
  beginEdit();
- if(kind==='wall'){if(item)item.material=CONSTRUCTION_WALL_MATERIALS[material];else{state.wallVariant=CONSTRUCTION_WALL_MATERIALS[material];selectTool(state.wallVariant==='caveRock'?'caveWall':'wall');}}
+ if(kind==='wall'){if(item)item.material=CONSTRUCTION_WALL_MATERIALS[material];else{state.wallVariant=CONSTRUCTION_WALL_MATERIALS[material];if(state.tool!=='curvedWall')selectTool(state.wallVariant==='caveRock'?'caveWall':'wall');}}
  else if(kind==='stairs'){if(item){item.material=material;syncLinkedStair(item,'material',material);}else state.stairMaterial=material;}
  else if(item)item.material=material;
  else state.constructionMaterial=material;

@@ -139,7 +139,7 @@ function initTerrainFinishes(){
 }
 
 function terrainFinishFallback(mat){
- return mat==='riverWater'?'water':Object.hasOwn(sandColors,mat)?'sand':mat;
+ return mat==='coastSea'||mat==='riverWater'?'water':Object.hasOwn(sandColors,mat)?'sand':mat;
 }
 
 function createFinishThumbnail(id){

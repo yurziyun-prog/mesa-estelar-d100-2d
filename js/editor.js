@@ -219,6 +219,11 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   const floor = getScene().floors[state.currentFloor];
   // Colocar objetos não altera a extensão do terreno-base.
 
+  if(state.tool==='curvedWall'){
+    dragStart ||= {x:wx,y:wy};
+    previewRect={curve:curvedWallPoints(dragStart,wx,wy,architectShiftHeld)};
+    return;
+  }
   if(state.tool==='caveRoom'||state.tool==='caveWall'){applyCaveTool(wx,wy,isDrag);return;}
   if(state.tool==='building'){
     dragStart ||= {x:snapCoord(wx),y:snapCoord(wy)};
@@ -316,6 +321,11 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
   window.activeBrushStroke=null;
   const floor = getScene().floors[state.currentFloor];
 
+  if(state.tool==='curvedWall'&&dragStart){
+    addCurvedWall(floor,curvedWallPoints(dragStart,wx,wy,shiftHeld));
+    dragStart=null;previewRect=null;
+    return;
+  }
   if((state.tool==='caveRoom'||state.tool==='caveWall')&&dragStart){
     finishCaveTool(floor,wx,wy);
     dragStart=null;previewRect=null;

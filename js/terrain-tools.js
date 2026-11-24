@@ -341,14 +341,14 @@ const TERRAIN_GROUPS = [
 ];
 
 function terrainIsBlocked(mat) {
-  return ['water','kenney_water','swampWater','lava','lavaAbyss','mesaShallows','riverWater','space','void'].includes(mat);
+  return ['water','kenney_water','swampWater','lava','lavaAbyss','mesaShallows','riverWater','coastSea','space','void'].includes(mat);
 }
 
 const terrainMotionPreference=matchMedia('(prefers-reduced-motion: reduce)');
 const terrainMotionKinds=new Map([
   ['grass','grass'],['grassLush','grass'],['grassDry','grass'],
   ['riverWater','river'],
-  ['water','water'],['swampWater','water'],['mesaShallows','water'],
+  ['water','water'],['coastSea','water'],['swampWater','water'],['mesaShallows','water'],
   ['lava','lava'],['lavaAbyss','lava']
 ]);
 
@@ -512,6 +512,7 @@ function drawTerrainStroke(stroke) {
     trace(diameter);
     ctx.fill();
   }
+  if(stroke.mat==='coastSea')drawShoreBreakers(stroke,size);
   if(terrainMotionKinds.has(stroke.mat)&&!terrainMotionPreference.matches){
     let left=Infinity,top=Infinity,right=-Infinity,bottom=-Infinity;
     for(const point of stroke.points){
