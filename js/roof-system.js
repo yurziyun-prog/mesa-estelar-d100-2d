@@ -289,18 +289,31 @@ function roofCoverageAtActor(area,actor){
  const margin=Math.min(12,Math.max(1,Math.min(area.w,area.h)/5));
  return pointInArchitectArea(area,actor.x,actor.y,-margin);
 }
+function externalBuildingSurfaces(scene,current){
+ const candidates=[];
+ for(const floor of scene.floors){
+  if(floor.level<=current)continue;
+  const areas=floor.areas||[];
+  const roofs=areas.filter(area=>{
+   if(!area.roof||!isRoofMaterial(area.mat))return false;
+   const supportLevel=area.supportLevel??floor.level-1;
+   if(supportLevel>=floor.level)return false;
+   const below=scene.floors.find(candidate=>candidate.level===supportLevel);
+   return below&&roofHasStructuralSupport(below,area);
+  });
+  const surfaces=roofs.length?roofs:areas.filter(area=>
+   !area.attic&&!area.fromBuildingId&&isStructuralSlab(area));
+  for(const area of surfaces)candidates.push({area,level:floor.level,floor});
+ }
+ return candidates;
+}
+
 function drawExternalBuildingTop(){
  if(state.mode==='architect')return;
  const actor=activeActor();if(!actor||actor.sceneId!==state.activeSceneId)return;
  const scene=getScene(),current=floorLevel(scene,actor.floor);
- const higher=scene.floors.filter(f=>f.level>current).sort((a,b)=>a.level-b.level);
- if(!higher.length)return;
- const candidates=[];
- for(const floor of higher){
-  const roofs=(floor.areas||[]).filter(a=>a.roof);
-  const surfaces=roofs.length?roofs:(floor.areas||[]).filter(a=>!a.attic&&!a.fromBuildingId&&!terrainIsBlocked(a.mat));
-  for(const area of surfaces)candidates.push({area,level:floor.level,floor});
- }
+ const higher=scene.floors.filter(f=>f.level>current);
+ const candidates=externalBuildingSurfaces(scene,current);
  if(!candidates.length)return;
  const highest=Math.max(...candidates.map(e=>e.level));
  const top=candidates.filter(e=>e.level===highest);
