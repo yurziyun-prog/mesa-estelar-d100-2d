@@ -344,18 +344,80 @@ function terrainIsBlocked(mat) {
   return ['water','kenney_water','swampWater','lava','lavaAbyss','mesaShallows','space','void'].includes(mat);
 }
 
-function drawCachedTerrain(mat,x,y,w,h) {
-  if(drawMesaTerrain(mat,x,y,w,h))return true;
-  if(!Object.hasOwn(TERRAIN_PALETTES,mat))return false;
-  ctx.fillStyle=getTerrainPattern(ctx,mat);
-  ctx.fillRect(x,y,w,h);
-  if(mat==='lava'||mat==='lavaAbyss'){
-    ctx.save();
-    ctx.globalAlpha=.05+.04*Math.sin(animTick);
+const terrainMotionPreference=matchMedia('(prefers-reduced-motion: reduce)');
+const terrainMotionKinds=new Map([
+  ['grass','grass'],['grassLush','grass'],['grassDry','grass'],
+  ['sand','sand'],['mesaVolcanicSand','sand'],
+  ['water','water'],['swampWater','water'],['mesaShallows','water'],
+  ['lava','lava'],['lavaAbyss','lava']
+]);
+
+function drawTerrainMotion(mat,x,y,w,h){
+  const kind=terrainMotionKinds.get(mat);
+  if(!kind||ctx.canvas!==canvas||terrainMotionPreference.matches)return;
+  const time=performance.now()/1000;
+  const zoom=state.camera.zoom;
+  const left=Math.max(x,-state.camera.x/zoom-40);
+  const top=Math.max(y,-state.camera.y/zoom-40);
+  const right=Math.min(x+w,(canvas.width-state.camera.x)/zoom+40);
+  const bottom=Math.min(y+h,(canvas.height-state.camera.y)/zoom+40);
+  if(left>=right||top>=bottom)return;
+  ctx.save();
+  if(kind==='lava'){
+    ctx.globalAlpha*=.05+.04*Math.sin(time*1.8);
     ctx.fillStyle='#ff841a';
-    ctx.fillRect(x,y,w,h);
+    ctx.fillRect(left,top,right-left,bottom-top);
     ctx.restore();
+    return;
   }
+  const cell=(kind==='grass'?29:kind==='water'?52:73)*Math.max(1,Math.ceil(.8/zoom));
+  ctx.lineCap='round';
+  for(let row=Math.floor(top/cell);row*cell<bottom;row++){
+    for(let col=Math.floor(left/cell);col*cell<right;col++){
+      const seed=Math.sin(col*127.1+row*311.7)*43758.5453;
+      const n=seed-Math.floor(seed);
+      const px=(col+.12+n*.62)*cell,py=(row+.12+(n*7%1)*.62)*cell;
+      const phase=px*.018+py*.012;
+      const wind=Math.sin(time*2.2-phase);
+      ctx.beginPath();
+      if(kind==='grass'){
+        ctx.strokeStyle=mat==='grassDry'?'rgba(236,212,128,.38)':'rgba(160,209,113,.42)';
+        ctx.lineWidth=1.2;
+        for(const offset of [-3,0,3]){
+          const blade=7+Math.abs(offset)*.6;
+          ctx.moveTo(px+offset,py);
+          ctx.quadraticCurveTo(px+offset+wind*1.2,py-blade*.58,px+offset*1.5+wind*4,py-blade);
+        }
+      }else if(kind==='sand'){
+        const drift=(time*.37+n)%1;
+        const sx=px+(drift-.5)*cell*.75,sy=py+(drift-.5)*7;
+        ctx.strokeStyle='rgba(255,235,185,'+(.25*Math.sin(Math.PI*drift)).toFixed(3)+')';
+        ctx.lineWidth=.9;
+        ctx.moveTo(sx,sy);
+        ctx.quadraticCurveTo(sx+8,sy-2,sx+17,sy-3);
+        ctx.moveTo(sx+5,sy+5);ctx.lineTo(sx+12,sy+4);
+      }else{
+        const offset=wind*6, rise=Math.cos(time*1.45-phase)*4;
+        const light=.16+.13*Math.sin(time*1.7+n*6.28);
+        ctx.strokeStyle='rgba(190,247,255,'+light.toFixed(3)+')';
+        ctx.lineWidth=1.35;
+        ctx.moveTo(px-14+offset,py+rise);
+        ctx.bezierCurveTo(px-4+offset,py-6+rise,px+5+offset,py+5+rise,px+15+offset,py+rise);
+        ctx.moveTo(px-6+offset,py+9+rise);
+        ctx.quadraticCurveTo(px+offset,py+6+rise,px+8+offset,py+8+rise);
+      }
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawCachedTerrain(mat,x,y,w,h) {
+  const imported=mesaTerrainPaint(mat);
+  if(!imported&&!Object.hasOwn(TERRAIN_PALETTES,mat))return false;
+  ctx.fillStyle=imported||getTerrainPattern(ctx,mat);
+  ctx.fillRect(x,y,w,h);
+  drawTerrainMotion(mat,x,y,w,h);
   return true;
 }
 
@@ -444,6 +506,15 @@ function drawTerrainStroke(stroke) {
     ctx.globalAlpha=alpha;
     trace(diameter);
     ctx.fill();
+  }
+  if(terrainMotionKinds.has(stroke.mat)&&!terrainMotionPreference.matches){
+    let left=Infinity,top=Infinity,right=-Infinity,bottom=-Infinity;
+    for(const point of stroke.points){
+      left=Math.min(left,point.x);right=Math.max(right,point.x);
+      top=Math.min(top,point.y);bottom=Math.max(bottom,point.y);
+    }
+    ctx.clip();
+    drawTerrainMotion(stroke.mat,left-size/2,top-size/2,right-left+size,bottom-top+size);
   }
   ctx.restore();
 }
