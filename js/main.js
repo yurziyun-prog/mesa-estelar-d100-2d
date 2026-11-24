@@ -155,6 +155,12 @@ function setupInputs() {
       const ent = activeActor();
       if (!ent || ent.sceneId !== state.activeSceneId) return;
       const floor=getScene().floors[ent.floor];
+      if(worldAction){
+        if(ent.sleepPose||liftRides.has(ent))return;
+        if(worldAction==='dig'||worldAction==='trim')digGround(ent,floor,wx,wy);
+        else inspectOrDamage(ent,floor,wx,wy);
+        return;
+      }
       const movable=floor.props.find(p=>(p.type==='log'||isPortableLadder(p)) && Math.hypot(p.x-wx,p.y-wy)<42 && Math.hypot(p.x-ent.x,p.y-ent.y)<110);
       if(movable) {beginEdit();draggingProp={item:movable,ent};return;}
       interactNearby(ent);

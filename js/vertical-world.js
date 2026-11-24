@@ -11,11 +11,19 @@ const worldFixtures=new Map([
  ['poolTable',['Mesa de bilhar','台球桌',82,49]],
  ['loungeChair',['Poltrona elegante','休闲扶手椅',42,42]],
  ['loungeSofa',['Sofá elegante','休闲沙发',84,43]],
- ['hoverLift',['Elevador flutuante','悬浮电梯',62,62]]
+ ['hoverLift',['Elevador flutuante','悬浮电梯',62,62]],
+ ['cryoPod',['Cápsula criogênica','低温休眠舱',40,76]],
+ ['hydroRack',['Cultivo hidropônico','水培种植架',82,38]],
+ ['holoTerminal',['Terminal holográfico','全息终端',51,34]],
+ ['chargingBench',['Banco com recarga','充电长椅',73,29]],
+ ['screenDivider',['Divisória luminosa','发光隔断',77,17]],
+ ['medStation',['Estação médica','医疗工作站',48,53]],
+ ['smartLocker',['Armário inteligente','智能储物柜',44,35]],
+ ['handgunPickup',['Pistola','手枪',26,15]]
 ]);
 
 function worldFixtureEntries(decoration){
- return [...worldFixtures].filter(([id])=>['holoSign','hoverLift'].includes(id)===decoration)
+ return [...worldFixtures].filter(([id])=>['holoSign','hoverLift','handgunPickup'].includes(id)===decoration)
    .map(([id,[label]])=>[id,'',label,'prop','Equipamentos futuristas']);
 }
 
@@ -117,7 +125,7 @@ function drawReliefs(floor){
 
 function fixtureRadius(type){
  const entry=worldFixtures.get(type);
- return entry&&!['hoverLift','holoSign'].includes(type)?Math.min(entry[2],entry[3])*.46:0;
+ return entry&&!['hoverLift','holoSign','handgunPickup'].includes(type)?Math.min(entry[2],entry[3])*.46:0;
 }
 
 function drawWorldFixture(p){
@@ -154,6 +162,32 @@ function drawWorldFixture(p){
    box(-w/2+5,-h/2+4,w-10,h-8,'#514159');box(-w/2+9,-h/2+9,w-18,h-17,'#ae758d');
    if(p.type==='loungeSofa')box(-1,-h/2+9,2,h-17,'#664d69');
    box(-w/2+8,h/2-6,w-16,2,'#d5aa71');break;
+  case 'cryoPod':
+   ellipse(0,0,15,30,'#2a5c78');ellipse(0,-4,10,22,'#86d2ed');
+   box(-3,-18,6,25,'#b4e6f7');box(-11,25,22,4,'#53dce8');break;
+  case 'hydroRack':
+   box(-35,-13,70,26,'#263b42');
+   for(let i=-29;i<=29;i+=14){
+     ellipse(i,0,7,10,'#2f6e59');ellipse(i+2,-2,4,7,'#8dd47e');
+   }
+   box(-35,10,70,2,'#69e2da');break;
+  case 'holoTerminal':
+   box(-21,-11,42,20,'#233552');box(-19,-10,38,11,'#7568ba');
+   box(-14,-8,25,1,'#c6eaff');box(-15,5,30,3,'#54dedc');break;
+  case 'chargingBench':
+   box(-31,-9,62,18,'#584b67');box(-32,-10,64,4,'#988ab4');
+   for(const x of [-22,0,22])box(x-3,4,6,3,'#6cebe6');
+   break;
+  case 'screenDivider':
+   box(-34,-5,68,10,'#303a5b');box(-31,-3,62,5,'#9a7ee2');break;
+  case 'medStation':
+   box(-18,-21,36,39,'#d1e1df');box(-13,-14,26,12,'#3d7880');
+   box(-2,4,4,15,'#cf7774');box(-7,9,14,4,'#cf7774');break;
+  case 'smartLocker':
+   box(-17,-12,34,24,'#526785');box(-1,-12,2,24,'#24344e');
+   box(-7,-3,3,7,'#6be5e4');box(7,-3,3,7,'#6be5e4');break;
+  case 'handgunPickup':
+   box(-10,-4,21,5,'#646f86');box(-8,0,6,6,'#313d51');box(7,-3,4,2,'#70cacf');break;
   case 'futureBar':
    box(-w/2+5,-h/2+5,w-10,h-10,'#b79471');box(-w/2+5,h/2-7,w-10,2,'#48d8db');
    box(17,-10,17,11,'#374256');box(20,-8,10,6,'#69dace');break;

@@ -52,6 +52,7 @@ function setMode(mode) {
     if(priorMode==='architect'||priorMode==='gm')state.modeScenes[priorMode]=state.activeSceneId;
   }
   state.mode=mode;
+  if(worldAction)chooseWorldAction(worldAction);
   if(mode==='architect'||mode==='gm'){
     state.activeSceneId=state.modeScenes[mode]||state.activeSceneId;
     state.currentFloor=0;updateFloorLabel();
@@ -241,7 +242,7 @@ function interactWithBed(ent,bed){
 function interactNearby(entity) {
   const floor = getScene().floors[entity.floor];
   if(entity.sleepPose||liftRides.has(entity))return;
-  if(interactCaveDoor(floor,entity)||interactPortableLadder(entity)||interactVending(entity,floor))return;
+  if(useExcavation(entity)||pickupWorldTool(entity,floor)||interactCaveDoor(floor,entity)||interactPortableLadder(entity)||interactVending(entity,floor))return;
   const nearBed=floor.props.filter(isSleepingFurniture).map(p=>({p,d:Math.hypot(p.x-entity.x,p.y-entity.y)})).sort((a,b)=>a.d-b.d)[0];
   if(nearBed && nearBed.d<(TENT_TYPES.has(nearBed.p.type)?48*(nearBed.p.scale||1):90)){interactWithBed(entity,nearBed.p);return;}
   const keyIndex=floor.props.findIndex(p=>p.type==='key'&&Math.hypot(p.x-entity.x,p.y-entity.y)<48);

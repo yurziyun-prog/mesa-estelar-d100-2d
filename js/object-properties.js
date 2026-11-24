@@ -14,6 +14,10 @@ function editArchitectObject(ref=null){
  const dialog=document.getElementById('architectObjectDialog');if(!dialog)return;
  const el=id=>document.getElementById(id);
  const put=(id,value)=>{const node=el(id);if(node)node.value=value;};
+ const durabilityKind={props:'prop',walls:'wall',doors:'door',windows:'window',chests:'chest'}[kind];
+ for(const id of ['objectDialogHardnessRow','objectDialogPvRow'])el(id).style.display=durabilityKind?'flex':'none';
+ const durability=materialDurability(obj,durabilityKind);
+ put('objectDialogHardness',durability.hardness);put('objectDialogPv',durability.maxPv);
  put('objectDialogStyle',obj.style||'normal');
  el('objectDialogScaleRow').style.display=kind==='props'?'flex':'none';
  el('objectDialogSignRow').style.display=kind==='props'&&isWritableSign(obj.type)?'flex':'none';
@@ -75,6 +79,12 @@ function saveArchitectObjectProperties(){
  const target=architectPropertyTarget,obj=getArchitectPropertyItem();if(!obj||!target)return;
  const get=id=>document.getElementById(id).value;
  const width=Number(get('objectDialogWidth'));
+ const durabilityKind={props:'prop',walls:'wall',doors:'door',windows:'window',chests:'chest'}[target.kind];
+ const hardness=Number(get('objectDialogHardness')),maxPv=Number(get('objectDialogPv'));
+ if(durabilityKind&&(!Number.isInteger(hardness)||hardness<0||hardness>999||
+    !Number.isInteger(maxPv)||maxPv<1||maxPv>9999)){
+   alert(translateSiteText('Valores de dureza ou PV inválidos.'));return;
+ }
  const scale=Number(get('objectDialogScale'));
  if(target.kind==='props'&&(!Number.isFinite(scale)||scale<20||scale>400)){
    alert(translateSiteText('Escala entre 20% e 400%.'));return;
@@ -96,6 +106,13 @@ function saveArchitectObjectProperties(){
  }
  beginEdit();
  const floor=getScene().floors[state.currentFloor];
+ if(durabilityKind){
+   const old=materialDurability(obj,durabilityKind);
+   if(old.hardness!==hardness||old.maxPv!==maxPv){
+     obj.hardness=hardness;obj.maxPv=maxPv;
+     obj.pv=Math.max(0,maxPv-(old.maxPv-old.pv));
+   }
+ }
  obj.style=get('objectDialogStyle');
  if(target.kind==='props'){
    obj.scale=scale/100;

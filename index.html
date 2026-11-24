@@ -274,6 +274,14 @@
       </div>
 
       <div class="card">
+        <div class="section-title">Ações no cenário</div>
+        <div class="tool-grid">
+          <button type="button" class="tool-btn" data-world-action="inspect" onclick="chooseWorldAction('inspect')">Inspecionar</button>
+          <button type="button" class="tool-btn" data-world-action="shoot" onclick="chooseWorldAction('shoot')">Disparar pistola</button>
+          <button type="button" class="tool-btn" data-world-action="trim" onclick="chooseWorldAction('trim')">Limpar vegetação</button>
+          <button type="button" class="tool-btn" data-world-action="dig" onclick="chooseWorldAction('dig')">Escavar</button>
+        </div>
+        <p id="worldActionStatus" role="status" class="library-hint"></p>
         <div class="section-title">Comandos</div>
         <div style="font-size:12px; line-height:1.6; color:var(--text-muted);">
           • <b>WASD / Setas:</b> Caminhar<br/>
@@ -539,15 +547,15 @@
 <script src="js/stair-system.js?v=vertical-20261125" defer></script>
 <script src="js/editor.js?v=vertical-20261125" defer></script>
 <script src="js/library.js?v=scenery-20261125" defer></script>
-<script src="js/gameplay.js?v=vertical-20261125" defer></script>
+<script src="js/gameplay.js?v=material-20261125" defer></script>
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/textures.js?v=vertical-20261125" defer></script>
+<script src="js/textures.js?v=material-20261125" defer></script>
 <script src="js/architect-selection.js?v=terrain-finishes-20261124" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/object-properties.js?v=vertical-20261125" defer></script>
-<script src="js/i18n.js?v=vertical-20261125" defer></script>
+<script src="js/object-properties.js?v=material-20261125" defer></script>
+<script src="js/i18n.js?v=material-20261125" defer></script>
 <script src="js/cloud-bank.js?v=mesa-firebase-20261124" defer></script>
 <script src="js/terrain-tools.js?v=scenery-20261125" defer></script>
 <script src="js/building.js?v=vertical-20261125" defer></script>
@@ -559,8 +567,9 @@
 <script src="js/caves.js?v=vertical-20261125" defer></script>
 <script src="js/plants.js?v=cave-massif-20261125" defer></script>
 <script src="js/scenery.js?v=vertical-20261125" defer></script>
-<script src="js/vertical-world.js?v=vertical-20261125" defer></script>
-<script src="js/main.js?v=vertical-20261125" defer></script>
+<script src="js/vertical-world.js?v=material-20261125" defer></script>
+<script src="js/material-damage.js?v=material-20261125" defer></script>
+<script src="js/main.js?v=material-20261125" defer></script>
 <dialog id="lockDialog" class="lock-dialog">
   <form method="dialog" onsubmit="return false;">
     <h3 id="lockDialogTitle">Configurar tranca</h3>
@@ -597,6 +606,8 @@
    <label id="objectDialogStopsRow" style="display:none">Paradas (níveis; térreo = 0) <input class="ctrl" id="objectDialogStops" placeholder="-1, 0, 1"/></label>
    <label id="objectDialogStockRow" style="display:none">Produtos e preços (nome:preço por linha) <textarea class="ctrl" id="objectDialogStock" rows="4" maxlength="1600"></textarea></label>
    <label id="objectDialogHeightRow" style="display:none">Altura (m) <input class="ctrl" id="objectDialogHeight" type="number" min=".1" max="2.9" step=".1"/></label>
+   <label id="objectDialogHardnessRow">Dureza <input type="number" id="objectDialogHardness" class="ctrl" min="0" max="999" step="1"></label>
+   <label id="objectDialogPvRow">PV máximos <input type="number" id="objectDialogPv" class="ctrl" min="1" max="9999" step="1"></label>
    <label id="objectDialogWidthRow">Largura (unidades) <input type="number" class="ctrl" id="objectDialogWidth" min="24" max="224" step="4" value="72"/></label>
    <div id="objectDoorOptions">
     <label>Movimento <select id="objectDoorMechanism" class="ctrl"><option value="hinged">Dobradiça</option><option value="sliding">Deslizar / retrair</option></select></label>

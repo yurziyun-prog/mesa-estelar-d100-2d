@@ -422,6 +422,27 @@ Solo Corrompido|腐化地表
 Escolha um trecho reto e livre da parede.|请选择一段空闲的直墙。
 Caverna|洞穴
 Solo interno|洞内地形
+Ações no cenário|地图互动
+Inspecionar|查看硬度与 PV
+Disparar pistola|用手枪射击
+Limpar vegetação|清除草丛
+Escavar|挖掘
+Dureza|硬度
+PV máximos|最大 PV
+Valores de dureza ou PV inválidos.|硬度或 PV 数值无效。
+Nenhum objeto neste ponto.|这里没有可检查的物件。
+É preciso ter uma pistola no inventário.|背包里需要有一把手枪。
+Alvo fora de alcance.|目标超出射程。
+Uma parede bloqueia o alvo.|墙壁挡住了目标。
+A dureza absorveu o dano.|硬度抵消了这次伤害。
+Objeto destruído.|目标已被破坏。
+Aproxime-se para cavar.|靠近后再挖掘。
+Este ponto não pode ser escavado.|这里无法挖掘。
+Abertura para a caverna. Use E para descer.|已挖通洞穴。按 E 下去。
+Solo escavado.|已挖开地面。
+Vegetação removida.|已清除草丛。
+A passagem está bloqueada.|通道被挡住了。
+Pistola recolhida.|已拾取手枪。
 Relevo em metros|米制地形
 Altura (m)|高度（米）
 Plataforma elevada|高台
