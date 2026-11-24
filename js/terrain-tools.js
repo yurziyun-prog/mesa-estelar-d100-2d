@@ -341,18 +341,18 @@ const TERRAIN_GROUPS = [
 ];
 
 function terrainIsBlocked(mat) {
-  return ['water','kenney_water','swampWater','lava','lavaAbyss','mesaShallows','space','void'].includes(mat);
+  return ['water','kenney_water','swampWater','lava','lavaAbyss','mesaShallows','riverWater','space','void'].includes(mat);
 }
 
 const terrainMotionPreference=matchMedia('(prefers-reduced-motion: reduce)');
 const terrainMotionKinds=new Map([
   ['grass','grass'],['grassLush','grass'],['grassDry','grass'],
-  ['sand','sand'],['mesaVolcanicSand','sand'],
+  ['riverWater','river'],
   ['water','water'],['swampWater','water'],['mesaShallows','water'],
   ['lava','lava'],['lavaAbyss','lava']
 ]);
 
-function drawTerrainMotion(mat,x,y,w,h){
+function drawTerrainMotion(mat,x,y,w,h,flow=0){
   const kind=terrainMotionKinds.get(mat);
   if(!kind||ctx.canvas!==canvas||terrainMotionPreference.matches)return;
   const time=performance.now()/1000;
@@ -364,13 +364,14 @@ function drawTerrainMotion(mat,x,y,w,h){
   if(left>=right||top>=bottom)return;
   ctx.save();
   if(kind==='lava'){
-    ctx.globalAlpha*=.05+.04*Math.sin(time*1.8);
-    ctx.fillStyle='#ff841a';
+    ctx.globalCompositeOperation='screen';
+    ctx.globalAlpha*=.11+.09*Math.sin(time*4.4)+.025*Math.sin(time*10.3);
+    ctx.fillStyle='#ff7028';
     ctx.fillRect(left,top,right-left,bottom-top);
     ctx.restore();
     return;
   }
-  const cell=(kind==='grass'?29:kind==='water'?52:73)*Math.max(1,Math.ceil(.8/zoom));
+  const cell=(kind==='grass'?29:52)*Math.max(1,Math.ceil(.8/zoom));
   ctx.lineCap='round';
   for(let row=Math.floor(top/cell);row*cell<bottom;row++){
     for(let col=Math.floor(left/cell);col*cell<right;col++){
@@ -388,14 +389,16 @@ function drawTerrainMotion(mat,x,y,w,h){
           ctx.moveTo(px+offset,py);
           ctx.quadraticCurveTo(px+offset+wind*1.2,py-blade*.58,px+offset*1.5+wind*4,py-blade);
         }
-      }else if(kind==='sand'){
-        const drift=(time*.37+n)%1;
-        const sx=px+(drift-.5)*cell*.75,sy=py+(drift-.5)*7;
-        ctx.strokeStyle='rgba(255,235,185,'+(.25*Math.sin(Math.PI*drift)).toFixed(3)+')';
-        ctx.lineWidth=.9;
-        ctx.moveTo(sx,sy);
-        ctx.quadraticCurveTo(sx+8,sy-2,sx+17,sy-3);
-        ctx.moveTo(sx+5,sy+5);ctx.lineTo(sx+12,sy+4);
+      }else if(kind==='river'){
+        const travel=(time*.48+n)%1;
+        const distance=(travel-.5)*cell;
+        const dx=Math.cos(flow),dy=Math.sin(flow);
+        const sx=px+dx*distance,sy=py+dy*distance;
+        const shine=.36*Math.sin(Math.PI*travel);
+        ctx.strokeStyle='rgba(204,250,255,'+shine.toFixed(3)+')';
+        ctx.lineWidth=1.4;
+        ctx.moveTo(sx-dx*11,sy-dy*11);
+        ctx.quadraticCurveTo(sx-dy*4,sy+dx*4,sx+dx*13,sy+dy*13);
       }else{
         const offset=wind*6, rise=Math.cos(time*1.45-phase)*4;
         const light=.16+.13*Math.sin(time*1.7+n*6.28);
@@ -412,12 +415,13 @@ function drawTerrainMotion(mat,x,y,w,h){
   ctx.restore();
 }
 
-function drawCachedTerrain(mat,x,y,w,h) {
-  const imported=mesaTerrainPaint(mat);
-  if(!imported&&!Object.hasOwn(TERRAIN_PALETTES,mat))return false;
-  ctx.fillStyle=imported||getTerrainPattern(ctx,mat);
+function drawCachedTerrain(mat,x,y,w,h,flow) {
+  const imported=finishTerrainPaint(mat)||mesaTerrainPaint(mat);
+  const fallback=terrainFinishFallback(mat);
+  if(!imported&&!Object.hasOwn(TERRAIN_PALETTES,fallback))return false;
+  ctx.fillStyle=imported||getTerrainPattern(ctx,fallback);
   ctx.fillRect(x,y,w,h);
-  drawTerrainMotion(mat,x,y,w,h);
+  drawTerrainMotion(mat,x,y,w,h,flow);
   return true;
 }
 
@@ -444,7 +448,8 @@ function applyTerrainBrush(floor,x,y,isDrag) {
   const mode=document.getElementById('terrainPaintMode').value;
   const mat=state.brush.mat;
   if(mode==='fill'){
-    if(!isDrag)floor.baseTerrain=mat;
+    if(!isDrag){floor.baseTerrain=mat;dragStart=mat==='riverWater'?{x,y,baseFlow:true}:null;}
+    else if(dragStart?.baseFlow)floor.flowAngle=Math.atan2(y-dragStart.y,x-dragStart.x);
     return;
   }
   if(mode==='rect'){
@@ -500,7 +505,7 @@ function drawTerrainStroke(stroke) {
     trace(size*(1+stroke.softness)+2);
     ctx.fill();
   }
-  ctx.fillStyle=mesaTerrainPaint(stroke.mat)||getTerrainPattern(ctx,stroke.mat);
+  ctx.fillStyle=finishTerrainPaint(stroke.mat)||mesaTerrainPaint(stroke.mat)||getTerrainPattern(ctx,terrainFinishFallback(stroke.mat));
   for(const [diameter,alpha] of [[size*(1+stroke.softness),stroke.softness*.6],[size,1]]){
     if(!alpha)continue;
     ctx.globalAlpha=alpha;
@@ -514,7 +519,9 @@ function drawTerrainStroke(stroke) {
       top=Math.min(top,point.y);bottom=Math.max(bottom,point.y);
     }
     ctx.clip();
-    drawTerrainMotion(stroke.mat,left-size/2,top-size/2,right-left+size,bottom-top+size);
+    const first=stroke.points[0],last=stroke.points.at(-1);
+    const angle=first&&last?Math.atan2(last.y-first.y,last.x-first.x):0;
+    drawTerrainMotion(stroke.mat,left-size/2,top-size/2,right-left+size,bottom-top+size,angle);
   }
   ctx.restore();
 }

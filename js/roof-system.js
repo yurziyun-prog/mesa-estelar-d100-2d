@@ -157,11 +157,23 @@ function addRoofOpening(x,y,type='skylight'){
  if(floor.roofOpenings.some(o=>Math.hypot(o.x-x,o.y-y)<35)){
   logEvent('⚠️ 两个屋顶开口距离太近。');return false;
  }
+ let stairLinkId;
  if(type==='hatch'){
-  const atStair=floor.stairs.some(st=>Math.hypot(st.x-x,st.y-y)<62);
-  if(!atStair){logEvent('⚠️ 楼梯出入口需要放在本层楼梯附近。');return false;}
+  const scene=getScene(),index=state.currentFloor,level=floorLevel(scene,index);
+  const lowerIndex=floorIndexForLevel(scene,level-1,false);
+  if(lowerIndex<0)return false;
+  const lower=scene.floors[lowerIndex];
+  const stair=floor.stairs.find(st=>st.dir==='down'&&Math.hypot(st.x-x,st.y-y)<62);
+  if(stair){
+   x=stair.x;y=stair.y;stairLinkId=stair.linkId;
+   if(!pointInArchitectArea(roof,x,y,-18))return false;
+  }else{
+   if(!onPaintedGround(lower,x,y)){logEvent('O alçapão precisa de piso no andar de baixo.');return false;}
+   const pair=createStairPair(scene,level-1,level,x,y,'open',state.stairMaterial||'wood',state.buildStyle);
+   stairLinkId=pair.destination.linkId;
+  }
  }
- floor.roofOpenings.push({x,y,w:type==='hatch'?66:78,h:type==='hatch'?74:52,type,roofId:roof.roofId||null});
+ floor.roofOpenings.push({x,y,w:type==='hatch'?66:78,h:type==='hatch'?74:52,type,roofId:roof.roofId||null,stairLinkId});
  logEvent(type==='hatch'?'🚪 已添加楼梯屋顶出口。':'🪟 已添加屋顶天窗。');
  return true;
 }

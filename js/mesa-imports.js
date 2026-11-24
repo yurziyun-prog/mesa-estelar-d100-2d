@@ -71,9 +71,10 @@ function mesaImage(file){
  return mesaImages.get(file);
 }
 
-let recoloredDesertTile;
-function desertSandTile(image){
- if(recoloredDesertTile)return recoloredDesertTile;
+const recoloredSandTiles=new Map();
+function desertSandTile(image,id){
+ if(recoloredSandTiles.has(id))return recoloredSandTiles.get(id);
+ const [red,green,blue,gain]=sandColors[id];
  const tile=document.createElement('canvas');
  tile.width=tile.height=96;
  const layer=tile.getContext('2d');
@@ -81,30 +82,30 @@ function desertSandTile(image){
  const pixels=layer.getImageData(0,0,96,96);
  for(let i=0;i<pixels.data.length;i+=4){
    const light=pixels.data[i]*.2126+pixels.data[i+1]*.7152+pixels.data[i+2]*.0722;
-   pixels.data[i]=128+light*1.3;
-   pixels.data[i+1]=85+light*1.24;
-   pixels.data[i+2]=41+light*1.1;
+   pixels.data[i]=red+light*gain;
+   pixels.data[i+1]=green+light*gain*.95;
+   pixels.data[i+2]=blue+light*gain*.86;
  }
  layer.putImageData(pixels,0,0);
- recoloredDesertTile=tile;
+ recoloredSandTiles.set(id,tile);
  return tile;
 }
 
 function mesaTerrainPaint(id){
- const terrain=mesaTerrainById.get(id==='sand'?'mesaVolcanicSand':id);
+ const terrain=mesaTerrainById.get(Object.hasOwn(sandColors,id)?'mesaVolcanicSand':id);
  if(!terrain)return null;
  if(!mesaPatterns.has(id)){
    const image=mesaImage(terrain[3]);
    if(image.complete&&image.naturalWidth){
-     const tile=id==='sand'?desertSandTile(image):document.createElement('canvas');
-     if(id!=='sand'){
+     const tile=Object.hasOwn(sandColors,id)?desertSandTile(image,id):document.createElement('canvas');
+     if(!Object.hasOwn(sandColors,id)){
        tile.width=tile.height=96;
        tile.getContext('2d').drawImage(image,0,0,96,96);
      }
      mesaPatterns.set(id,ctx.createPattern(tile,'repeat'));
    }
  }
- return mesaPatterns.get(id)||(id==='sand'?null:terrain[4]);
+ return mesaPatterns.get(id)||(Object.hasOwn(sandColors,id)?null:terrain[4]);
 }
 
 function drawMesaFurniture(prop){
@@ -120,7 +121,7 @@ function drawMesaFurniture(prop){
 }
 
 function createMesaPreview(id){
- const terrain=mesaTerrainById.get(id==='sand'?'mesaVolcanicSand':id),furniture=mesaFurnitureById.get(id);
+ const terrain=mesaTerrainById.get(Object.hasOwn(sandColors,id)?'mesaVolcanicSand':id),furniture=mesaFurnitureById.get(id);
  if(!terrain&&!furniture)return null;
  const image=mesaImage((terrain||furniture)[3]);
  const preview=document.createElement('canvas');
@@ -131,7 +132,7 @@ function createMesaPreview(id){
    if(!image.naturalWidth)return;
    const scale=32/Math.max(image.naturalWidth,image.naturalHeight);
    const w=image.naturalWidth*scale,h=image.naturalHeight*scale;
-   preview.getContext('2d').drawImage(id==='sand'?desertSandTile(image):image,(32-w)/2,(32-h)/2,w,h);
+   preview.getContext('2d').drawImage(Object.hasOwn(sandColors,id)?desertSandTile(image,id):image,(32-w)/2,(32-h)/2,w,h);
  };
  if(image.complete)paint();else image.addEventListener('load',paint,{once:true});
  return preview;

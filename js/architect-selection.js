@@ -310,7 +310,10 @@ function openArchitectContextMenu(sx,sy,clientX,clientY){
  const grouped=architectSelections.some(ref=>Boolean(objectForSelection(ref)?.archGroupId));
  const single=architectSelections.length===1?architectSelections[0]:null;
  const wall=clicked?.kind==='walls'?objectForSelection(clicked):null;
+ const canRotate=architectSelections.some(ref=>['props','walls','doors','windows'].includes(ref.kind)||
+   (ref.kind==='areas'&&isBridgeMaterial(objectForSelection(ref)?.mat)));
  const items=[
+  ...(canRotate?[['Girar 90°',rotateArchitectSelection]]:[]),
   ...(wall?[['Estender parede +3 m',()=>{closeArchitectContextMenu();extendWallUp(wall);}]]:[]),
   ...(single&&['windows','doors','chests','props','walls','stairs'].includes(single.kind)?[['✏️ Editar propriedades',()=>{closeArchitectContextMenu();editArchitectObject(single);}]]:[]),
   ...(architectSelections.length>1?[['🔗 Agrupar',architectGroupSelection]]:[]),
@@ -324,5 +327,73 @@ function openArchitectContextMenu(sx,sy,clientX,clientY){
  menu.style.left=Math.min(clientX,window.innerWidth-170)+'px';
  document.body.append(menu);
  menu.style.top=Math.max(0,Math.min(clientY,window.innerHeight-menu.offsetHeight))+'px';
+ return true;
+}
+
+function openingTouchesWall(opening,kind,wall){
+ const vertical=opening.orient==='v',half=kind==='doors'?34:(opening.width||40)/2+2;
+ const across=vertical?opening.x:opening.y,along=vertical?opening.y:opening.x;
+ const [a,b,c,d]=vertical?[wall.x1,wall.x2,wall.y1,wall.y2]:[wall.y1,wall.y2,wall.x1,wall.x2];
+ return Math.abs(a-across)<2&&Math.abs(b-across)<2&&
+   [c,d].some(endpoint=>Math.abs(Math.abs(endpoint-along)-half)<8);
+}
+
+function rotateArchitectSelection(){
+ if(state.mode!=='architect'||state.tool!=='move'||!architectSelections.length)return false;
+ const scene=getScene(),floor=scene.floors[state.currentFloor];
+ const bounds=architectSelectionBounds();
+ if(!bounds)return false;
+ const centerX=bounds.x+bounds.w/2,centerY=bounds.y+bounds.h/2;
+ const items=new Map();
+ const add=(ref,item)=>items.set(item,ref.kind);
+ for(const ref of architectSelections){
+   const item=objectForSelection(ref);
+   if(item&&(ref.kind!=='areas'||isBridgeMaterial(item.mat)))add(ref,item);
+ }
+ if(!items.size)return false;
+ for(const [item,kind] of [...items]){
+   if(kind!=='walls')continue;
+   for(const openingKind of ['doors','windows']){
+     for(const opening of floor[openingKind]){
+       if(!opening.buildingId&&openingTouchesWall(opening,openingKind,item))items.set(opening,openingKind);
+     }
+   }
+ }
+ for(const [item,kind] of [...items]){
+   if(!['doors','windows'].includes(kind)||item.buildingId)continue;
+   for(const wall of floor.walls)if(openingTouchesWall(item,kind,wall))items.set(wall,'walls');
+ }
+ const rotate=(x,y)=>[centerX-(y-centerY),centerY+(x-centerX)];
+ beginEdit();
+ for(const [item,kind] of items){
+   if(kind==='walls'){
+     [item.x1,item.y1]=rotate(item.x1,item.y1);
+     [item.x2,item.y2]=rotate(item.x2,item.y2);
+   }else if(kind==='areas'){
+     const [x,y]=rotate(item.x+item.w/2,item.y+item.h/2);
+     [item.w,item.h]=[item.h,item.w];
+     item.x=x-item.w/2;item.y=y-item.h/2;
+   }else if(['doors','windows'].includes(kind)){
+     if(item.buildingId){
+       const building=(floor.buildings||[]).find(b=>b.id===item.buildingId);
+       if(!building)continue;
+       const u=(item.x-building.x)/building.w,v=(item.y-building.y)/building.h;
+       const x=building.x+(1-v)*building.w,y=building.y+u*building.h;
+       const openings={buildings:[building],doors:floor.doors.filter(d=>d!==item),windows:floor.windows.filter(w=>w!==item)};
+       const target=snapBuildingOpening(openings,x,y,kind==='doors'?34:(item.width||40)/2+2);
+       if(!target||target.orient===item.orient)continue;
+       Object.assign(item,target);
+     }else{
+       [item.x,item.y]=rotate(item.x,item.y);
+       item.orient=item.orient==='v'?'h':'v';
+     }
+   }else if(kind==='props'){
+     [item.x,item.y]=rotate(item.x,item.y);
+     item.rot=((item.rot||0)+1)%4;
+   }
+ }
+ finishEdit();
+ closeArchitectContextMenu();
+ updateArchitectSelectionUI();
  return true;
 }

@@ -121,7 +121,7 @@ function onPlacedBridge(floor, x, y) {
   });
 }
 function walkableFloor(floor, x, y) {
-  return onPaintedGround(floor, x, y) || onPlacedBridge(floor, x, y);
+  return floor.areas.some(a=>isBridgeMaterial(a.mat)&&pointInArchitectArea(a,x,y)) || onPaintedGround(floor, x, y) || onPlacedBridge(floor, x, y);
 }
 function openedDoorLeaf(d){
   const mechanism=d.mechanism||(d.style==='futurist'?'sliding':'hinged');
@@ -165,7 +165,7 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   if (floor.windows.some(win => win.orient==='v'?(Math.abs(nx-win.x)<r+9&&Math.abs(ny-win.y)<(win.width||40)/2+r):(Math.abs(ny-win.y)<r+9&&Math.abs(nx-win.x)<(win.width||40)/2+r))) return false;
   if (floor.chests.some(c => Math.hypot(c.x - nx, c.y - ny) < r + 14)) return false;
 
-  if(floor.props.some(p=>(catalogPropIsSolid(p.type)||mesaFurnitureById.has(p.type))&&Math.hypot(p.x-nx,p.y-ny)<r+19*(p.scale||1)))return false;
+  if(floor.props.some(p=>(catalogPropIsSolid(p.type)||mesaFurnitureById.has(p.type)||furnitureFinishById.has(p.type))&&Math.hypot(p.x-nx,p.y-ny)<r+19*(p.scale||1)))return false;
   const solidProps = ['tree', 'pine', 'fruitTree', 'rock', 'table', 'bookshelf', 'hearth', 'barrel', 'cabinet', 'sofa', 'sofaBlue', 'sofaRed', 'sofaGreen'];
   if (floor.props.some(p => solidProps.includes(p.type) && Math.hypot(p.x - nx, p.y - ny) < r + 14*(p.scale||1))) return false;
   if (floor.props.some(p => isKenneyObject(p.type) && KENNEY_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17*(p.scale||1)))return false;
@@ -178,8 +178,8 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
     Math.abs(nx-o.x)<o.w/2+r&&Math.abs(ny-o.y)<o.h/2+r &&
     floor.areas.some(a=>a.roof&&roofPitchFor(a.mat,a.roofPitch)==='flat' &&
       nx>=a.x&&nx<=a.x+a.w&&ny>=a.y&&ny<=a.y+a.h)))return false;
-  const onWater = floor.areas.some(a => ['water','kenney_water'].includes(a.mat) && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
-  const onBridge = floor.areas.some(a => a.mat === 'bridge' && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
+  const onWater = floor.areas.some(a => ['water','kenney_water','riverWater','mesaShallows','swampWater'].includes(a.mat) && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
+  const onBridge = floor.areas.some(a => isBridgeMaterial(a.mat) && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
   if (onWater && !onBridge && !onPlacedBridge(floor,nx,ny)) return false;
   if (!walkableFloor(floor,nx,ny)) return false;
 

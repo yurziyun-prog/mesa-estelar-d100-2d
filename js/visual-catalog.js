@@ -281,7 +281,7 @@ function drawCatalogProp(p){
 
 const catalogThumbnailCache=new Map();
 function catalogThumbnail(kind,id){
- const imported=createMesaPreview(id);
+ const imported=createFinishThumbnail(id)||createMesaPreview(id);
  if(imported)return imported;
  if(kind==='terrain'||(kind==='mat'&&Object.hasOwn(TERRAIN_PALETTES,id)))return createTerrainThumbnail(id);
  if(!['prop','mat','wallFinish','roof'].includes(kind)&&!(kind==='tool'&&id==='wall'))return null;
@@ -319,9 +319,11 @@ function catalogEntries(category){
  const entries=ARCHITECT_LIBRARY[category]||[];
  if(category==='architecture')return [...entries,
    ...catalogWalls.map(([id,label])=>[id,'',label,'wallFinish','Paredes texturizadas']),
+   ...[...finishTextures].map(([id,[label]])=>[id,'',label,'mat','Pisos texturizados']),
+   ...[['bridgeMetal','Ponte metálica'],['bridgeMarble','Ponte de mármore'],['bridgeStone','Ponte de pedra']].map(([id,label])=>[id,'',label,'mat','Pisos texturizados']),
    ...catalogFloors.slice(6).map(([id,label])=>[id,'',label,'mat','Pisos texturizados'])];
  if(category==='nature')return [...entries,...catalogNature.map(([id,label])=>[id,'',label,'prop'])];
- if(category==='furniture')return [...entries,...MESA_FURNITURE.map(([id,label])=>[id,'',label,'prop','Móveis do Mesa Estelar']),...catalogProps.flatMap(([group,,props])=>props.map(([id,label])=>[id,'',label,'prop',group]))];
+ if(category==='furniture')return [...entries,...furnitureFinishes.map(([id,label])=>[id,'',label,'prop','Materiais de mesa e cadeira']),...MESA_FURNITURE.map(([id,label])=>[id,'',label,'prop','Móveis do Mesa Estelar']),...catalogProps.flatMap(([group,,props])=>props.map(([id,label])=>[id,'',label,'prop',group]))];
  return entries;
 }
 

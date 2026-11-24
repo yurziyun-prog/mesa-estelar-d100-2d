@@ -114,7 +114,7 @@ function drawCustomTileFinish(x,y,w,h,settings){
   }
  }
 }
-function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null, roofPitch = null, roofHeight = null) {
+function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null, roofPitch = null, roofHeight = null, flow = 0) {
   if(isRoofMaterial(mat)){drawRoofSurface(x,y,w,h,mat,roofPitch,roofHeight);return;}
   if(mat==='kenney_water')mat='water';
   if(mat==='kenney_wood')mat='wood';
@@ -124,7 +124,7 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
   ctx.rect(x, y, w, h);
   ctx.clip();
 
-  if(drawCachedTerrain(mat,x,y,w,h)){ctx.restore();return;}
+  if(drawCachedTerrain(mat,x,y,w,h,flow)){ctx.restore();return;}
   if (mat === 'space' || mat === 'forest') {
     const space=mat==='space', cell=space?48:38;
     ctx.fillStyle=space?'#101529':'#29482e';
@@ -171,7 +171,13 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
     ctx.strokeStyle = '#c99b32';
     ctx.lineWidth = 3;
     ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
+  } else if(Object.hasOwn(bridgeFinishes,mat)){
+    drawBridgeFinish(mat,x,y,w,h);
   } else if (mat === 'bridge') {
+    if(h>w){
+      ctx.translate(x+w/2,y+h/2);ctx.rotate(Math.PI/2);
+      [w,h]=[h,w];x=-w/2;y=-h/2;
+    }
     ctx.fillStyle = '#824d24';
     ctx.fillRect(x, y, w, h);
     for (let bx = x + 6; bx < x + w - 4; bx += 14) {
@@ -499,7 +505,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
   // Área inicial compacta e expansível
   if (floor.terrainBounds && floor.baseTerrain) {
     const b = floor.terrainBounds;
-    drawTexturedArea(b.x,b.y,b.w,b.h,floor.baseTerrain);
+    drawTexturedArea(b.x,b.y,b.w,b.h,floor.baseTerrain,null,null,null,null,floor.flowAngle);
   }
   if (floor.bounds) {
     const b = floor.bounds;
@@ -519,7 +525,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     if(inside&&state.mode!=='architect')return; // 阁楼内部不被屋顶贴图覆盖
     ctx.save();
     if(a.fromBuildingId){traceBuilding(a);ctx.clip();}
-    drawTexturedArea(a.x,a.y,a.w,a.h,a.mat,a.color,a.tile,a.roofPitch,a.roofHeight);
+    drawTexturedArea(a.x,a.y,a.w,a.h,a.mat,a.color,a.tile,a.roofPitch,a.roofHeight,a.flowAngle);
     ctx.restore();
   });
   drawBrushStrokes(floor);
@@ -683,7 +689,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     ctx.strokeRect(c.x - 5, c.y - 4, 10, 8);
   });
 
-  floor.props.forEach(p => drawProp(p));
+  floor.props.forEach(p => {drawProp(p);drawFireEffect(p);});
   if(state.mode==='architect'&&!isBelow&&typeof selectedMapObject!=='undefined'&&selectedMapObject){
     const sel=floor[selectedMapObject.kind]?.[selectedMapObject.index];
     if(sel&&sel.x!==undefined&&sel.y!==undefined){
@@ -969,7 +975,7 @@ function drawProp(p) {
   if(isKenneyObject(p.type)){drawKenneyObject(p);return;}
   if(isKenneyRoguelikeObject(p.type)){drawKenneyRoguelikeObject(p);return;}
   if(isSleepingFurniture(p)){drawSleepingFurniture(p);return;}
-  if(drawMesaFurniture(p)||drawCatalogProp(p)||drawExpandedProp(p))return;
+  if(drawMesaFurniture(p)||drawMaterialFurniture(p)||drawCatalogProp(p)||drawExpandedProp(p))return;
   if(p.type==='key'){
     ctx.save();ctx.translate(p.x,p.y);ctx.strokeStyle='#e7be4c';ctx.lineWidth=4;
     ctx.beginPath();ctx.arc(-5,-2,5,0,Math.PI*2);ctx.moveTo(0,0);ctx.lineTo(15,11);ctx.moveTo(9,6);ctx.lineTo(7,11);ctx.moveTo(13,9);ctx.lineTo(11,14);ctx.stroke();
@@ -977,6 +983,10 @@ function drawProp(p) {
   }
   if(isRetroFuture(p)) {drawFutureProp(p); return;}
   if(isArabia(p) || ['palm','desertTree','tent','oilLamp','cushions'].includes(p.type)){drawArabiaProp(p);return;}
+  if(p.rot&&p.type!=='log'){
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/2);ctx.translate(-p.x,-p.y);
+    drawProp({...p,rot:0});ctx.restore();return;
+  }
   const cx = p.x;
   const cy = p.y;
 

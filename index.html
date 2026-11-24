@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <title>Mesa RPG 2D — Arquiteto, Mestre & Jogador</title>
-  <link rel="stylesheet" href="css/style.css?v=tactile-terrain-20261124" />
+  <link rel="stylesheet" href="css/style.css?v=terrain-finishes-20261124" />
 </head>
 <body>
 
@@ -93,6 +93,7 @@
           <button class="tool-btn" data-tool="building" onclick="selectTool('building')">🏠 Edificação / Sala</button>
           <button class="tool-btn" onclick="openTerrainDialog(false)">Terreno base</button>
           <button class="tool-btn" data-tool="move" onclick="selectTool('move')">👆 Selecionar / Arrastar</button>
+          <button class="tool-btn" onclick="rotateArchitectSelection()">Girar 90°</button>
           <button class="tool-btn" onclick="selectTool('move');document.getElementById('selectedWallBar').scrollIntoView({block:'nearest'})">📐 Alinhar</button>
           <button class="tool-btn" data-tool="erase" onclick="selectTool('erase')">🧹 Apagar</button>
           <button class="tool-btn" data-tool="brush" onclick="openArchitectLibrary('brush')">🖌️ Pincel</button>
@@ -490,25 +491,26 @@
 
 <script src="js/d100.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/state.js?v=building-terrain-20261124" defer></script>
-<script src="js/roof-system.js?v=mesa-imports-20261124" defer></script>
+<script src="js/roof-system.js?v=terrain-finishes-20261124" defer></script>
 <script src="js/stair-system.js?v=building-terrain-20261124" defer></script>
-<script src="js/editor.js?v=building-terrain-20261124" defer></script>
+<script src="js/editor.js?v=terrain-finishes-20261124" defer></script>
 <script src="js/library.js?v=visual-catalog-20261124" defer></script>
-<script src="js/gameplay.js?v=mesa-imports-20261124" defer></script>
+<script src="js/gameplay.js?v=terrain-finishes-20261124" defer></script>
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/textures.js?v=mesa-imports-20261124" defer></script>
-<script src="js/architect-selection.js?v=slab-wall-extension-20261124" defer></script>
+<script src="js/textures.js?v=terrain-finishes-20261124" defer></script>
+<script src="js/architect-selection.js?v=terrain-finishes-20261124" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=visual-catalog-20261124" defer></script>
 <script src="js/i18n.js?v=tactile-terrain-20261124" defer></script>
 <script src="js/cloud-bank.js?v=mesa-firebase-20261124" defer></script>
-<script src="js/terrain-tools.js?v=terrain-motion-20261124" defer></script>
+<script src="js/terrain-tools.js?v=terrain-finishes-20261124" defer></script>
 <script src="js/building.js?v=visual-catalog-20261124" defer></script>
-<script src="js/visual-catalog.js?v=mesa-imports-20261124" defer></script>
-<script src="js/mesa-imports.js?v=terrain-motion-20261124" defer></script>
-<script src="js/main.js?v=mesa-imports-20261124" defer></script>
+<script src="js/visual-catalog.js?v=terrain-finishes-20261124" defer></script>
+<script src="js/mesa-imports.js?v=terrain-finishes-20261124" defer></script>
+<script src="js/terrain-finishes.js?v=terrain-finishes-20261124" defer></script>
+<script src="js/main.js?v=terrain-finishes-20261124" defer></script>
 <dialog id="lockDialog" class="lock-dialog">
   <form method="dialog" onsubmit="return false;">
     <h3 id="lockDialogTitle">Configurar tranca</h3>

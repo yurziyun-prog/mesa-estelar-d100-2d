@@ -94,7 +94,7 @@ function setupInputs() {
       return;
     }
     keys[e.key.toLowerCase()] = true;
-    if (e.key.toLowerCase() === 'r') state.rotation = (state.rotation + 1) % 4;
+    if(e.key.toLowerCase()==='r'&&!e.repeat&&!rotateArchitectSelection())state.rotation=(state.rotation+1)%4;
     if (e.key === 'Delete' || e.key === 'Backspace') {
       if(state.mode==='architect'){
         if(deleteArchitectSelection()){e.preventDefault();return;}
@@ -346,5 +346,6 @@ function render() {
 
 initVisualCatalog();
 initMesaImports();
+initTerrainFinishes();
 initTerrainTools();
 init();

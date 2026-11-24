@@ -314,11 +314,11 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
     return;
   }
   if(state.tool==='terrainBrush'){
-    if(dragStart){
+    if(dragStart&&!dragStart.baseFlow){
       const x=Math.min(dragStart.x,wx),y=Math.min(dragStart.y,wy);
       const w=Math.abs(wx-dragStart.x),h=Math.abs(wy-dragStart.y);
       if(w>0&&h>0){
-        floor.areas.push({x,y,w,h,mat:state.brush.mat});
+        floor.areas.push({x,y,w,h,mat:state.brush.mat,flowAngle:Math.atan2(wy-dragStart.y,wx-dragStart.x)});
         expandFloorToInclude(floor,x,y);
         expandFloorToInclude(floor,x+w,y+h);
       }
