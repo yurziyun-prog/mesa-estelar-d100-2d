@@ -102,7 +102,8 @@ function caveWallPieces(cave,solid){
    cavePieceCache.set(cave,cache);
  }
  const key=solid?'solid':'visible';
- if(!cache[key])cache[key]=computeCaveWallPieces(cave,openings.filter(o=>!solid||(o.kind==='door'&&o.open)));
+ if(!cache[key])cache[key]=computeCaveWallPieces(cave,openings.filter(o=>!solid||(o.kind==='door'&&o.open))
+   .map(o=>solid?{...o,width:Math.max(48,o.width)}:o));
  return cache[key];
 }
 
@@ -153,12 +154,28 @@ function editCaveOpening(floor,start,x,y){
  if(existing)Object.assign(existing,detail);else cave.openings.push(detail);
 }
 
+// The threshold bridges the terrain seam in either direction, including old maps.
+function caveDoorThreshold(door,x,y,depth=45){
+ const dx=x-door.x,dy=y-door.y;
+ const angle=door.angle||0,c=Math.cos(angle),s=Math.sin(angle);
+ return Math.abs(dx*c+dy*s)<Math.max(48,door.width)/2-10 &&
+   Math.abs(-dx*s+dy*c)<depth;
+}
+
+function caveEntranceGround(floor,x,y){
+ return (floor.caves||[]).some(cave=>caveOpenings(cave).some(door=>
+   door.kind==='door'&&caveDoorThreshold(door,x,y)));
+}
+
 function interactCaveDoor(floor,entity){
  for(const cave of floor.caves||[]){
-   const door=cave.openings?.find(opening=>opening.kind==='door'&&Math.hypot(opening.x-entity.x,opening.y-entity.y)<39);
+   const door=caveOpenings(cave).find(opening=>opening.kind==='door'&&Math.hypot(opening.x-entity.x,opening.y-entity.y)<44);
    if(!door)continue;
-   if(door.open&&Math.hypot(door.x-entity.x,door.y-entity.y)<18)return false;
-   door.open=!door.open;
+   if(!door.open){
+     door.open=true;
+   }else if(cave.openings&&insideCave(cave,entity.x,entity.y)&&!caveDoorThreshold(door,entity.x,entity.y,23)){
+     door.open=false;
+   }
    return true;
  }
  return false;

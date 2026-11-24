@@ -501,7 +501,7 @@ function drawLowerStoreyWallContinuations(sc,upperIndex){
  }
  ctx.restore();
 }
-function drawFloorLayer(sc, floorIdx, isBelow) {
+function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
   const floor = sc.floors[floorIdx];
   if (!floor) return;
 
@@ -526,14 +526,19 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
     const inside=actor&&actor.floor===floorIdx&&actor.sceneId===state.activeSceneId
       &&a.roof&&a.roofAttic&&pointInArchitectArea(a,actor.x,actor.y);
     if(inside&&state.mode!=='architect')return; // 阁楼内部不被屋顶贴图覆盖
+    if(interior)return;
     ctx.save();
+    if(a.roof||isRoofMaterial(a.mat))clipOutsideCaves(floor.caves,a);
     if(a.fromBuildingId){traceBuilding(a);ctx.clip();}
     drawTexturedArea(a.x,a.y,a.w,a.h,a.mat,a.color,a.tile,a.roofPitch,a.roofHeight,a.flowAngle);
     ctx.restore();
   });
   drawBrushStrokes(floor);
-  for(const cave of floor.caves||[])drawCaveBase(cave);
-  for(const building of floor.buildings||[])drawBuildingBase(building,floor);
+  for(const cave of interior?[interior]:(floor.caves||[])){
+    if(!interior)drawCaveApron(cave);
+    drawCaveBase(cave);
+  }
+  if(!interior)for(const building of floor.buildings||[])drawBuildingBase(building,floor);
   // 只将楼下的自然地形和地板作为背景，隐藏门、窗、墙、家具和人物。
   if(isBelow)return;
 
@@ -730,8 +735,10 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
   const viewer=activeActor();
   const underCanopy=viewer?.floor===floorIdx&&viewer.sceneId===state.activeSceneId?viewer:null;
   for(const p of floor.props)if(plantTypes.has(p.type))drawPlantCanopy(p,underCanopy);
-  drawBuildingRoofs(floor,floorIdx);
-  drawCaveRoofs(floor,floorIdx);
+  if(!interior){
+    drawBuildingRoofs(floor,floorIdx);
+    drawCaveRoofs(floor,floorIdx);
+  }
 }
 
 function drawCharacterToken(ent, isBelow) {

@@ -75,6 +75,7 @@ function setMode(mode) {
 
   document.getElementById('sceneBankCard').classList.toggle('hidden', mode === 'player');
   document.getElementById('architectSceneControls').classList.toggle('hidden', mode !== 'architect');
+  document.getElementById('deleteMapButton').classList.toggle('hidden',mode!=='architect');
   document.getElementById('gmSceneControls').classList.toggle('hidden', mode !== 'gm');
 
   const hud = document.getElementById('hudStatus');
@@ -91,6 +92,7 @@ function setMode(mode) {
 }
 
 function onPaintedGround(floor, x, y) {
+  if(caveEntranceGround(floor,x,y))return true;
   const hit = (a) => x >= a.x && x <= a.x+a.w && y >= a.y && y <= a.y+a.h;
   for(const stroke of [...(floor.brushStrokes||[])].reverse()){
     if(stroke.mesaScatter)continue;

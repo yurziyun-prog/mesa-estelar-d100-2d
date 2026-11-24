@@ -313,6 +313,7 @@ function drawExternalBuildingTop(){
   if(!isRoofMaterial(area.mat)){
    if(underSlab)continue;
    ctx.save();
+   clipOutsideCaves(scene.floors[actor.floor].caves,area);
    for(const opening of floor.openings||[]){
     ctx.beginPath();
     ctx.rect(area.x,area.y,area.w,area.h);
@@ -337,6 +338,7 @@ function drawExternalBuildingTop(){
   roofFadeLevels.set(key,fade);
   if(fade.alpha<.015)continue;
   ctx.save();ctx.globalAlpha=fade.alpha;
+  clipOutsideCaves(scene.floors[actor.floor].caves,area);
   drawRoofSurface(area.x,area.y,area.w,area.h,area.mat,area.roofPitch,area.roofHeight);
   drawRoofOpenings(floor,area);
   ctx.restore();

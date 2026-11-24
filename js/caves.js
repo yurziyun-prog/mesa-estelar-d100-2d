@@ -15,8 +15,13 @@ function insideCave(cave,x,y){
 }
 
 function caveWallBlocks(floor,x,y){
- return (floor.caves||[]).some(cave=>caveWallPieces(cave,true).some(([a,b])=>
-  distToSegment(x,y,a.x,a.y,b.x,b.y)<cave.thickness/2+10));
+ return (floor.caves||[]).some(cave=>{
+   if(caveOpenings(cave).some(door=>door.kind==='door'&&door.open&&
+     caveDoorThreshold(door,x,y,24)))return false;
+   return caveWallPieces(cave,true).some(([a,b])=>
+     distToSegment(x,y,a.x,a.y,b.x,b.y)<cave.thickness/2+10);
+ });
+
 }
 
 function currentCaveBrushRadius(){
@@ -120,6 +125,30 @@ function drawCaveBase(cave){
  for(const opening of caveOpenings(cave))drawCaveOpening(opening);
 }
 
+// Prevent house roofs projected from the same or a higher floor from covering the cave.
+function clipOutsideCaves(caves,bounds){
+ for(const cave of caves||[]){
+   const b=caveBounds(cave),pad=55;
+   if(b.x-pad>bounds.x+bounds.w||b.x+b.w+pad<bounds.x||
+      b.y-pad>bounds.y+bounds.h||b.y+b.h+pad<bounds.y)continue;
+   const cx=b.x+b.w/2,cy=b.y+b.h/2;
+   cavePath(cave.points.map(p=>({x:cx+(p.x-cx)*1.12,y:cy+(p.y-cy)*1.12})),true);
+   ctx.rect(bounds.x-1,bounds.y-1,bounds.w+2,bounds.h+2);
+   ctx.clip('evenodd');
+ }
+}
+
+function drawCaveApron(cave){
+ for(const door of caveOpenings(cave)){
+   if(door.kind!=='door')continue;
+   ctx.save();ctx.translate(door.x,door.y);ctx.rotate(door.angle||0);
+   const radius=Math.max(48,door.width)/2;
+   ctx.beginPath();ctx.ellipse(0,0,radius+2,45,0,0,Math.PI*2);
+   ctx.fillStyle=getTerrainPattern(ctx,cave.ground);ctx.fill();
+   ctx.restore();
+ }
+}
+
 function drawCaveMountain(cave,roof){
  const b=caveBounds(cave),cx=b.x+b.w/2,cy=b.y+b.h/2;
  ctx.save();
@@ -150,9 +179,7 @@ function drawCaveRoofs(floor,index){
   const roof=cave.roof||cave.wall||'caveStone';
   const person=state.mode==='architect'?buildingPointer:actor?.floor===index&&actor.sceneId===state.activeSceneId?actor:null;
   if(person&&insideCave(cave,person.x,person.y))continue;
-  if(state.mode==='gm'&&!showGmBuildingRoofs)continue;
   ctx.save();
-  if(state.mode==='gm')ctx.globalAlpha=.25;
   if(floor.level>=0)drawCaveMountain(cave,roof);
   else drawCaveSurface(cave,roof);
   ctx.restore();

@@ -422,6 +422,8 @@ Solo Corrompido|腐化地表
 Escolha um trecho reto e livre da parede.|请选择一段空闲的直墙。
 Caverna|洞穴
 Solo interno|洞内地形
+Excluir mapa|删除地图
+Excluir este mapa? Seus personagens irão para a reserva.|删除这张地图？地图里的角色会移到待放置列表。
 Rocha de Caverna|洞穴岩石
 Parede de Caverna|洞穴墙壁
 Caverna de Cogumelos|蘑菇洞穴

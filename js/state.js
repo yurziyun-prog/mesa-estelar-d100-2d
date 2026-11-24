@@ -208,6 +208,7 @@ function init() {
 
 function refreshSceneSelect() {
   const sel = document.getElementById('sceneSelect');
+  document.getElementById('deleteMapButton').disabled=Object.keys(state.scenes).length<=1;
   sel.replaceChildren(...Object.entries(state.scenes).map(([id, sc]) =>
     new Option(sc.name, id, false, id === state.activeSceneId)
   ));
@@ -301,6 +302,30 @@ function duplicateCurrentScene() {
   refreshSceneSelect();
   finishEdit();
   saveBank();
+}
+
+function deleteCurrentScene(){
+  if(state.mode!=='architect')return;
+  const id=state.activeSceneId;
+  const remaining=Object.keys(state.scenes).filter(key=>key!==id);
+  if(!remaining.length)return;
+  const message=translateSiteText('Excluir este mapa? Seus personagens irão para a reserva.');
+  if(!confirm(getScene().name+'\n\n'+message))return;
+  beginEdit();
+  delete state.scenes[id];
+  state.activeSceneId=remaining[0];
+  state.modeScenes.architect=state.activeSceneId;
+  migrateModeScenes();
+  for(const entity of state.entities){
+    if(entity.sceneId!==id)continue;
+    entity.sceneId=null;entity.floor=0;
+    entity.sleepBed=null;entity.sleepPose=null;entity.sleepRest=null;
+    delete entity.stairClimb;
+  }
+  state.currentFloor=0;state.selectedWallIdx=null;selectedMapObject=null;
+  architectSelections=[];architectPropertyTarget=null;
+  updateFloorLabel();refreshSceneSelect();updateSelectedWallBar();updateUI();centerMap();
+  finishEdit();saveBank();
 }
 
 function renderGmPullList() {

@@ -138,6 +138,7 @@ function drawBuildingRoofs(floor,index) {
     if(state.mode==='player'&&actor?.floor===index&&actor.sceneId===state.activeSceneId&&buildingDistance(actor.x,actor.y,b)<0)continue;
     ctx.save();
     if(state.mode==='gm')ctx.globalAlpha=.25;
+    clipOutsideCaves(floor.caves,b);
     traceBuilding(b);
     ctx.clip();
     if(b.roofType==='upperFloorBase')drawTexturedArea(b.x,b.y,b.w,b.h,'wood');

@@ -293,7 +293,7 @@ function render() {
     // Os pisos inferiores e suas paredes projetadas usam as mesmas coordenadas.
     // A sombra distingue a profundidade sem deslocar as bordas do piso.
     if(interior){cavePath(interior.points,true);ctx.clip();}
-    drawFloorLayer(sc,f,isBelow);
+    drawFloorLayer(sc,f,isBelow,interior);
     if(isBelow){
       ctx.fillStyle='rgba(14,20,32,'+Math.min(.36,depthDiff*.2)+')';
       ctx.fillRect(-2000,-2000,6000,6000);
