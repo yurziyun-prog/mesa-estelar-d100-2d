@@ -7,6 +7,7 @@ const geologyTypes=new Map([
  ['volcanicRock',['Rocha vulcânica','火山岩',3,45]],
  ['mountainRock',['Rocha de montanha','山地岩石',1,59]],
  ['riverRock',['Seixo de rio','河卵石',1,37]],
+ ['sharpCaveRock',['Rocha pontiaguda de caverna','尖角洞穴岩',1,48]],
  ['caveStalactite',['Estalactites','钟乳石',1,56]],
  ['amethyst',['Ametista','紫水晶',7,48]],
  ['citrine',['Citrino','黄水晶',6,46]],
@@ -82,9 +83,9 @@ function drawGeologyProp(prop){
      const aspect=prop.type==='riverRock'?.52+random()*.27:.75+random()*.26;
      ctx.scale(1,aspect);
      ctx.beginPath();
-     const sides=prop.type==='riverRock'?14:7+Math.floor(random()*6);
+     const sides=prop.type==='riverRock'?14:['mountainRock','slateRock','sharpCaveRock'].includes(prop.type)?6:7+Math.floor(random()*6);
      for(let j=0;j<sides;j++){
-       const theta=j/sides*Math.PI*2,r=radius*(.72+random()*.28);
+       const theta=j/sides*Math.PI*2,r=radius*(['mountainRock','slateRock','sharpCaveRock'].includes(prop.type)?(j%2?.63:1):.72+random()*.28);
        const x=Math.cos(theta)*r,y=Math.sin(theta)*r;
        if(j===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
      }

@@ -74,6 +74,7 @@ function selectBuildingKind(){
 
 function selectTool(tool) {
   state.tool = tool;
+  document.getElementById('reliefOptions').classList.toggle('hidden',tool!=='relief');
   document.getElementById('buildingKindOptions').classList.toggle('hidden',!['building','caveRoom'].includes(tool));
   if(['building','caveRoom'].includes(tool))document.getElementById('buildingKind').value=tool;
   document.getElementById('caveOptions').classList.toggle('hidden',tool!=='caveRoom');
@@ -108,7 +109,9 @@ function updateFloorLabel(){
  if(label){
   const scene=getScene(),floor=scene.floors[state.currentFloor];
   const roof=Boolean(floor?.areas?.some(a=>isRoofMaterial(a.mat)));
-  label.textContent=floorName(floorLevel(scene,state.currentFloor))+(roof?' · Cobertura':'');
+  const level=floorLevel(scene,state.currentFloor);
+  label.textContent=floorName(level)+(roof?' · Cobertura':'');
+  label.title=(level*LEVEL_METRES)+' m';
  }
 }
 
@@ -219,6 +222,11 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   const floor = getScene().floors[state.currentFloor];
   // Colocar objetos não altera a extensão do terreno-base.
 
+  if(state.tool==='relief'){
+    dragStart ||= {x:wx,y:wy};
+    previewRect={x:Math.min(wx,dragStart.x),y:Math.min(wy,dragStart.y),w:Math.abs(wx-dragStart.x),h:Math.abs(wy-dragStart.y),mat:'dirt'};
+    return;
+  }
   if(state.tool==='curvedWall'){
     dragStart ||= {x:wx,y:wy};
     previewRect={curve:curvedWallPoints(dragStart,wx,wy,architectShiftHeld)};
@@ -290,7 +298,16 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   } else if (state.tool === 'prop') {
     if (!isDrag) {
       floor.props.push({ ...newGeologyVariant(floor,state.propType), x: wx, y: wy, type: state.propType, rot: state.rotation, color:state.propColor, style: state.propType.startsWith('kenney_')?'downloads':state.buildStyle,...(isPortableLadder({type:state.propType})?{ladderState:state.propType==='foldingLadder'?'folded':'lying',material:'wood'}:{}) });
+      const placed=floor.props.at(-1);
+      if(architectShiftHeld&&geologyPropRadius(placed.type)){
+        const base=floor.props.slice(0,-1).filter(p=>geologyPropRadius(p.type)&&Math.hypot(p.x-wx,p.y-wy)<20)
+          .sort((a,b)=>rockTop(b)-rockTop(a))[0];
+        if(base){placed.x=base.x;placed.y=base.y;placed.baseMetres=rockTop(base);}
+      }
       selectedMapObject={kind:'props',index:floor.props.length-1};onArchitectSelectionChange();
+      if(!isDrag&&(isWritableSign(state.propType)||['hoverLift','vendingFridge'].includes(state.propType))){
+        finishEdit();editArchitectObject(selectedMapObject);
+      }
     }
   } else if (state.tool === 'chest') {
     if (!isDrag) {
@@ -301,7 +318,9 @@ function applyArchitectAction(wx, wy, isDrag = false) {
       openLockDialog(chest, 'chest');
     }
   } else if (state.tool === 'erase') {
+    if(architectShiftHeld&&eraseStructureWall(floor,wx,wy))return;
     if(eraseCave(floor,wx,wy)||eraseBuilding(getScene(),floor,wx,wy))return;
+    if(floor.reliefs)floor.reliefs=floor.reliefs.filter(area=>!pointInArchitectArea(area,wx,wy));
     for(const stroke of floor.brushStrokes||[]){
       stroke.points=stroke.points.filter(point=>Math.hypot(point.x-wx,point.y-wy)>Math.max(18,stroke.size/2));
     }
@@ -321,6 +340,12 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
   window.activeBrushStroke=null;
   const floor = getScene().floors[state.currentFloor];
 
+  if(state.tool==='relief'&&dragStart){
+    const metres=Math.min(2.9,Math.max(.1,Number(document.getElementById('reliefHeight').value)||1));
+    addRelief(floor,dragStart,{x:wx,y:wy},document.getElementById('reliefMode').value,metres);
+    dragStart=null;previewRect=null;
+    return;
+  }
   if(state.tool==='curvedWall'&&dragStart){
     addCurvedWall(floor,curvedWallPoints(dragStart,wx,wy,shiftHeld));
     dragStart=null;previewRect=null;

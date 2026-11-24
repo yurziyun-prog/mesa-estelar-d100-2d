@@ -152,6 +152,10 @@ function crossesWall(floor,x1,y1,x2,y2,extensionsOnly=false){
  }
  return false;
 }
+function canWalkStep(ent,x,y){
+  const floor=getScene().floors[ent.floor];
+  return Math.abs(reliefAt(floor,x,y)-reliefAt(floor,ent.x,ent.y))<=.25&&canMoveTo(ent.floor,x,y);
+}
 function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   const floor = getScene().floors[floorIdx];
   if (!floor) return false;
@@ -173,6 +177,7 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   if(floor.props.some(p=>(catalogPropIsSolid(p.type)||mesaFurnitureById.has(p.type)||furnitureFinishById.has(p.type))&&Math.hypot(p.x-nx,p.y-ny)<r+19*(p.scale||1)))return false;
   if(floor.props.some(p=>plantTrunkRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+plantTrunkRadius(p.type)*(p.scale||1)))return false;
   if(floor.props.some(p=>geologyPropRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+geologyPropRadius(p.type)*(p.scale||1)))return false;
+  if(floor.props.some(p=>fixtureRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+fixtureRadius(p.type)*(p.scale||1)))return false;
   if(floor.props.some(p=>scenerySolidRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+scenerySolidRadius(p.type)*(p.scale||1)))return false;
   const solidProps = ['table', 'bookshelf', 'hearth', 'barrel', 'cabinet', 'sofa', 'sofaBlue', 'sofaRed', 'sofaGreen'];
   if (floor.props.some(p => solidProps.includes(p.type) && Math.hypot(p.x - nx, p.y - ny) < r + 14*(p.scale||1))) return false;
@@ -189,7 +194,10 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   const onWater = floor.areas.some(a => ['water','kenney_water','riverWater','mesaShallows','swampWater'].includes(a.mat) && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
   const onBridge = floor.areas.some(a => isBridgeMaterial(a.mat) && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
   if (onWater && !onBridge && !onPlacedBridge(floor,nx,ny)) return false;
-  if (!walkableFloor(floor,nx,ny)) return false;
+  const lift=[...floor.props.filter(p=>p.type==='hoverLift'),...remoteLifts(getScene(),floorIdx).map(x=>x.prop)]
+    .some(p=>Math.hypot(p.x-nx,p.y-ny)<26*(p.scale||1));
+  if (!walkableFloor(floor,nx,ny)&&!reliefAt(floor,nx,ny)&&
+      !onStructureTop(getScene(),floorIdx,nx,ny)&&!lift) return false;
 
   return true;
 }
@@ -232,8 +240,8 @@ function interactWithBed(ent,bed){
 }
 function interactNearby(entity) {
   const floor = getScene().floors[entity.floor];
-  if(entity.sleepPose)return;
-  if(interactCaveDoor(floor,entity)||interactPortableLadder(entity))return;
+  if(entity.sleepPose||liftRides.has(entity))return;
+  if(interactCaveDoor(floor,entity)||interactPortableLadder(entity)||interactVending(entity,floor))return;
   const nearBed=floor.props.filter(isSleepingFurniture).map(p=>({p,d:Math.hypot(p.x-entity.x,p.y-entity.y)})).sort((a,b)=>a.d-b.d)[0];
   if(nearBed && nearBed.d<(TENT_TYPES.has(nearBed.p.type)?48*(nearBed.p.scale||1):90)){interactWithBed(entity,nearBed.p);return;}
   const keyIndex=floor.props.findIndex(p=>p.type==='key'&&Math.hypot(p.x-entity.x,p.y-entity.y)<48);
@@ -558,8 +566,21 @@ function attemptJump(ent, dx, dy) {
   // Buscar a menor aterrissagem válida, permitindo pular pequenos vãos.
   for(let d=42;d<=104;d+=8){
     const x=ent.x+ux*d,y=ent.y+uy*d;
-    if(!canMoveTo(ent.floor,x,y,true)) continue;
-    if(crossesWall(floor,ent.x,ent.y,x,y,true))continue;
+    const startHeight=reliefAt(floor,ent.x,ent.y);
+    if(Math.abs(reliefAt(floor,x,y)-startHeight)>JUMP_CLEARANCE||!canMoveTo(ent.floor,x,y,true))continue;
+    if(crossesWall(floor,ent.x,ent.y,x,y))continue;
+    let blockedTrajectory=false;
+    for(let step=1;step<Math.ceil(d/5);step++){
+      const t=step/Math.ceil(d/5),px=ent.x+ux*d*t,py=ent.y+uy*d*t;
+      const high=reliefAt(floor,px,py)>startHeight+JUMP_CLEARANCE;
+      const tall=floor.props.some(p=>{
+        const radius=plantTrunkRadius(p.type)||geologyPropRadius(p.type)||fixtureRadius(p.type);
+        return radius&&(plantTrunkRadius(p.type)||rockTop(p)>JUMP_CLEARANCE)
+          &&Math.hypot(px-p.x,py-p.y)<radius*(p.scale||1)+10;
+      });
+      if(high||tall){blockedTrajectory=true;break;}
+    }
+    if(blockedTrajectory)continue;
     // Não saltar através de paredes, portas ou objetos sólidos.
     const blocked=[0.25,0.5,0.75].some(t=>{
       const px=ent.x+ux*d*t,py=ent.y+uy*d*t;

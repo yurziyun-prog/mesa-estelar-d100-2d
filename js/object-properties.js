@@ -16,7 +16,13 @@ function editArchitectObject(ref=null){
  const put=(id,value)=>{const node=el(id);if(node)node.value=value;};
  put('objectDialogStyle',obj.style||'normal');
  el('objectDialogScaleRow').style.display=kind==='props'?'flex':'none';
- el('objectDialogSignRow').style.display=kind==='props'&&obj.type==='neonSignCyan'?'flex':'none';
+ el('objectDialogSignRow').style.display=kind==='props'&&isWritableSign(obj.type)?'flex':'none';
+ el('objectDialogStopsRow').style.display=obj.type==='hoverLift'?'flex':'none';
+ el('objectDialogStockRow').style.display=obj.type==='vendingFridge'?'flex':'none';
+ el('objectDialogHeightRow').style.display=geologyPropRadius(obj.type)?'flex':'none';
+ put('objectDialogHeight',obj.metres||1);
+ put('objectDialogStops',(obj.stops||[]).join(', '));
+ put('objectDialogStock',(obj.stock||[{name:'Refrigerante',price:2},{name:'Cerveja',price:3},{name:'Comida',price:4}]).map(p=>p.name+':'+p.price).join('\n'));
  put('objectDialogScale',Math.round((obj.scale||1)*100));
  put('objectDialogSign',obj.signText||'');
  const material=kind==='walls'
@@ -80,12 +86,23 @@ function saveArchitectObjectProperties(){
  if(target.kind==='doors'&&lock!=='none'&&!value){
    alert('Digite um código ou nome de chave.');return;
  }
+ const stops=get('objectDialogStops').split(',').map(s=>s.trim()).filter(Boolean);
+ if(obj.type==='hoverLift'&&stops.some(s=>!/^[-+]?\d+$/.test(s)||floorIndexForLevel(getScene(),Number(s))<0)){
+   alert(translateSiteText('Escolha níveis existentes.'));return;
+ }
+ const stock=get('objectDialogStock').split('\n').map(s=>s.trim()).filter(Boolean).map(line=>line.match(/^(.+):\s*(\d+)$/));
+ if(obj.type==='vendingFridge'&&stock.some(row=>!row||!Number.isSafeInteger(Number(row[2])))){
+   alert(translateSiteText('Use nome:preço, um produto por linha.'));return;
+ }
  beginEdit();
  const floor=getScene().floors[state.currentFloor];
  obj.style=get('objectDialogStyle');
  if(target.kind==='props'){
    obj.scale=scale/100;
-   if(obj.type==='neonSignCyan')obj.signText=get('objectDialogSign').trim().slice(0,32);
+   if(isWritableSign(obj.type))obj.signText=get('objectDialogSign').trim().slice(0,32);
+   if(obj.type==='hoverLift')obj.stops=[...new Set(stops.map(Number))];
+   if(obj.type==='vendingFridge')obj.stock=stock.map(row=>({name:row[1].trim(),price:Number(row[2])}));
+   if(geologyPropRadius(obj.type))obj.metres=Math.max(.1,Math.min(2.9,Number(get('objectDialogHeight'))||1));
  }
  obj.material=target.kind==='walls'?(CONSTRUCTION_WALL_MATERIALS[get('objectDialogMaterial')]||'wallMasonry'):get('objectDialogMaterial');
  if(document.getElementById('objectDialogUseColor').checked)obj.color=get('objectDialogColor');

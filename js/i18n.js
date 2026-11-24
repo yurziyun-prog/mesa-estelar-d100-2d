@@ -422,6 +422,22 @@ Solo Corrompido|腐化地表
 Escolha um trecho reto e livre da parede.|请选择一段空闲的直墙。
 Caverna|洞穴
 Solo interno|洞内地形
+Relevo em metros|米制地形
+Altura (m)|高度（米）
+Plataforma elevada|高台
+Rampa|斜坡
+Degraus no mesmo andar|同层台阶
+Equipamentos futuristas|未来风设备
+Paradas (níveis; térreo = 0)|停靠楼层（地面层 = 0）
+Produtos e preços (nome:preço por linha)|商品与价格（每行填写名称:价格）
+Escolha níveis existentes.|请选择已有的楼层。
+Use nome:preço, um produto por linha.|每行填写一种商品，格式为名称:价格。
+Escolha o andar do elevador:|输入目标楼层的序号
+Comprar produto|购买商品
+Créditos insuficientes.|余额不足。
+Refrigerante|汽水
+Cerveja|啤酒
+Comida|食物
 Excluir mapa|删除地图
 Excluir este mapa? Seus personagens irão para a reserva.|删除这张地图？地图里的角色会移到待放置列表。
 Rocha de Caverna|洞穴岩石

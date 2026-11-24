@@ -102,7 +102,7 @@ function caveWallPieces(cave,solid){
    cavePieceCache.set(cave,cache);
  }
  const key=solid?'solid':'visible';
- if(!cache[key])cache[key]=computeCaveWallPieces(cave,openings.filter(o=>!solid||(o.kind==='door'&&o.open))
+ if(!cache[key])cache[key]=computeCaveWallPieces(cave,openings.filter(o=>!solid||((o.kind==='door'&&o.open)||o.kind==='passage'))
    .map(o=>solid?{...o,width:Math.max(48,o.width)}:o));
  return cache[key];
 }

@@ -86,11 +86,11 @@ function setupInputs() {
       e.preventDefault();
       const ent=activeActor();
       if(ent && ent.sceneId===state.activeSceneId) {
-        if(ent.sleepPose)return;
+        if(ent.sleepPose||liftRides.has(ent))return;
         let dx=(keys['d']||keys['arrowright']?1:0)-(keys['a']||keys['arrowleft']?1:0);
         let dy=(keys['s']||keys['arrowdown']?1:0)-(keys['w']||keys['arrowup']?1:0);
         if(!dx&&!dy) {dx=ent.facingX||0;dy=ent.facingY||1;}
-        if(!tryJumpDownFromUnfinishedFloor(ent,dx,dy))attemptJump(ent,dx,dy);
+        if(!attemptJump(ent,dx,dy))tryJumpDownFromUnfinishedFloor(ent,dx,dy);
       }
       return;
     }
@@ -245,6 +245,7 @@ function updateSimulation() {
     if (ent && ent.sceneId === state.activeSceneId) {
       // 攀爬期间锁定水平输入，动画逐帧运行，完成时才进入相邻楼层。
       if(advanceStairClimb(ent))return;
+      if(trackHoverLift(ent))return;
       let dx = 0, dy = 0;
       if (keys['w'] || keys['arrowup']) dy -= 1;
       if (keys['s'] || keys['arrowdown']) dy += 1;
@@ -261,8 +262,8 @@ function updateSimulation() {
         if(!tryWalkingStair(ent,dx/len,dy/len)){
           const newX=ent.x+vx,newY=ent.y+vy;
           if(!tryFallThroughStairOpening(ent,newX,newY,dx/len,dy/len)){
-            if (canMoveTo(ent.floor, ent.x + vx, ent.y)) ent.x += vx;
-            if (canMoveTo(ent.floor, ent.x, ent.y + vy)) ent.y += vy;
+            if (canWalkStep(ent, ent.x + vx, ent.y)) ent.x += vx;
+            if (canWalkStep(ent, ent.x, ent.y + vy)) ent.y += vy;
           }
         }
         ent.walkingUntil=performance.now()+130;
@@ -277,7 +278,7 @@ function render() {
 
   // Renderizar conforme a altura física, não conforme o índice no array.
   // Isso preserva os níveis antigos e permite subterrâneos anexados ao fim da lista.
-  ensureFloorLevels(sc);
+  ensureStructureStoreys(sc);
   const currentLevel=floorLevel(sc,state.currentFloor);
   const interior=viewerCave(sc.floors[state.currentFloor],state.currentFloor);
   const visible=sc.floors.map((floor,i)=>({i,level:floor.level}))
@@ -292,7 +293,7 @@ function render() {
     ctx.scale(state.camera.zoom,state.camera.zoom);
     // Os pisos inferiores e suas paredes projetadas usam as mesmas coordenadas.
     // A sombra distingue a profundidade sem deslocar as bordas do piso.
-    if(interior){cavePath(interior.points,true);ctx.clip();}
+    if(interior)clipCaveInterior(sc.floors[f],interior);
     drawFloorLayer(sc,f,isBelow,interior);
     if(isBelow){
       ctx.fillStyle='rgba(14,20,32,'+Math.min(.36,depthDiff*.2)+')';
@@ -365,5 +366,6 @@ initTerrainFinishes();
 initPlantCatalog();
 initGeologyCatalog();
 initSceneryCatalog();
+initVerticalWorld();
 initTerrainTools();
 init();

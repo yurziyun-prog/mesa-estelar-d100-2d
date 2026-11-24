@@ -160,14 +160,14 @@ function renderSceneryLights(floor,interior){
    const x=prop.x,y=prop.y,r=radius*(prop.scale||1),zoom=state.camera.zoom;
    if(x*zoom+state.camera.x<-r*zoom||y*zoom+state.camera.y<-r*zoom||
       x*zoom+state.camera.x>canvas.width+r*zoom||y*zoom+state.camera.y>canvas.height+r*zoom)continue;
-   if(interior&&!insideCave(interior,x,y))continue;
+   if(interior&&!connectedCaves(floor,interior).some(c=>insideCave(c,x,y)))continue;
    const cave=(floor.caves||[]).find(c=>insideCave(c,x,y));
-   if(state.mode==='player'&&cave&&cave!==interior)continue;
+   if(state.mode==='player'&&cave&&(!interior||!connectedCaves(floor,interior).includes(cave)))continue;
    if(state.mode==='player'&&(floor.buildings||[]).some(b=>b.hasRoof&&buildingDistance(x,y,b)<0&&
       (!actor||actor.floor!==state.currentFloor||buildingDistance(actor.x,actor.y,b)>=0)))continue;
    const nearby=walls.filter(wall=>wall.source!==prop&&distToSegment(x,y,wall.x1,wall.y1,wall.x2,wall.y2)<r);
    ctx.save();
-   if(interior){cavePath(interior.points,true);ctx.clip();}
+   if(interior)clipCaveInterior(floor,interior);
    ctx.beginPath();
    for(let i=0;i<96;i++){
      const angle=i*Math.PI/48,dx=Math.cos(angle),dy=Math.sin(angle);

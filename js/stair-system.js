@@ -77,6 +77,8 @@ function applyFallDamage(ent,levels,reason='queda'){
 function repairExistingStairLandings(scene){ensureFloorLevels(scene);}
 function hasBuiltFloorAt(floor,x,y){
  if(!floor)return false;
+ const scene=getScene(),index=scene.floors.indexOf(floor);
+ if(reliefAt(floor,x,y)>0||(index>=0&&onStructureTop(scene,index,x,y)))return true;
  if((floor.caves||[]).some(c=>insideCave(c,x,y)&&!terrainIsBlocked(c.ground)))return true;
  const hit=a=>x>=a.x&&x<=a.x+a.w&&y>=a.y&&y<=a.y+a.h;
  if((floor.buildings||[]).some(b=>b.hasFloor&&buildingDistance(x,y,b)<=0))return true;

@@ -16,7 +16,8 @@ function insideCave(cave,x,y){
 
 function caveWallBlocks(floor,x,y){
  return (floor.caves||[]).some(cave=>{
-   if(caveOpenings(cave).some(door=>door.kind==='door'&&door.open&&
+   if(mergedBoundary(floor,cave,x,y))return false;
+   if(caveOpenings(cave).some(door=>(door.kind==='door'||door.kind==='passage')&&door.open&&
      caveDoorThreshold(door,x,y,24)))return false;
    return caveWallPieces(cave,true).some(([a,b])=>
      distToSegment(x,y,a.x,a.y,b.x,b.y)<cave.thickness/2+10);
@@ -84,7 +85,7 @@ function placeCaveStack(scene,index,cave,levels,direction){
  for(let i=0;i<levels;i++){
    const at=level+i*direction;
    const target=scene.floors[floorIndexForLevel(scene,at,true,{x,y})];
-   (target.caves ||= []).push({...cave,stackId:id,entrance:i===0?cave.entrance:-1,openings:i===0?caveOpenings(cave):[]});
+   (target.caves ||= []).push({...cave,stackId:id,subsurface:at<0,entrance:i===0?cave.entrance:-1,openings:i===0?caveOpenings(cave):[]});
    for(const point of cave.points)expandFloorToInclude(target,point.x,point.y);
    if(i>0){
      const pair=createStairPair(scene,at-direction,at,x+(i%2?-42:42),y,'open','stone','normal');
@@ -112,12 +113,21 @@ function drawCaveSurface(cave,material){
  ctx.restore();
 }
 
-function drawCaveBase(cave){
+function drawCaveBase(cave,floor=null){
  drawCaveSurface(cave,cave.ground);
  ctx.save();
  ctx.lineJoin='round';ctx.lineCap='round';
  ctx.beginPath();
- for(const [a,b] of caveWallPieces(cave,false)){ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);}
+ for(const [a,b] of caveWallPieces(cave,false)){
+   const n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/10));
+   for(let i=0;i<n;i++){
+     const point=t=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t});
+     const m=point((i+.5)/n);
+     if(floor&&mergedBoundary(floor,cave,m.x,m.y))continue;
+     const p=point(i/n),q=point((i+1)/n);
+     ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);
+   }
+ }
  ctx.strokeStyle='rgba(0,0,0,.4)';ctx.lineWidth=cave.thickness+9;ctx.stroke();
  ctx.lineWidth=cave.thickness;ctx.strokeStyle=getTerrainPattern(ctx,cave.wall);
  ctx.stroke();
@@ -149,7 +159,7 @@ function drawCaveApron(cave){
  }
 }
 
-function drawCaveMountain(cave,roof){
+function drawCaveMountain(cave,roof,showOpenings=true){
  const b=caveBounds(cave),cx=b.x+b.w/2,cy=b.y+b.h/2;
  ctx.save();
  ctx.lineJoin='round';
@@ -169,7 +179,7 @@ function drawCaveMountain(cave,roof){
    ctx.fillStyle=light;ctx.fill();
    ctx.lineWidth=2+depth*2;ctx.strokeStyle='rgba(26,28,34,.56)';ctx.stroke();
  }
- for(const entrance of caveOpenings(cave))drawCaveOpening(entrance);
+ if(showOpenings)for(const entrance of caveOpenings(cave))drawCaveOpening(entrance);
  ctx.restore();
 }
 
@@ -177,7 +187,8 @@ function drawCaveRoofs(floor,index){
  const actor=activeActor();
  for(const cave of floor.caves||[]){
   const roof=cave.roof||cave.wall||'caveStone';
-  const person=state.mode==='architect'?buildingPointer:actor?.floor===index&&actor.sceneId===state.activeSceneId?actor:null;
+  if(state.mode==='architect'||floor.level<0||cave.subsurface||caveUnderSibling(getScene(),floor,cave))continue;
+  const person=actor?.floor===index&&actor.sceneId===state.activeSceneId?actor:null;
   if(person&&insideCave(cave,person.x,person.y))continue;
   ctx.save();
   if(floor.level>=0)drawCaveMountain(cave,roof);
@@ -203,11 +214,20 @@ function eraseCave(floor,x,y){
 
 
 function drawCaveOpening(opening){
+ if(opening.kind==='passage')return;
  ctx.save();ctx.translate(opening.x,opening.y);ctx.rotate(opening.angle);
  const r=opening.width/2;
  ctx.fillStyle=opening.kind==='window'?'#313c45':opening.open?'#241f1a':'#584331';
  ctx.beginPath();ctx.ellipse(0,0,r,10,0,0,Math.PI*2);ctx.fill();
- ctx.strokeStyle='#9a9588';ctx.lineWidth=2;ctx.stroke();
+ if(opening.kind==='door'){
+   const rim=ctx.createLinearGradient(0,-11,0,11);
+   rim.addColorStop(0,'#988e77');rim.addColorStop(.55,'#57534a');rim.addColorStop(1,'#282724');
+   ctx.strokeStyle=rim;ctx.lineWidth=4;ctx.stroke();
+   ctx.strokeStyle='#c1ac85';ctx.lineWidth=1;
+   ctx.beginPath();ctx.ellipse(0,0,r-2,8,0,Math.PI*1.1,Math.PI*1.88);ctx.stroke();
+ }else{
+   ctx.strokeStyle='#9a9588';ctx.lineWidth=2;ctx.stroke();
+ }
  if(opening.kind==='window'){
    ctx.strokeStyle='#aab6b2';
    for(let x=-r+8;x<r-5;x+=10){

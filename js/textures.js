@@ -534,9 +534,11 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     ctx.restore();
   });
   drawBrushStrokes(floor);
-  for(const cave of interior?[interior]:(floor.caves||[])){
+  if(!interior&&!isBelow)drawStructureStorey(sc,floorIdx);
+  drawReliefs(floor);
+  for(const cave of interior?connectedCaves(floor,interior):(floor.caves||[])){
     if(!interior)drawCaveApron(cave);
-    drawCaveBase(cave);
+    drawCaveBase(cave,floor);
   }
   if(!interior)for(const building of floor.buildings||[])drawBuildingBase(building,floor);
   // 只将楼下的自然地形和地板作为背景，隐藏门、窗、墙、家具和人物。
@@ -709,9 +711,13 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     ctx.strokeRect(c.x - 5, c.y - 4, 10, 8);
   });
 
-  floor.props.forEach(p => {
+  const liftViewer=activeActor();
+  const liftOffset=p=>p.type==='hoverLift'&&liftViewer?.floor===floorIdx&&Math.hypot(liftViewer.x-p.x,liftViewer.y-p.y)<28?
+    liftVisualOffset(liftViewer):0;
+  for(const {prop} of remoteLifts(sc,floorIdx))drawProp({...prop,y:prop.y-liftOffset(prop)});
+  [...floor.props].sort((a,b)=>(a.baseMetres||0)-(b.baseMetres||0)||reliefAt(floor,a.x,a.y)-reliefAt(floor,b.x,b.y)||(a.y-b.y)).forEach(p => {
     if(plantTypes.has(p.type))drawPlantBase(p);
-    else{drawProp(p);drawFireEffect(p);}
+    else{drawProp({...p,y:p.y-(p.baseMetres||0)*7-liftOffset(p)});drawFireEffect(p);}
   });
   if(state.mode==='architect'&&!isBelow&&typeof selectedMapObject!=='undefined'&&selectedMapObject){
     const sel=floor[selectedMapObject.kind]?.[selectedMapObject.index];
@@ -738,6 +744,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
   if(!interior){
     drawBuildingRoofs(floor,floorIdx);
     drawCaveRoofs(floor,floorIdx);
+    if(state.mode!=='architect')drawOutdoorTopProps(sc,floorIdx);
   }
 }
 
@@ -764,7 +771,7 @@ function drawCharacterToken(ent, isBelow) {
     ctx.fillText(ent.name,cx,cy-51);ctx.restore();
     return;
   }
-  let lift=0;
+  let lift=liftVisualOffset(ent);
   if(ent.stairClimb){
     const progress=ent.stairClimbProgress||0;
     lift=ent.stairClimb.dir==='down'?Math.max(0,20*(1-progress)):6+22*progress;
@@ -1006,7 +1013,7 @@ function drawProp(p) {
   if(isKenneyObject(p.type)){drawKenneyObject(p);return;}
   if(isKenneyRoguelikeObject(p.type)){drawKenneyRoguelikeObject(p);return;}
   if(isSleepingFurniture(p)&&!TENT_TYPES.has(p.type)){drawSleepingFurniture(p);return;}
-  if(drawSceneryProp(p)||drawMesaFurniture(p)||drawMaterialFurniture(p)||drawGeologyProp(p)||drawCatalogProp(p)||drawExpandedProp(p))return;
+  if(drawWorldFixture(p)||drawSceneryProp(p)||drawMesaFurniture(p)||drawMaterialFurniture(p)||drawGeologyProp(p)||drawCatalogProp(p)||drawExpandedProp(p))return;
   if(p.type==='key'){
     ctx.save();ctx.translate(p.x,p.y);ctx.strokeStyle='#e7be4c';ctx.lineWidth=4;
     ctx.beginPath();ctx.arc(-5,-2,5,0,Math.PI*2);ctx.moveTo(0,0);ctx.lineTo(15,11);ctx.moveTo(9,6);ctx.lineTo(7,11);ctx.moveTo(13,9);ctx.lineTo(11,14);ctx.stroke();

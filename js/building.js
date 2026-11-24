@@ -83,6 +83,9 @@ function architectOpeningPosition(floor,x,y,halfWidth){
 function buildingWallBlocks(floor,x,y) {
   return (floor.buildings||[]).some(b=>{
     if(Math.abs(buildingDistance(x,y,b))>=b.wallThickness/2+10)return false;
+    if(mergedBoundary(floor,b,x,y))return false;
+    if((b.wallGaps||[]).some(g=>g.orient==='v'?Math.abs(y-g.y)<g.width/2-9&&Math.abs(x-g.x)<30:
+      Math.abs(x-g.x)<g.width/2-9&&Math.abs(y-g.y)<30))return false;
     return !floor.doors.some(door=>door.open&&door.buildingId===b.id&&
       (door.orient==='v'?Math.abs(y-door.y):Math.abs(x-door.x))<24&&
       (door.orient==='v'?Math.abs(x-door.x):Math.abs(y-door.y))<b.wallThickness/2+12);
@@ -107,8 +110,9 @@ function drawBuildingBase(b,floor,preview=false) {
     ctx.restore();
   }
   if(!preview){
-    for(const item of [...floor.doors,...floor.windows]){
-      if(item.buildingId!==b.id)continue;
+    clipRoomWalls(floor,b);
+    for(const item of [...floor.doors,...floor.windows,...(b.wallGaps||[])]){
+      if(item.buildingId!==b.id&&!(b.wallGaps||[]).includes(item))continue;
       const half=(floor.doors.includes(item)?68:(item.width||40))/2;
       const width=b.wallThickness+12;
       ctx.beginPath();
@@ -129,12 +133,12 @@ function drawBuildingBase(b,floor,preview=false) {
   ctx.restore();
 }
 
-function drawBuildingRoofs(floor,index) {
+function drawBuildingRoofs(floor,index,onTop=false) {
   const actor=activeActor();
   for(const b of floor.buildings||[]){
     if(!b.hasRoof)continue;
     if(state.mode==='gm'&&!showGmBuildingRoofs)continue;
-    if(state.mode==='architect'&&buildingPointer&&buildingDistance(buildingPointer.x,buildingPointer.y,b)<=b.wallThickness/2)continue;
+    if(state.mode==='architect'&&!onTop)continue;
     if(state.mode==='player'&&actor?.floor===index&&actor.sceneId===state.activeSceneId&&buildingDistance(actor.x,actor.y,b)<0)continue;
     ctx.save();
     if(state.mode==='gm')ctx.globalAlpha=.25;
