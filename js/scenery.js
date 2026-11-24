@@ -3,10 +3,10 @@ const sceneryItems=new Map([
  ['neonTubeMagenta',['Luminária magenta','洋红灯管',1,46,'#fa5bcf',103]],
  ['industrialGenerator',['Gerador industrial','工业发电机',2,60,'#68d8ff',86,true]],
  ['industrialPipe',['Tubulação industrial','工业弯管',3,60,null,0,true]],
- ['campTent',['Barraca de campismo','露营帐篷',4,62,null,0,true]],
- ['roundPavilion',['Pavilhão circular','圆形营帐',5,74,null,0,true]],
- ['sandstoneRuin',['Ruína de arenito','砂岩废墟',6,83,null,0,true]],
- ['snowyRuin',['Ruína nevada','覆雪废墟',7,83,null,0,true]]
+ ['campTent',['Barraca de campismo','露营帐篷',4,104]],
+ ['roundPavilion',['Pavilhão circular','圆形营帐',5,125]],
+ ['sandstoneRuin',['Ruína de arenito','砂岩废墟',6,112,null,0,true]],
+ ['snowyRuin',['Ruína nevada','覆雪废墟',7,112,null,0,true]]
 ]);
 const sceneryArt=new Image();
 sceneryArt.src='assets/nature/scenery-atlas.webp';
@@ -30,6 +30,11 @@ function drawSceneryProp(prop){
  ctx.fillStyle='rgba(12,14,20,.27)';
  ctx.beginPath();ctx.ellipse(size*.14,size*.18,size*.39,size*.21,.45,0,Math.PI*2);ctx.fill();
  ctx.drawImage(sceneryArt,sprite%4*w,Math.floor(sprite/4)*h,w,h,-size/2,-size/2,size,size);
+ if(prop.type==='neonSignCyan'&&prop.signText){
+   ctx.fillStyle='#d1ffff';ctx.font='bold '+Math.max(5,size*.14)+'px sans-serif';
+   ctx.textAlign='center';ctx.textBaseline='middle';
+   ctx.fillText(prop.signText,0,size*.038,size*.69);
+ }
  ctx.restore();
  return true;
 }

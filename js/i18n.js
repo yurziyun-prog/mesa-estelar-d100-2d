@@ -422,6 +422,26 @@ Solo Corrompido|腐化地表
 Escolha um trecho reto e livre da parede.|请选择一段空闲的直墙。
 Caverna|洞穴
 Solo interno|洞内地形
+Rocha de Caverna|洞穴岩石
+Parede de Caverna|洞穴墙壁
+Caverna de Cogumelos|蘑菇洞穴
+Caverna Cristalina|水晶洞穴
+Terra Batida|夯土地面
+Estatísticas da sessão|本局统计
+Ambiente & Horário|环境与时间
+Vento na vegetação|植物受风
+Brisa|微风
+Sem vento|无风
+Vento forte|强风
+Clique para selecionar e arraste personagens ou NPCs pelo mapa.|点击选中角色或 NPC，然后在地图上拖动。
+Personagens disponíveis (marque e clique em Colocar):|勾选角色，点击「放置」，再点击地图。
+Colocar|放置
+Aqui|当前场景
+Reserva|未放置
+Texto da placa|招牌文字
+Escala do objeto (%)|物件比例（%）
+Escala entre 20% e 400%.|请输入 20% 到 400% 的比例。
+Entrar na barraca e dormir?|进入帐篷睡觉？
 Cobertura externa|洞顶岩层
 Sem cobertura|无洞顶
 Entrada|入口

@@ -57,12 +57,12 @@ function setMode(mode) {
     state.currentFloor=0;updateFloorLabel();
   }else if(mode==='player'){
     const pc=state.entities.find(e=>e.id===state.selectedEntityId&&e.type==='pc')||state.entities.find(e=>e.type==='pc');
-    if(pc){state.selectedEntityId=pc.id;state.activeSceneId=pc.sceneId;state.currentFloor=pc.floor;updateFloorLabel();}
+    if(pc&&state.scenes[pc.sceneId]){state.selectedEntityId=pc.id;state.activeSceneId=pc.sceneId;state.currentFloor=pc.floor;updateFloorLabel();}
   }
   gmControlledId=null;gmPreviewId=null;
   if(mode==='player' && getSelectedEntity()?.type!=='pc') {
     const pc=state.entities.find(e=>e.type==='pc');
-    if(pc){state.selectedEntityId=pc.id;state.activeSceneId=pc.sceneId;state.currentFloor=pc.floor;updateFloorLabel();}
+    if(pc&&state.scenes[pc.sceneId]){state.selectedEntityId=pc.id;state.activeSceneId=pc.sceneId;state.currentFloor=pc.floor;updateFloorLabel();}
   }
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   document.getElementById('architectTools').classList.toggle('hidden', mode !== 'architect');
@@ -177,7 +177,7 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   if (floor.props.some(p => isKenneyObject(p.type) && KENNEY_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17*(p.scale||1)))return false;
   if (floor.props.some(p => isKenneyRoguelikeObject(p.type) && KENNEY_ROGUELIKE_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17*(p.scale||1)))return false;
   // As camas têm colisão retangular proporcional ao seu tamanho.
-  if(floor.props.some(p=>isSleepingFurniture(p)&&p.type!=='sleepingBag' && Math.abs(nx-p.x)<sleepFurnitureSize(p).w*(p.scale||1)/2+r-4 && Math.abs(ny-p.y)<sleepFurnitureSize(p).h*(p.scale||1)/2+r-4))return false;
+  if(floor.props.some(p=>isSleepingFurniture(p)&&p.type!=='sleepingBag' && !TENT_TYPES.has(p.type) && Math.abs(nx-p.x)<sleepFurnitureSize(p).w*(p.scale||1)/2+r-4 && Math.abs(ny-p.y)<sleepFurnitureSize(p).h*(p.scale||1)/2+r-4))return false;
 
   // 平屋顶上的玻璃天窗不是安全行走区域；连接楼梯的出入口仍交给楼梯系统。
   if((floor.roofOpenings||[]).some(o=>o.type==='skylight' &&
@@ -192,7 +192,8 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   return true;
 }
 
-const SLEEP_TYPES=new Set(['bed','bedDouble','sleepingBag','capsuleBed']);
+const TENT_TYPES=new Set(['tent','campTent','roundPavilion']);
+const SLEEP_TYPES=new Set(['bed','bedDouble','sleepingBag','capsuleBed',...TENT_TYPES]);
 function isSleepingFurniture(item){return Boolean(item&&SLEEP_TYPES.has(item.type));}
 function sleepFurnitureSize(item) {
   const sizes={bed:{w:44,h:84},bedDouble:{w:78,h:90},sleepingBag:{w:32,h:76},capsuleBed:{w:66,h:100}};
@@ -208,6 +209,14 @@ function awakenEntity(ent){
 }
 function interactWithBed(ent,bed){
   if(ent.sleepPose)return;
+  if(TENT_TYPES.has(bed.type)){
+    if(state.entities.some(other=>other!==ent&&other.sleepPose&&other.sceneId===ent.sceneId&&other.floor===ent.floor&&other.sleepBed?.x===bed.x&&other.sleepBed?.y===bed.y))return;
+    if(!confirm(translateSiteText('Entrar na barraca e dormir?')))return;
+    ent.sleepRest={x:ent.x,y:ent.y};
+    ent.sleepBed={x:bed.x,y:bed.y,type:bed.type,rot:bed.rot||0};
+    ent.x=bed.x;ent.y=bed.y;ent.sleepPose='sleeping';
+    return;
+  }
   if(!confirm('Deitar em '+({bed:'cama',bedDouble:'cama de casal',sleepingBag:'saco de dormir',capsuleBed:'cápsula de sono'}[bed.type]||'cama')+'?'))return;
   ent.sleepRest={x:ent.x,y:ent.y};
   ent.sleepPose='lying';
@@ -224,7 +233,7 @@ function interactNearby(entity) {
   if(entity.sleepPose)return;
   if(interactCaveDoor(floor,entity)||interactPortableLadder(entity))return;
   const nearBed=floor.props.filter(isSleepingFurniture).map(p=>({p,d:Math.hypot(p.x-entity.x,p.y-entity.y)})).sort((a,b)=>a.d-b.d)[0];
-  if(nearBed && nearBed.d<90){interactWithBed(entity,nearBed.p);return;}
+  if(nearBed && nearBed.d<(TENT_TYPES.has(nearBed.p.type)?48*(nearBed.p.scale||1):90)){interactWithBed(entity,nearBed.p);return;}
   const keyIndex=floor.props.findIndex(p=>p.type==='key'&&Math.hypot(p.x-entity.x,p.y-entity.y)<48);
   if(keyIndex!==-1){const key=floor.props.splice(keyIndex,1)[0];entity.inventory.push(key.keyId);updateUI();logEvent('🔑 '+entity.name+' recolheu '+(key.label||'uma chave')+'.');return;}
 
@@ -454,6 +463,7 @@ function placeGmEntityAt(wx, wy){
     gmRosterPlacementIds.forEach((id,i)=>{
       const ent=state.entities.find(e=>e.id===id);
       if(!ent)return;
+      awakenEntity(ent);
       ent.sceneId=state.activeSceneId;
       ent.floor=state.currentFloor;
       ent.x=wx+(i%3)*36;

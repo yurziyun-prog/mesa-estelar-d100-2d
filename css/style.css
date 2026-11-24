@@ -417,3 +417,14 @@ html[lang="zh-CN"] .section-title {
   display: grid;
   gap: 4px;
 }
+
+html[lang="zh-CN"] .section-title {
+  justify-content: flex-start;
+  text-transform: none;
+}
+html[lang="zh-CN"] .section-title:has(> :nth-child(2)) {
+  justify-content: space-between;
+}
+#caveOptions .ctrl, #gmTools .ctrl { min-width: 0; max-width: 100%; }
+#caveOptions label > span { display: block; }
+#gmPullEntitiesList { max-height: 145px; overflow-y: auto; }

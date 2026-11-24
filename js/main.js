@@ -31,7 +31,8 @@ function centerMap() {
   const level = floorLevel(scene, state.currentFloor);
   const areas = scene.floors.filter(floor => floor.level <= level).flatMap(floor => [
     ...(floor.baseTerrain && floor.terrainBounds ? [floor.terrainBounds] : []),
-    ...floor.areas
+    ...floor.areas,
+    ...(floor.caves||[]).map(caveBounds)
   ]);
   if (!areas.length) areas.push(scene.floors[state.currentFloor].bounds);
   const left = Math.min(...areas.map(area => area.x));

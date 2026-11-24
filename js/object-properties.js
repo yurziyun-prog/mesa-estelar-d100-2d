@@ -15,6 +15,10 @@ function editArchitectObject(ref=null){
  const el=id=>document.getElementById(id);
  const put=(id,value)=>{const node=el(id);if(node)node.value=value;};
  put('objectDialogStyle',obj.style||'normal');
+ el('objectDialogScaleRow').style.display=kind==='props'?'flex':'none';
+ el('objectDialogSignRow').style.display=kind==='props'&&obj.type==='neonSignCyan'?'flex':'none';
+ put('objectDialogScale',Math.round((obj.scale||1)*100));
+ put('objectDialogSign',obj.signText||'');
  const material=kind==='walls'
    ? Object.keys(CONSTRUCTION_WALL_MATERIALS).find(key=>CONSTRUCTION_WALL_MATERIALS[key]===obj.material)
    : obj.material;
@@ -65,6 +69,10 @@ function saveArchitectObjectProperties(){
  const target=architectPropertyTarget,obj=getArchitectPropertyItem();if(!obj||!target)return;
  const get=id=>document.getElementById(id).value;
  const width=Number(get('objectDialogWidth'));
+ const scale=Number(get('objectDialogScale'));
+ if(target.kind==='props'&&(!Number.isFinite(scale)||scale<20||scale>400)){
+   alert(translateSiteText('Escala entre 20% e 400%.'));return;
+ }
  if(['windows','walls'].includes(target.kind)&&(!Number.isFinite(width)||width<16||width>224)){
    alert('Largura inválida.');return;
  }
@@ -75,6 +83,10 @@ function saveArchitectObjectProperties(){
  beginEdit();
  const floor=getScene().floors[state.currentFloor];
  obj.style=get('objectDialogStyle');
+ if(target.kind==='props'){
+   obj.scale=scale/100;
+   if(obj.type==='neonSignCyan')obj.signText=get('objectDialogSign').trim().slice(0,32);
+ }
  obj.material=target.kind==='walls'?(CONSTRUCTION_WALL_MATERIALS[get('objectDialogMaterial')]||'wallMasonry'):get('objectDialogMaterial');
  if(document.getElementById('objectDialogUseColor').checked)obj.color=get('objectDialogColor');
  else delete obj.color;

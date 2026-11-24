@@ -227,8 +227,8 @@ function onSceneSelectChange(id) {
     state.selectedWallIdx = null;
     updateFloorLabel();
     refreshSceneSelect();
-  } else {
-    renderGmPullList();
+  } else if(state.mode==='gm'){
+    gmSwitchScene(id);
   }
 }
 
@@ -325,37 +325,22 @@ function renderGmPullList() {
   }
 }
 function armGmRosterPlacement() {
-  const ids = [...(state.gmTransferIds||[])];
+  const ids = state.entities.filter(ent=>(state.gmTransferIds||[]).includes(ent.id)).map(ent=>ent.id);
   if (!ids.length) { logEvent('Marque pelo menos um personagem para colocar.'); return; }
   gmRosterPlacementIds = ids;
   gmPlacementTemplate = null;
   logEvent('📍 Clique no mapa aberto para colocar os '+ids.length+' personagens.');
 }
-function gmSwitchScene(){
-  const targetId=document.getElementById('sceneSelect').value;
-  if(!targetId||!state.scenes[targetId])return;
-  migrateModeScenes();
-  if(targetId===state.activeSceneId){logEvent('👑 Este cenário já está aberto.');return;}
+function gmSwitchScene(targetId){
+  if(state.mode!=='gm'||!state.scenes[targetId]||targetId===state.activeSceneId)return;
   beginEdit();
-  const selected=new Set(state.gmTransferIds||[]);
-  const floor=state.scenes[targetId].floors[0];
-  const bounds=floor.terrainBounds||floor.bounds||{x:0,y:0,w:600,h:450};
-  const moved=state.entities.filter(ent=>selected.has(ent.id));
-  moved.forEach((ent,i)=>{
-    ent.sceneId=targetId;ent.floor=0;
-    const col=i%4,row=Math.floor(i/4);
-    ent.x=bounds.x+bounds.w/2+(col-1.5)*38;
-    ent.y=bounds.y+bounds.h/2+(row-1)*38;
-  });
+  migrateModeScenes();
   state.modeScenes.gm=targetId;
   state.activeSceneId=targetId;
   state.currentFloor=0;
-  if(typeof gmControlledId!=='undefined'){gmControlledId=null;gmPreviewId=null;}
-  if(typeof gmRosterPlacementIds!=='undefined')gmRosterPlacementIds=null;
-  updateFloorLabel();refreshSceneSelect();updateUI();
-  if(typeof refreshGmFocus==='function')refreshGmFocus();
+  gmControlledId=null;gmPreviewId=null;gmPlacementTemplate=null;gmRosterPlacementIds=null;
+  updateFloorLabel();refreshSceneSelect();updateUI();refreshGmFocus();centerMap();
   finishEdit();
-  logEvent('👑 Mestre abriu "'+getScene().name+'" e levou '+moved.length+' personagem(ns). Os desmarcados ficaram nos cenários anteriores.');
 }
 function saveBank() {
   try{

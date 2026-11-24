@@ -736,6 +736,7 @@ function drawFloorLayer(sc, floorIdx, isBelow) {
 
 function drawCharacterToken(ent, isBelow) {
   const cx=ent.x,cy=ent.y,now=performance.now();
+  if(ent.sleepPose&&TENT_TYPES.has(ent.sleepBed?.type))return;
   if(ent.sleepPose){
     const bed=ent.sleepBed||{x:cx,y:cy,type:'bed',rot:0};
     ctx.save();ctx.translate(cx,cy);
@@ -997,7 +998,7 @@ function drawProp(p) {
   if(isPortableLadder(p)){drawPortableLadder(p);return;}
   if(isKenneyObject(p.type)){drawKenneyObject(p);return;}
   if(isKenneyRoguelikeObject(p.type)){drawKenneyRoguelikeObject(p);return;}
-  if(isSleepingFurniture(p)){drawSleepingFurniture(p);return;}
+  if(isSleepingFurniture(p)&&!TENT_TYPES.has(p.type)){drawSleepingFurniture(p);return;}
   if(drawSceneryProp(p)||drawMesaFurniture(p)||drawMaterialFurniture(p)||drawGeologyProp(p)||drawCatalogProp(p)||drawExpandedProp(p))return;
   if(p.type==='key'){
     ctx.save();ctx.translate(p.x,p.y);ctx.strokeStyle='#e7be4c';ctx.lineWidth=4;
