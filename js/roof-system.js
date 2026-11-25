@@ -302,6 +302,30 @@ function roofCoverageAtActor(area,actor){
  const margin=Math.min(12,Math.max(1,Math.min(area.w,area.h)/5));
  return pointInArchitectArea(area,actor.x,actor.y,-margin);
 }
+function roofSupportFloor(scene,floor,roof){
+ const level=roof.supportLevel??floor.level-1;
+ if(level>=floor.level)return null;
+ return scene.floors.find(candidate=>candidate.level===level);
+}
+
+function effectiveRoofBounds(scene,floor,roof){
+ const below=roofSupportFloor(scene,floor,roof);
+ if(!below)return roof;
+ const support=roofSupportingBounds(below);
+ if(!support||!roofHasStructuralSupport({...below,areas:[]},support))return roof;
+ // When the roof already follows a home's full footprint, cover its wall thickness.
+ const near=ROOF_OVERHANG+12;
+ if(Math.abs(roof.x-support.x)>near||Math.abs(roof.y-support.y)>near||
+    Math.abs(roof.x+roof.w-support.x-support.w)>near||
+    Math.abs(roof.y+roof.h-support.y-support.h)>near)return roof;
+ const wallMargin=Math.min(ROOF_OVERHANG,Math.max(8,
+   ...(below.walls||[]).map(w=>(w.width||16)/2+3),
+   ...(below.buildings||[]).map(b=>(b.wallThickness||16)/2+3)));
+ const x=Math.min(roof.x,support.x-wallMargin),y=Math.min(roof.y,support.y-wallMargin);
+ return {...roof,x,y,w:Math.max(roof.x+roof.w,support.x+support.w+wallMargin)-x,
+   h:Math.max(roof.y+roof.h,support.y+support.h+wallMargin)-y};
+}
+
 function externalBuildingSurfaces(scene,current){
  const candidates=[];
  for(const floor of scene.floors){
@@ -309,16 +333,22 @@ function externalBuildingSurfaces(scene,current){
   const areas=floor.areas||[];
   const roofs=areas.filter(area=>{
    if(!area.roof||!isRoofMaterial(area.mat))return false;
-   const supportLevel=area.supportLevel??floor.level-1;
-   if(supportLevel>=floor.level)return false;
-   const below=scene.floors.find(candidate=>candidate.level===supportLevel);
-   return below&&roofHasStructuralSupport(below,area);
+   const below=roofSupportFloor(scene,floor,area);
+   if(!below)return false;
+   const footprint=effectiveRoofBounds(scene,floor,area);
+   return footprint!==area||roofHasStructuralSupport(below,area);
   });
   const surfaces=roofs.length?roofs:areas.filter(area=>
    !area.attic&&!area.fromBuildingId&&isStructuralSlab(area));
   for(const area of surfaces)candidates.push({area,level:floor.level,floor});
  }
  return candidates;
+}
+
+function actorUnderBuildingCover(floor,area,actor){
+ if(!roofCoverageAtActor(area,actor))return false;
+ if((floor.buildings||[]).some(room=>buildingDistance(actor.x,actor.y,room)<0))return true;
+ return (floor.areas||[]).some(slab=>isStructuralSlab(slab)&&pointInArchitectArea(slab,actor.x,actor.y));
 }
 
 function drawExternalBuildingTop(){
@@ -330,16 +360,17 @@ function drawExternalBuildingTop(){
  const candidates=externalBuildingSurfaces(scene,current).filter(({area})=>
    !caveMountainMasksRoof(viewFloor,area)&&!roofHiddenByMountain(area)&&!roofHiddenInCaveCourtyard(area));
  if(!candidates.length)return;
- const highest=Math.max(...candidates.map(e=>e.level));
- const top=candidates.filter(e=>e.level===highest);
+ const top=candidates.sort((a,b)=>a.level-b.level);
  const underSlab=higher.some(floor=>floor.areas.some(area=>
   isStructuralSlab(area)&&pointInArchitectArea(area,actor.x,actor.y)
  ) && !(floor.openings||[]).some(opening=>pointInArchitectArea(opening,actor.x,actor.y)));
  ctx.save();ctx.translate(state.camera.x,state.camera.y);ctx.scale(state.camera.zoom,state.camera.zoom);
- for(const {area,level,floor} of top){
+ for(const {area:stored,level,floor} of top){
+  const area=isRoofMaterial(stored.mat)?effectiveRoofBounds(scene,floor,stored):stored;
   // Lajes feitas de vários recortes mudam de visibilidade juntas e sem sobrepor o personagem.
   if(!isRoofMaterial(area.mat)){
-   if(underSlab)continue;
+   if(underSlab||top.some(entry=>entry.level>level&&isRoofMaterial(entry.area.mat)&&
+     pointInArchitectArea(entry.area,area.x+area.w/2,area.y+area.h/2)))continue;
    ctx.save();
    clipOutsideCaves(scene.floors[actor.floor].caves,area);
    for(const opening of floor.openings||[]){
@@ -356,7 +387,7 @@ function drawExternalBuildingTop(){
    continue;
   }
   const key=state.activeSceneId+':'+level+':'+area.x+':'+area.y+':'+area.w+':'+area.h;
-  const indoor=roofCoverageAtActor(area,actor);
+  const indoor=actorUnderBuildingCover(viewFloor,area,actor);
   const now=performance.now();
   let fade=roofFadeLevels.get(key);
   if(!fade)fade={alpha:indoor?0:1,time:now};

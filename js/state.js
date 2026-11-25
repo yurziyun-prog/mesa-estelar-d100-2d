@@ -223,7 +223,7 @@ function onSceneSelectChange(id) {
   if (state.mode === 'architect') {
     state.activeSceneId = id;
     state.modeScenes.architect = id;
-    if (typeof selectedMapObject !== 'undefined') selectedMapObject = null;
+    selectedMapObject=null;architectSelections=[];architectSelectionGesture=null;
     state.currentFloor = 0;
     state.selectedWallIdx = null;
     updateFloorLabel();

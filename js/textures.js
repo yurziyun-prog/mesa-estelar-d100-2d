@@ -496,7 +496,8 @@ function drawLowerStoreyWallContinuations(sc,upperIndex){
    wallCastle:'#8a8b87',wallMetal:'#a5bdc9',wallRust:'#96715a',wallSandstone:'#d1b381'};
  ctx.save();ctx.lineCap='square';ctx.lineJoin='bevel';
  // Reconstitui visualmente os recortes das portas e janelas vistas de cima.
- const slabs = upper.areas.filter(isStructuralSlab);
+ const slabs = upper.areas.filter(a=>isStructuralSlab(a)||isRoofMaterial(a.mat))
+   .map(area=>isRoofMaterial(area.mat)?effectiveRoofBounds(sc,upper,area):area);
  const walls = [...beneath.walls, ...lowerOpeningWallSpans(beneath)]
    .flatMap(wall => exposedLowerWallSpans(wall, slabs));
  for(const wall of walls){
@@ -536,6 +537,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
 
   const actor=typeof activeActor==='function'?activeActor():null;
   floor.areas.forEach(a=>{
+    if(isBelow&&a.mat==='carpet')return;
     const inside=actor&&actor.floor===floorIdx&&actor.sceneId===state.activeSceneId
       &&a.roof&&a.roofAttic&&pointInArchitectArea(a,actor.x,actor.y);
     if(inside&&state.mode!=='architect')return; // 阁楼内部不被屋顶贴图覆盖
@@ -543,7 +545,8 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     ctx.save();
     if(a.roof||isRoofMaterial(a.mat))clipOutsideCaves(floor.caves,a);
     if(a.fromBuildingId){traceBuilding(a);ctx.clip();}
-    drawTexturedArea(a.x,a.y,a.w,a.h,a.mat,a.color,a.tile,a.roofPitch,a.roofHeight,a.flowAngle);
+    const shape=isRoofMaterial(a.mat)?effectiveRoofBounds(sc,floor,a):a;
+    drawTexturedArea(shape.x,shape.y,shape.w,shape.h,a.mat,a.color,a.tile,a.roofPitch,a.roofHeight,a.flowAngle);
     ctx.restore();
   });
   drawBrushStrokes(floor);

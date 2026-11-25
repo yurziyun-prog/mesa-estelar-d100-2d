@@ -102,7 +102,10 @@ function changeFloor(delta) {
  const scene=getScene(),level=floorLevel(scene,state.currentFloor);
  const next=floorIndexForLevel(scene,level+delta,state.mode==='architect');
  if(next<0)return;
- state.currentFloor=next;state.selectedWallIdx=null;updateSelectedWallBar();updateFloorLabel();
+ if(next===state.currentFloor)return;
+ state.currentFloor=next;
+ selectedMapObject=null;architectSelections=[];architectSelectionGesture=null;state.selectedWallIdx=null;
+ closeArchitectContextMenu();updateSelectedWallBar();updateFloorLabel();updateArchitectSelectionUI();
 }
 function updateFloorLabel(){
  const label=document.getElementById('floorLabel');
@@ -318,6 +321,11 @@ function applyArchitectAction(wx, wy, isDrag = false) {
       openLockDialog(chest, 'chest');
     }
   } else if (state.tool === 'erase') {
+    const hit=hitArchitectObjectAt(wx,wy);
+    if(!architectShiftHeld&&hit){
+      if(!isDrag||hit.kind!=='areas')floor[hit.kind].splice(hit.index,1);
+      return;
+    }
     if(architectShiftHeld&&eraseStructureWall(floor,wx,wy))return;
     if(eraseCave(floor,wx,wy)||eraseBuilding(getScene(),floor,wx,wy))return;
     if(floor.reliefs)floor.reliefs=floor.reliefs.filter(area=>!pointInArchitectArea(area,wx,wy));
@@ -325,7 +333,10 @@ function applyArchitectAction(wx, wy, isDrag = false) {
       stroke.points=stroke.points.filter(point=>Math.hypot(point.x-wx,point.y-wy)>Math.max(18,stroke.size/2));
     }
     if(floor.brushStrokes)floor.brushStrokes=floor.brushStrokes.filter(stroke=>stroke.points.length);
-    floor.areas = floor.areas.filter(a => !(wx >= a.x && wx <= a.x + a.w && wy >= a.y && wy <= a.y + a.h));
+    if(!isDrag&&architectShiftHeld){
+      const area=floor.areas.findLastIndex(a=>pointInArchitectArea(a,wx,wy));
+      if(area>=0){floor.areas.splice(area,1);return;}
+    }
     floor.props = floor.props.filter(p => Math.hypot(p.x - wx, p.y - wy) > 26);
     floor.chests = floor.chests.filter(c => Math.hypot(c.x - wx, c.y - wy) > 26);
     floor.doors = floor.doors.filter(d => Math.hypot(d.x - wx, d.y - wy) > 26);
