@@ -276,12 +276,13 @@ function drawUpperStairOpening(stair){
  const slab=hasBuiltFloorAt(floor,stair.x,stair.y);
  const shape=stairVisualShape(stair.shape);
  const w=shape==='spiral'?82:65,h=shape==='spiral'?82:100;
+ const traceOpening=()=>{
+   ctx.beginPath();
+   if(shape==='spiral')ctx.arc(0,0,41,0,Math.PI*2);
+   else ctx.rect(-w/2,-h/2,w,h);
+ };
  ctx.save();
- if(shape==='spiral'){
-   ctx.beginPath();ctx.arc(0,0,41,0,Math.PI*2);
- }else{
-   ctx.beginPath();ctx.rect(-w/2,-h/2,w,h);
- }
+ traceOpening();
  ctx.save();ctx.clip();
  // 画出下层的真实结构，不用假台阶遮盖上层的人物。
  const sc=getScene(),current=state.currentFloor;
@@ -321,6 +322,8 @@ function drawUpperStairOpening(stair){
  ctx.fillStyle=slab?'rgba(5,12,22,.24)':'rgba(5,12,22,.10)';
  ctx.fillRect(-w/2,-h/2,w,h);
  ctx.restore();
+ // Canvas keeps the current path even when restoring the drawing state.
+ traceOpening();
  ctx.lineWidth=5;ctx.strokeStyle=slab?'#536574':'#91a3ac';ctx.stroke();
  ctx.lineWidth=2;ctx.strokeStyle='#c2d0d2';ctx.stroke();
  // Near lip provides a visible reference for safe stair descent.

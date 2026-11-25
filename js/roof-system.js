@@ -392,6 +392,24 @@ function roofDoorCutouts(floor,roof,actor){
  return cutouts;
 }
 
+function clipRoofOverhang(floor,roof,actor){
+ if(state.mode!=='player'||!actor||!pointInArchitectArea(roof,actor.x,actor.y))return false;
+ // Relate the roof to the underlying building's walls. Legacy houses store
+ // the enclosure as wall segments and floors, rather than a building object.
+ const footprint=(floor.buildings||[]).find(b=>pointInArchitectArea(b,roof.x+roof.w/2,roof.y+roof.h/2))
+   ||roofSupportingBounds(floor);
+ if(!footprint||pointInArchitectArea(footprint,actor.x,actor.y))return false;
+ const x=Math.max(roof.x,footprint.x),y=Math.max(roof.y,footprint.y);
+ const right=Math.min(roof.x+roof.w,footprint.x+footprint.w);
+ const bottom=Math.min(roof.y+roof.h,footprint.y+footprint.h);
+ if(right<=x||bottom<=y||!pointInArchitectArea({x,y,w:right-x,h:bottom-y},roof.x+roof.w/2,roof.y+roof.h/2))return false;
+ ctx.beginPath();
+ if(footprint.cornerRadius>0)ctx.roundRect(x,y,right-x,bottom-y,Math.min(footprint.cornerRadius,(right-x)/2,(bottom-y)/2));
+ else ctx.rect(x,y,right-x,bottom-y);
+ ctx.clip();
+ return true;
+}
+
 function clipRoofAtDoors(floor,roof,actor){
  for(const gap of roofDoorCutouts(floor,roof,actor)){
    ctx.beginPath();
@@ -448,7 +466,7 @@ function drawExternalBuildingTop(){
   if(fade.alpha<.015)continue;
   ctx.save();ctx.globalAlpha=fade.alpha;
   clipOutsideCaves(scene.floors[actor.floor].caves,area);
-  clipRoofAtDoors(viewFloor,area,actor);
+  if(!clipRoofOverhang(viewFloor,area,actor))clipRoofAtDoors(viewFloor,area,actor);
   drawRoofSurface(area.x,area.y,area.w,area.h,area.mat,area.roofPitch,area.roofHeight);
   drawRoofOpenings(floor,area);
   ctx.restore();
