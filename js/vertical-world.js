@@ -60,9 +60,7 @@ function drawStructureStorey(scene,index){
  const below=structureBelow(scene,index);
  if(!below)return;
  drawBuildingRoofs(below,scene.floors.indexOf(below),true);
- if(below.level>=0){
-   for(const cave of below.caves||[])if(!cave.subsurface&&!caveUnderSibling(scene,below,cave))drawCaveMountain(cave,cave.roof||cave.wall,false);
- }
+ drawCaveRoofGroups(below,scene.floors.indexOf(below),true);
 }
 
 function drawOutdoorTopProps(scene,index){
@@ -270,28 +268,62 @@ function initVerticalWorld(){
 }
 
 // Boundaries covered by another room or cave are internal to the combined space.
+const caveContacts=new WeakMap();
+function cavesTouch(one,other){
+ let peers=caveContacts.get(one.points);
+ if(!peers){peers=new WeakMap();caveContacts.set(one.points,peers);}
+ if(peers.has(other.points))return peers.get(other.points);
+ const contacts=(a,b)=>a.points.some(p=>insideCave(b,p.x,p.y)||closestCaveBoundary(b,p.x,p.y).distance<.75);
+ let result=contacts(one,other)||contacts(other,one);
+ if(!result)result=one.points.some((a,i)=>{
+   const b=one.points[(i+1)%one.points.length];
+   return other.points.some((c,j)=>{
+     const d=other.points[(j+1)%other.points.length];
+     const cross=(p,q,r)=>(q.x-p.x)*(r.y-p.y)-(q.y-p.y)*(r.x-p.x);
+     return cross(a,b,c)*cross(a,b,d)<0&&cross(c,d,a)*cross(c,d,b)<0;
+   });
+ });
+ peers.set(other.points,result);
+ return result;
+}
+
 function connectedCaves(floor,first){
  const result=[first];
  for(let i=0;i<result.length;i++){
    const one=result[i];
    for(const other of floor.caves||[]){
      if(result.includes(other))continue;
-     if(one.points.some(p=>insideCave(other,p.x,p.y))||other.points.some(p=>insideCave(one,p.x,p.y)))result.push(other);
+     if(cavesTouch(one,other))result.push(other);
    }
  }
  return result;
 }
 
-function clipCaveInterior(floor,first){
+function traceCaveGroup(caves){
  ctx.beginPath();
- for(const cave of connectedCaves(floor,first)){
+ for(const cave of caves){
    const area=cave.points.reduce((sum,a,i)=>{const b=cave.points[(i+1)%cave.points.length];return sum+a.x*b.y-b.x*a.y;},0);
    const points=area<0?cave.points.slice().reverse():cave.points;
    ctx.moveTo(points[0].x,points[0].y);
    for(const p of points.slice(1))ctx.lineTo(p.x,p.y);
    ctx.closePath();
  }
+}
+function clipCaveInterior(floor,first){
+ traceCaveGroup(connectedCaves(floor,first));
  ctx.clip();
+}
+
+function sharedCaveBoundary(floor,owner,x,y){
+ const adjacent=(floor.caves||[]).filter(other=>other!==owner&&cavesTouch(owner,other));
+ if(!adjacent.length)return false;
+ return adjacent.some(other=>{
+   if(insideCave(other,x,y)&&closestCaveBoundary(other,x,y).distance>1)return true;
+   if(closestCaveBoundary(other,x,y).distance>1.5)return false;
+   const hit=closestCaveBoundary(owner,x,y),dx=-Math.sin(hit.angle)*2,dy=Math.cos(hit.angle)*2;
+   return [[dx,dy],[-dx,-dy]].every(([ox,oy])=>
+     insideCave(owner,x+ox,y+oy)||insideCave(other,x+ox,y+oy));
+ });
 }
 
 function mergedBoundary(floor,owner,x,y){

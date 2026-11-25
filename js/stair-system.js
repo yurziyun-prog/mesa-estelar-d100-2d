@@ -1,7 +1,7 @@
 // Sistema de escadas arquitetônicas do Mesa Estelar 2D.
 // Níveis absolutos: -1 = 1º subterrâneo, 0 = térreo, 1 = 2º andar.
 // Índices em scene.floors permanecem estáveis para não danificar personagens salvos.
-const STAIR_SHAPES=['straight','spiral','open','continuous'];
+const STAIR_SHAPES=['straight','spiral','open','continuous','caveRamp'];
 let stairTransferSequence=0;
 function ensureFloorLevels(scene){
  if(!scene?.floors)return;

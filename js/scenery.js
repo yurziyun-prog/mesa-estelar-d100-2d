@@ -42,13 +42,16 @@ function drawSceneryProp(prop){
 function curvedWallPoints(start,x,y,reverse){
  const dx=x-start.x,dy=y-start.y,length=Math.hypot(dx,dy);
  if(length<12)return [start];
- const bend=reverse?-.77:.77;
- const controlX=(start.x+x)/2-dy*bend,controlY=(start.y+y)/2+dx*bend;
- const count=Math.min(72,Math.max(8,Math.ceil(length/12)));
- return Array.from({length:count+1},(_,i)=>{
-   const t=i/count,s=1-t;
-   return {x:s*s*start.x+2*s*t*controlX+t*t*x,y:s*s*start.y+2*s*t*controlY+t*t*y};
+ const cx=(start.x+x)/2,cy=(start.y+y)/2,radius=length/2;
+ const startAngle=Math.atan2(start.y-cy,start.x-cx);
+ const direction=reverse?1:-1;
+ const count=Math.min(96,Math.max(10,Math.ceil(Math.PI*radius/10)));
+ const points=Array.from({length:count+1},(_,i)=>{
+   const angle=startAngle+direction*Math.PI*i/count;
+   return {x:cx+Math.cos(angle)*radius,y:cy+Math.sin(angle)*radius};
  });
+ points[0]=start;points[count]={x,y};
+ return points;
 }
 
 function addCurvedWall(floor,points){

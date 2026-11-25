@@ -119,7 +119,7 @@ function makePlantCanopy(type){
 
 function beginPlantTransform(p){
  ctx.save();
- ctx.translate(p.x,p.y);ctx.rotate((p.rot||0)*Math.PI/2);
+ ctx.translate(p.x,p.y);ctx.rotate((p.rot||0)*Math.PI/2+(p.freeAngle||0));
  ctx.scale(p.scale||1,p.scale||1);
 }
 

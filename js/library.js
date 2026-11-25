@@ -251,6 +251,9 @@ function refreshArchitectProperties(){
  if(tileSelected)syncTileOptions();
  document.getElementById('constructionOptions')?.classList.toggle('hidden',!kind);
  document.getElementById('wallThicknessOptions')?.classList.toggle('hidden',kind!=='wall');
+ const wallShape=document.getElementById('wallShape');
+ wallShape.value=state.tool==='curvedWall'?'curvedWall':'wall';
+ document.getElementById('wallShapeOptions').classList.toggle('hidden',!['wall','curvedWall'].includes(state.tool));
  document.getElementById('stairShapeOptions')?.classList.toggle('hidden',kind!=='stairs');
  const checkbox=document.getElementById('wallColorException');if(checkbox)checkbox.style.display=kind==='wall'?'flex':'none';
  const check=document.getElementById('wallColorEnabled');if(check)check.checked=Boolean(state.wallCustomColor||item?.color);

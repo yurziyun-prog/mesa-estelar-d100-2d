@@ -422,6 +422,11 @@ Solo Corrompido|腐化地表
 Escolha um trecho reto e livre da parede.|请选择一段空闲的直墙。
 Caverna|洞穴
 Solo interno|洞内地形
+Forma da parede|墙体形状
+Parede reta|直墙
+Parede curva|弧形墙
+Rampa natural de caverna|洞穴岩坡
+Girar 90°|旋转 90 度
 Ações no cenário|地图互动
 Inspecionar|查看硬度与 PV
 Disparar pistola|用手枪射击

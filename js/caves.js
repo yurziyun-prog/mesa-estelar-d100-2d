@@ -26,8 +26,11 @@ function caveWallBlocks(floor,x,y){
    const outside=!insideCave(cave,x,y);
    const foot=outside&&floor.level>=0&&!cave.subsurface?CAVE_FOOT_MARGIN:0;
    const clearance=Math.max(cave.thickness/2,foot)+10;
-   return caveWallPieces(cave,true).some(([a,b])=>
-     distToSegment(x,y,a.x,a.y,b.x,b.y)<clearance);
+   return caveWallPieces(cave,true).some(([a,b])=>{
+     if(distToSegment(x,y,a.x,a.y,b.x,b.y)>=clearance)return false;
+     const p=projectOnSegment(x,y,a,b);
+     return !sharedCaveBoundary(floor,cave,p.x,p.y);
+   });
  });
 }
 
@@ -68,7 +71,7 @@ function finishCaveTool(floor,x,y){
    }
    const radius=currentCaveBrushRadius();
    sampleCaveBrush(dragStart.points,x,y,4);
-   const cave=buildPaintedCave(dragStart.points,radius);
+   const cave=buildPaintedCave(dragStart.points,radius,floor);
    if(cave)placeCaveStack(getScene(),state.currentFloor,cave,Number(document.getElementById('caveLevels').value)||1,
      Number(document.getElementById('caveLevelDirection').value)||-1);
    return;
@@ -94,7 +97,7 @@ function placeCaveStack(scene,index,cave,levels,direction){
    (target.caves ||= []).push({...cave,stackId:id,subsurface:at<0,entrance:i===0?cave.entrance:-1,openings:i===0?caveOpenings(cave):[]});
    for(const point of cave.points)expandFloorToInclude(target,point.x,point.y);
    if(i>0){
-     const pair=createStairPair(scene,at-direction,at,x+(i%2?-42:42),y,'open','stone','normal');
+     const pair=createStairPair(scene,at-direction,at,x+(i%2?-42:42),y,'caveRamp','stone','normal');
      pair.origin.caveStackId=pair.destination.caveStackId=id;
    }
  }
@@ -119,26 +122,36 @@ function drawCaveSurface(cave,material){
  ctx.restore();
 }
 
-function drawCaveBase(cave,floor=null){
- drawCaveSurface(cave,cave.ground);
- ctx.save();
- ctx.lineJoin='round';ctx.lineCap='round';
+function traceExposedCaveEdges(caves,floor,useOpenings){
  ctx.beginPath();
- for(const [a,b] of caveWallPieces(cave,false)){
+ for(const cave of caves){
+ for(const [a,b] of useOpenings?caveWallPieces(cave,false):cave.points.map((p,i)=>[p,cave.points[(i+1)%cave.points.length]])){
    const n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/10));
    for(let i=0;i<n;i++){
      const point=t=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t});
      const m=point((i+.5)/n);
-     if(floor&&mergedBoundary(floor,cave,m.x,m.y))continue;
+     if(floor&&(mergedBoundary(floor,cave,m.x,m.y)||sharedCaveBoundary(floor,cave,m.x,m.y)))continue;
      const p=point(i/n),q=point((i+1)/n);
      ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);
    }
  }
+ }
+}
+
+function exposedCaveOpenings(cave,floor){
+ return caveOpenings(cave).filter(o=>!floor||!sharedCaveBoundary(floor,cave,o.x,o.y));
+}
+
+function drawCaveBase(cave,floor=null){
+ drawCaveSurface(cave,cave.ground);
+ ctx.save();
+ ctx.lineJoin='round';ctx.lineCap='round';
+ traceExposedCaveEdges([cave],floor,true);
  ctx.strokeStyle='rgba(0,0,0,.4)';ctx.lineWidth=cave.thickness+9;ctx.stroke();
  ctx.lineWidth=cave.thickness;ctx.strokeStyle=getTerrainPattern(ctx,cave.wall);
  ctx.stroke();
  ctx.restore();
- for(const opening of caveOpenings(cave))drawCaveOpening(opening);
+ for(const opening of exposedCaveOpenings(cave,floor))drawCaveOpening(opening);
 }
 
 function overlapsCaveMountain(cave,rect){
@@ -207,8 +220,8 @@ function clipOutsideCaves(caves,bounds){
  }
 }
 
-function drawCaveApron(cave){
- for(const door of caveOpenings(cave)){
+function drawCaveApron(cave,floor=null){
+ for(const door of exposedCaveOpenings(cave,floor)){
    if(door.kind!=='door')continue;
    ctx.save();ctx.translate(door.x,door.y);ctx.rotate(door.angle||0);
    const radius=Math.max(48,door.width)/2;
@@ -218,47 +231,54 @@ function drawCaveApron(cave){
  }
 }
 
-function drawCaveMountain(cave,roof,showOpenings=true){
+function drawCaveMountain(cave,roof,showOpenings=true,group=[cave],floor=null){
  const b=caveBounds(cave);
  ctx.save();
- ctx.lineJoin='round';
+ ctx.lineJoin='round';ctx.lineCap='round';
  ctx.save();ctx.translate(3,5);
- cavePath(cave.points,true);
+ traceCaveGroup(group);
  ctx.fillStyle='rgba(7,10,13,.42)';ctx.fill();
+ traceExposedCaveEdges(group,floor,false);
  ctx.strokeStyle='rgba(7,10,13,.42)';ctx.lineWidth=CAVE_FOOT_MARGIN*2;ctx.stroke();
  ctx.restore();
  for(const [margin,depth] of CAVE_MOUNTAIN_TIERS){
-   cavePath(cave.points,true);
    const texture=mesaTerrainPaint(roof)||getTerrainPattern(ctx,roof);
    const light=ctx.createLinearGradient(b.x,b.y,b.x+b.w,b.y+b.h);
    light.addColorStop(0,'rgba(218,206,181,'+(.29*(1-depth)+.11)+')');
    light.addColorStop(.52,'rgba(48,49,52,.07)');
    light.addColorStop(1,'rgba(12,15,22,'+(.46*depth+.19)+')');
    if(margin){
+     traceExposedCaveEdges(group,floor,false);
      ctx.lineWidth=margin*2+2;ctx.strokeStyle='rgba(26,28,34,.56)';ctx.stroke();
      ctx.lineWidth=margin*2;ctx.strokeStyle=texture;ctx.stroke();
      ctx.strokeStyle=light;ctx.stroke();
    }
+   traceCaveGroup(group);
    ctx.fillStyle=texture;ctx.fill();
    ctx.fillStyle=light;ctx.fill();
  }
+ traceExposedCaveEdges(group,floor,false);
  ctx.lineWidth=2;ctx.strokeStyle='rgba(26,28,34,.68)';ctx.stroke();
- if(showOpenings)for(const entrance of caveOpenings(cave))drawCaveOpening(entrance);
+ if(showOpenings)for(const part of group)for(const entrance of exposedCaveOpenings(part,floor))drawCaveOpening(entrance);
  ctx.restore();
 }
 
-function drawCaveRoofs(floor,index){
- const actor=activeActor();
+function drawCaveRoofGroups(floor,index,onTop=false){
+ if(floor.level<0||(!onTop&&state.mode==='architect'))return;
+ const scene=getScene(),actor=activeActor(),drawn=new Set();
+ const visible=cave=>!cave.subsurface&&!caveUnderSibling(scene,floor,cave);
  for(const cave of floor.caves||[]){
-  const roof=cave.roof||cave.wall||'caveStone';
-  if(state.mode==='architect'||floor.level<0||cave.subsurface||caveUnderSibling(getScene(),floor,cave))continue;
-  const person=actor?.floor===index&&actor.sceneId===state.activeSceneId?actor:null;
-  if(person&&insideCave(cave,person.x,person.y))continue;
-  ctx.save();
-  if(floor.level>=0)drawCaveMountain(cave,roof);
-  else drawCaveSurface(cave,roof);
-  ctx.restore();
+   if(drawn.has(cave)||!visible(cave))continue;
+   const group=connectedCaves(floor,cave).filter(visible);
+   group.forEach(part=>drawn.add(part));
+   if(!onTop&&actor?.floor===index&&actor.sceneId===state.activeSceneId&&
+      group.some(part=>insideCave(part,actor.x,actor.y)))continue;
+   drawCaveMountain(cave,cave.roof||cave.wall||'caveStone',!onTop,group,{...floor,caves:group});
  }
+}
+
+function drawCaveRoofs(floor,index){
+ drawCaveRoofGroups(floor,index);
 }
 
 function eraseCave(floor,x,y){

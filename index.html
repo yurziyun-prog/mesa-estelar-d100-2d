@@ -92,11 +92,9 @@
         </div>
         <div class="tool-grid">
           <button class="tool-btn" data-tool="relief" onclick="selectTool('relief')">Relevo em metros</button>
-          <button class="tool-btn" data-tool="curvedWall" onclick="selectTool('curvedWall')">Parede curva</button>
           <button class="tool-btn" data-tool="building" onclick="selectBuildingKind()">🏠 Edificação / Sala</button>
           <button class="tool-btn" onclick="openTerrainDialog(false)">Terreno base</button>
           <button class="tool-btn" data-tool="move" onclick="selectTool('move')">👆 Selecionar / Arrastar</button>
-          <button class="tool-btn" onclick="rotateArchitectSelection()">Girar 90°</button>
           <button class="tool-btn" onclick="selectTool('move');document.getElementById('selectedWallBar').scrollIntoView({block:'nearest'})">📐 Alinhar</button>
           <button class="tool-btn" data-tool="erase" onclick="selectTool('erase')">🧹 Apagar</button>
           <button class="tool-btn" data-tool="brush" onclick="openArchitectLibrary('brush')">🖌️ Pincel</button>
@@ -415,6 +413,11 @@
             </select>
           </label>
           <div id="wallThicknessOptions" class="hidden">
+            <label id="wallShapeOptions" class="library-hint">Forma da parede
+              <select id="wallShape" class="ctrl" onchange="selectTool(this.value)">
+                <option value="wall">Parede reta</option><option value="curvedWall">Parede curva</option>
+              </select>
+            </label>
             <label class="library-hint">Espessura: <output id="wallThicknessLabel">16</output>
               <input id="wallThickness" type="range" min="8" max="40" step="2" value="16" oninput="setWallThickness(Number(this.value))" style="width:100%"/>
             </label>
@@ -423,6 +426,7 @@
             <label class="library-hint">Formato
               <select id="stairShape" class="ctrl" onchange="changeStairShape(this.value)">
                 <option value="straight">Reta / normal</option><option value="spiral">Espiral</option><option value="open">Vazada (frestas)</option><option value="continuous">Contínua · vários andares</option>
+                <option value="caveRamp">Rampa natural de caverna</option>
               </select>
             </label>
           </div>
@@ -544,18 +548,18 @@
 <script src="js/d100.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/state.js?v=cave-entry-20261125" defer></script>
 <script src="js/roof-system.js?v=cave-courtyard-20261126" defer></script>
-<script src="js/stair-system.js?v=vertical-20261125" defer></script>
+<script src="js/stair-system.js?v=cave-joins-20261126" defer></script>
 <script src="js/editor.js?v=vertical-20261125" defer></script>
-<script src="js/library.js?v=scenery-20261125" defer></script>
+<script src="js/library.js?v=cave-joins-20261126" defer></script>
 <script src="js/gameplay.js?v=material-20261125" defer></script>
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/textures.js?v=cave-roof-layer-20261126" defer></script>
-<script src="js/architect-selection.js?v=terrain-finishes-20261124" defer></script>
+<script src="js/textures.js?v=cave-joins-20261126" defer></script>
+<script src="js/architect-selection.js?v=cave-joins-20261126" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=material-20261125" defer></script>
-<script src="js/i18n.js?v=material-20261125" defer></script>
+<script src="js/i18n.js?v=cave-joins-20261126" defer></script>
 <script src="js/cloud-bank.js?v=firebase-browser-key-20261125" defer></script>
 <script src="js/terrain-tools.js?v=scenery-20261125" defer></script>
 <script src="js/building.js?v=cave-roof-rings-20261126" defer></script>
@@ -563,11 +567,11 @@
 <script src="js/mesa-imports.js?v=terrain-finishes-20261124" defer></script>
 <script src="js/terrain-finishes.js?v=scenery-20261125" defer></script>
 <script src="js/geology.js?v=vertical-20261125" defer></script>
-<script src="js/cave-brush.js?v=vertical-20261125" defer></script>
-<script src="js/caves.js?v=cave-courtyard-20261126" defer></script>
-<script src="js/plants.js?v=cave-massif-20261125" defer></script>
-<script src="js/scenery.js?v=vertical-20261125" defer></script>
-<script src="js/vertical-world.js?v=material-20261125" defer></script>
+<script src="js/cave-brush.js?v=cave-joins-20261126" defer></script>
+<script src="js/caves.js?v=cave-joins-20261126" defer></script>
+<script src="js/plants.js?v=cave-joins-20261126" defer></script>
+<script src="js/scenery.js?v=cave-joins-20261126" defer></script>
+<script src="js/vertical-world.js?v=cave-joins-20261126" defer></script>
 <script src="js/material-damage.js?v=material-20261125" defer></script>
 <script src="js/main.js?v=cave-roof-rings-20261126" defer></script>
 <dialog id="lockDialog" class="lock-dialog">

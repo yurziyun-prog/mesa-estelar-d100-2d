@@ -343,6 +343,19 @@ function drawArchitecturalStair(stair,overlay=false){
  };
  const [base,lit,edge]=materials[mat]||materials.wood;
  ctx.save();ctx.translate(stair.x,stair.y);ctx.rotate((stair.rot||0)*Math.PI/2);
+ if(shape==='caveRamp'){
+   if(!overlay){
+     const shade=ctx.createLinearGradient(0,-52,0,52);
+     shade.addColorStop(0,up?'#798389':'#303840');shade.addColorStop(1,up?'#303840':'#798389');
+     ctx.beginPath();ctx.moveTo(-24,-53);ctx.lineTo(21,-48);ctx.lineTo(29,43);
+     ctx.lineTo(15,52);ctx.lineTo(-26,46);ctx.closePath();
+     ctx.fillStyle=shade;ctx.fill();ctx.strokeStyle='#282e36';ctx.lineWidth=4;ctx.stroke();
+     ctx.strokeStyle='rgba(202,209,210,.28)';ctx.lineWidth=1.5;
+     for(let y=-36;y<=38;y+=17){ctx.beginPath();ctx.moveTo(-18,y);ctx.lineTo(0,y-4);ctx.lineTo(19,y+2);ctx.stroke();}
+     ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#eadbb9';ctx.font='bold 15px system-ui';ctx.fillText(up?'↑':'↓',0,0);
+   }
+   ctx.restore();return;
+ }
  if(stair.dir==='down'){
    if(!overlay)drawUpperStairOpening(stair);
    ctx.restore();return;
@@ -537,7 +550,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
   if(!interior&&!isBelow)drawStructureStorey(sc,floorIdx);
   drawReliefs(floor);
   for(const cave of interior?connectedCaves(floor,interior):(floor.caves||[])){
-    if(!interior)drawCaveApron(cave);
+    if(!interior)drawCaveApron(cave,floor);
     drawCaveBase(cave,floor);
   }
   if(!interior)for(const building of floor.buildings||[])drawBuildingBase(building,floor);
@@ -1006,6 +1019,10 @@ function drawSleepingFurniture(p){
 }
 function drawProp(p) {
   if(drawPlant(p))return;
+  if(p.freeAngle){
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.freeAngle);ctx.translate(-p.x,-p.y);
+    drawProp({...p,freeAngle:0});ctx.restore();return;
+  }
   if(p.scale&&p.scale!==1){
     ctx.save();ctx.translate(p.x,p.y);ctx.scale(p.scale,p.scale);ctx.translate(-p.x,-p.y);
     drawProp({...p,scale:1});ctx.restore();return;

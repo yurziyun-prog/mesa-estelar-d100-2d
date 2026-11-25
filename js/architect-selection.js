@@ -97,6 +97,32 @@ function updateArchitectSelectionUI(){
 function selectionSnapshot(){
  return architectSelections.map(ref=>({ref,original:structuredClone(objectForSelection(ref))})).filter(e=>e.original);
 }
+function canRotateSelectionFreely(){
+ const floor=getScene().floors[state.currentFloor];
+ return architectSelections.length>0&&architectSelections.every(ref=>{
+   if(ref.kind==='props')return !isPortableLadder(objectForSelection(ref));
+   if(ref.kind!=='walls')return false;
+   const wall=objectForSelection(ref);
+   return wall&&!['doors','windows'].some(kind=>floor[kind].some(o=>openingTouchesWall(o,kind,wall)));
+ });
+}
+function selectionRotateHandle(b){
+ return {x:b.x+b.w/2,y:b.y+b.h+28/state.camera.zoom};
+}
+function applyFreeSelectionRotation(gesture,angle){
+ const {cx,cy}=gesture,c=Math.cos(angle),s=Math.sin(angle);
+ const turn=(x,y)=>[cx+(x-cx)*c-(y-cy)*s,cy+(x-cx)*s+(y-cy)*c];
+ for(const {ref,original} of gesture.items){
+   const item=objectForSelection(ref);if(!item)continue;
+   if(ref.kind==='walls'){
+     [item.x1,item.y1]=turn(original.x1,original.y1);
+     [item.x2,item.y2]=turn(original.x2,original.y2);
+   }else{
+     [item.x,item.y]=turn(original.x,original.y);
+     item.freeAngle=(original.freeAngle||0)+angle;
+   }
+ }
+}
 function handleArchitectSelection(wx,wy,isDrag){
  if(!isDrag){
   closeArchitectContextMenu();
@@ -114,6 +140,14 @@ function handleArchitectSelection(wx,wy,isDrag){
    return;
   }
   const b=architectSelectionBounds();
+  if(b&&canRotateSelectionFreely()){
+   const handle=selectionRotateHandle(b);
+   if(Math.hypot(wx-handle.x,wy-handle.y)<13/state.camera.zoom){
+     const cx=b.x+b.w/2,cy=b.y+b.h/2;
+     architectSelectionGesture={mode:'rotate',cx,cy,start:Math.atan2(wy-cy,wx-cx),items:selectionSnapshot()};
+     return;
+   }
+  }
   if(b&&Math.hypot(wx-(b.x+b.w),wy-(b.y+b.h))<Math.max(11,12/state.camera.zoom)){
    architectSelectionGesture={mode:'resize',x:wx,y:wy,bounds:b,items:selectionSnapshot()};
    return;
@@ -123,8 +157,8 @@ function handleArchitectSelection(wx,wy,isDrag){
    // Clique simples seleciona o piso; arrasto começa nova seleção retangular.
    architectSelections=[];
    architectSelectionGesture={mode:'marquee',x:wx,y:wy,x2:wx,y2:wy,clickTarget:hit};
-  }else if(hit){
-   if(!already)architectSelections=expandArchitectSelection([hit]);
+  }else if(hit||(b&&rectContains(b,wx,wy))){
+   if(hit&&!already)architectSelections=expandArchitectSelection([hit]);
    architectSelectionGesture={mode:'move',x:wx,y:wy,items:selectionSnapshot()};
   }else{
    architectSelections=[];
@@ -135,6 +169,12 @@ function handleArchitectSelection(wx,wy,isDrag){
  }
  const gesture=architectSelectionGesture;if(!gesture||gesture.mode==='ctrl-click')return;
  if(gesture.mode==='marquee'){gesture.x2=wx;gesture.y2=wy;return;}
+ if(gesture.mode==='rotate'){
+  let angle=Math.atan2(wy-gesture.cy,wx-gesture.cx)-gesture.start;
+  if(architectShiftHeld)angle=Math.round(angle/(Math.PI/12))*Math.PI/12;
+  applyFreeSelectionRotation(gesture,angle);
+  return;
+ }
  if(gesture.mode==='move'){
   const dx=wx-gesture.x,dy=wy-gesture.y;
   for(const {ref,original} of gesture.items){
@@ -175,6 +215,10 @@ function handleArchitectSelection(wx,wy,isDrag){
 function finishArchitectSelection(wx,wy){
  const g=architectSelectionGesture;architectSelectionGesture=null;
  if(!g)return;
+ if(g.mode==='rotate'){
+  const angle=Math.atan2(wy-g.cy,wx-g.cx)-g.start;
+  applyFreeSelectionRotation(g,architectShiftHeld?Math.round(angle/(Math.PI/12))*Math.PI/12:angle);
+ }
  if(g.mode==='marquee'){
   const b={x:Math.min(g.x,wx),y:Math.min(g.y,wy),w:Math.abs(wx-g.x),h:Math.abs(wy-g.y)};
   if(b.w>3&&b.h>3){
@@ -210,6 +254,13 @@ function drawArchitectSelectionHUD(){
   ctx.fillStyle='#f7e4b7';ctx.fillText(measure,b.x+6/state.camera.zoom,b.y-7/state.camera.zoom);
   if(g?.mode!=='marquee'){
    const size=10/state.camera.zoom;ctx.fillStyle='#f1c562';ctx.fillRect(b.x+b.w-size/2,b.y+b.h-size/2,size,size);
+   if(canRotateSelectionFreely()){
+     const h=selectionRotateHandle(b);
+     ctx.beginPath();ctx.moveTo(h.x,b.y+b.h);ctx.lineTo(h.x,h.y);ctx.stroke();
+     ctx.beginPath();ctx.arc(h.x,h.y,10/state.camera.zoom,0,Math.PI*2);ctx.fill();
+     ctx.fillStyle='#1a2029';ctx.textAlign='center';ctx.textBaseline='middle';
+     ctx.fillText('↻',h.x,h.y);
+   }
   }
  }
  ctx.restore();
@@ -310,10 +361,7 @@ function openArchitectContextMenu(sx,sy,clientX,clientY){
  const grouped=architectSelections.some(ref=>Boolean(objectForSelection(ref)?.archGroupId));
  const single=architectSelections.length===1?architectSelections[0]:null;
  const wall=clicked?.kind==='walls'?objectForSelection(clicked):null;
- const canRotate=architectSelections.some(ref=>['props','walls','doors','windows'].includes(ref.kind)||
-   (ref.kind==='areas'&&isBridgeMaterial(objectForSelection(ref)?.mat)));
  const items=[
-  ...(canRotate?[['Girar 90°',rotateArchitectSelection]]:[]),
   ...(wall?[['Estender parede +3 m',()=>{closeArchitectContextMenu();extendWallUp(wall);}]]:[]),
   ...(single&&['windows','doors','chests','props','walls','stairs'].includes(single.kind)?[['✏️ Editar propriedades',()=>{closeArchitectContextMenu();editArchitectObject(single);}]]:[]),
   ...(architectSelections.length>1?[['🔗 Agrupar',architectGroupSelection]]:[]),

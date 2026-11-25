@@ -72,12 +72,13 @@ function closestCaveBoundary(cave,x,y){
  return best;
 }
 
-function buildPaintedCave(points,radius){
+function buildPaintedCave(points,radius,floor=null){
  const read=id=>document.getElementById(id).value;
  const cave={points:caveBrushContour(points,radius),entrance:-1,thickness:state.wallWidth||16,
    ground:read('caveGround'),wall:read('caveWall'),roof:read('caveRoof')||read('caveWall'),openings:[]};
  if(!cave.points.length)return null;
  const first=points[0],next=points[1]||{x:first.x+1,y:first.y};
+ if((floor?.caves||[]).some(old=>insideCave(old,first.x,first.y)||closestCaveBoundary(old,first.x,first.y).distance<2))return cave;
  const dir=Math.atan2(next.y-first.y,next.x-first.x);
  const entrance=closestCaveBoundary(cave,first.x-Math.cos(dir)*radius,first.y-Math.sin(dir)*radius);
  cave.openings.push({x:entrance.x,y:entrance.y,angle:entrance.angle,kind:'door',width:67,open:true});
@@ -169,7 +170,7 @@ function caveEntranceGround(floor,x,y){
 
 function interactCaveDoor(floor,entity){
  for(const cave of floor.caves||[]){
-   const door=caveOpenings(cave).find(opening=>opening.kind==='door'&&Math.hypot(opening.x-entity.x,opening.y-entity.y)<44);
+   const door=exposedCaveOpenings(cave,floor).find(opening=>opening.kind==='door'&&Math.hypot(opening.x-entity.x,opening.y-entity.y)<44);
    if(!door)continue;
    if(!door.open){
      door.open=true;
