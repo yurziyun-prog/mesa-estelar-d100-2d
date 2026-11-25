@@ -136,7 +136,7 @@ function drawBuildingBase(b,floor,preview=false) {
 function drawBuildingRoofs(floor,index,onTop=false) {
   const actor=activeActor();
   for(const b of floor.buildings||[]){
-    if(!b.hasRoof||(!onTop&&caveMountainMasksRoof(floor,b)))continue;
+    if(!b.hasRoof||roofHiddenByMountain(b)||(!onTop&&caveMountainMasksRoof(floor,b)))continue;
     if(state.mode==='gm'&&!showGmBuildingRoofs)continue;
     if(state.mode==='architect'&&!onTop)continue;
     if(state.mode==='player'&&actor?.floor===index&&actor.sceneId===state.activeSceneId&&buildingDistance(actor.x,actor.y,b)<0)continue;

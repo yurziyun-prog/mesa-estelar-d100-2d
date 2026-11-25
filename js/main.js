@@ -278,6 +278,8 @@ function updateSimulation() {
   }
 }
 
+let roofViewFloors=null;
+
 function render() {
   const sc = getScene();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -290,6 +292,19 @@ function render() {
   const visible=sc.floors.map((floor,i)=>({i,level:floor.level}))
     .filter(item=>item.level<=currentLevel)
     .sort((a,b)=>a.level-b.level);
+  // All world roof draws share this guard, including terrain and projected storeys.
+  roofViewFloors=state.mode==='architect'?null:visible
+    .filter(entry=>entry.level>=currentLevel-1)
+    .map(entry=>sc.floors[entry.i]);
+  try {
+    renderMapSurfaces(sc,visible,currentLevel,interior);
+  } finally {
+    roofViewFloors=null;
+  }
+  drawMapOverlays(sc,interior);
+}
+
+function renderMapSurfaces(sc,visible,currentLevel,interior){
   for(const entry of visible){
     const f=entry.i,isBelow=f!==state.currentFloor;
     if(interior&&isBelow)continue;
@@ -343,6 +358,9 @@ function render() {
   }
 
   if(!interior)drawExternalBuildingTop();
+}
+
+function drawMapOverlays(sc,interior){
   const ambientColors = {
     dawn: 'rgba(255, 160, 90, 0.13)',
     day: 'rgba(0, 0, 0, 0)',

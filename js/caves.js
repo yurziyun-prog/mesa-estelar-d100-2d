@@ -135,10 +135,20 @@ function drawCaveBase(cave,floor=null){
  for(const opening of caveOpenings(cave))drawCaveOpening(opening);
 }
 
-// Test the rendered mountain silhouette, including its overhang.
+const CAVE_MOUNTAIN_RINGS=[[1.08,1],[.91,.8],[.70,.58],[.46,.34]];
+function caveMountainRing(cave,bounds,scale,offsetX=0,offsetY=0){
+ const cx=bounds.x+bounds.w/2,cy=bounds.y+bounds.h/2;
+ return cave.points.map(p=>({x:cx+(p.x-cx)*scale+offsetX,y:cy+(p.y-cy)*scale+offsetY}));
+}
+
 function overlapsCaveMountain(cave,rect){
- const b=caveBounds(cave),cx=b.x+b.w/2,cy=b.y+b.h/2;
- const outline={points:cave.points.map(p=>({x:cx+(p.x-cx)*1.08,y:cy+(p.y-cy)*1.08}))};
+ const bounds=caveBounds(cave);
+ return CAVE_MOUNTAIN_RINGS.some(([scale])=>polygonOverlapsRoof(
+   caveMountainRing(cave,bounds,scale,-9*(1-scale),-13*(1-scale)),rect));
+}
+
+function polygonOverlapsRoof(points,rect){
+ const outline={points};
  const {x,y,w,h}=rect;
  if(outline.points.some(p=>pointInArchitectArea(rect,p.x,p.y)))return true;
  if([[x,y],[x+w,y],[x,y+h],[x+w,y+h]].some(([px,py])=>insideCave(outline,px,py)))return true;
@@ -183,15 +193,13 @@ function drawCaveApron(cave){
 }
 
 function drawCaveMountain(cave,roof,showOpenings=true){
- const b=caveBounds(cave),cx=b.x+b.w/2,cy=b.y+b.h/2;
+ const b=caveBounds(cave);
  ctx.save();
  ctx.lineJoin='round';
- const ring=(scale,offsetX=0,offsetY=0)=>cave.points.map(p=>({
-   x:cx+(p.x-cx)*scale+offsetX,y:cy+(p.y-cy)*scale+offsetY
- }));
+ const ring=(scale,x,y)=>caveMountainRing(cave,b,scale,x,y);
  cavePath(ring(1.12,7,10),true);
  ctx.fillStyle='rgba(7,10,13,.48)';ctx.fill();
- for(const [scale,depth] of [[1.08,1],[.91,.8],[.70,.58],[.46,.34]]){
+ for(const [scale,depth] of CAVE_MOUNTAIN_RINGS){
    cavePath(ring(scale,-9*(1-scale),-13*(1-scale)),true);
    ctx.fillStyle=mesaTerrainPaint(roof)||getTerrainPattern(ctx,roof);
    ctx.fill();
