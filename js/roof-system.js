@@ -363,6 +363,44 @@ function actorUnderBuildingCover(floor,area,actor){
  return (floor.areas||[]).some(slab=>isStructuralSlab(slab)&&pointInArchitectArea(slab,actor.x,actor.y));
 }
 
+function roofDoorCutouts(floor,roof,actor){
+ if(state.mode!=='player'||!actor)return [];
+ const cutouts=[];
+ for(const door of floor.doors||[]){
+   if(Math.hypot(door.x-actor.x,door.y-actor.y)>95)continue;
+   const vertical=door.orient==='v';
+   const along=vertical?door.y:door.x;
+   const alongStart=vertical?roof.y:roof.x;
+   const span=vertical?roof.h:roof.w;
+   if(along<=alongStart||along>=alongStart+span)continue;
+   const cross=vertical?door.x:door.y;
+   const crossStart=vertical?roof.x:roof.y;
+   const crossEnd=crossStart+(vertical?roof.w:roof.h);
+   const edge=Math.abs(cross-crossStart)<=Math.abs(cross-crossEnd)?crossStart:crossEnd;
+   if(Math.abs(cross-edge)>96||cross<crossStart-5||cross>crossEnd+5)continue;
+   // Interior doors may be close to a roof edge in a narrow room.
+   const inside=(x,y)=>(floor.buildings||[]).some(b=>b.hasFloor&&buildingDistance(x,y,b)<0)||
+     (floor.areas||[]).some(a=>isStructuralSlab(a)&&pointInArchitectArea(a,x,y));
+   const a=vertical?inside(door.x-12,door.y):inside(door.x,door.y-12);
+   const b=vertical?inside(door.x+12,door.y):inside(door.x,door.y+12);
+   if(a&&b)continue;
+   const from=Math.min(edge,cross)-4,to=Math.max(edge,cross)+8;
+   const half=(door.width||68)/2+8;
+   cutouts.push(vertical?{x:from,y:along-half,w:to-from,h:half*2}:
+     {x:along-half,y:from,w:half*2,h:to-from});
+ }
+ return cutouts;
+}
+
+function clipRoofAtDoors(floor,roof,actor){
+ for(const gap of roofDoorCutouts(floor,roof,actor)){
+   ctx.beginPath();
+   ctx.rect(roof.x-1,roof.y-1,roof.w+2,roof.h+2);
+   ctx.rect(gap.x,gap.y,gap.w,gap.h);
+   ctx.clip('evenodd');
+ }
+}
+
 function drawExternalBuildingTop(){
  if(state.mode==='architect')return;
  const actor=activeActor();if(!actor||actor.sceneId!==state.activeSceneId)return;
@@ -410,6 +448,7 @@ function drawExternalBuildingTop(){
   if(fade.alpha<.015)continue;
   ctx.save();ctx.globalAlpha=fade.alpha;
   clipOutsideCaves(scene.floors[actor.floor].caves,area);
+  clipRoofAtDoors(viewFloor,area,actor);
   drawRoofSurface(area.x,area.y,area.w,area.h,area.mat,area.roofPitch,area.roofHeight);
   drawRoofOpenings(floor,area);
   ctx.restore();

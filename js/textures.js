@@ -484,6 +484,19 @@ function exposedLowerWallSpans(wall, slabs) {
  }));
 }
 
+function isLowerInteriorPartition(wall,floor){
+ if(wall.extendedUp)return false;
+ const dx=wall.x2-wall.x1,dy=wall.y2-wall.y1,length=Math.hypot(dx,dy);
+ if(!length)return false;
+ const clearance=(wall.width||16)/2+4,ox=-dy/length*clearance,oy=dx/length*clearance;
+ const inside=(x,y)=>floor.areas.some(a=>isStructuralSlab(a)&&pointInArchitectArea(a,x,y))||
+   (floor.buildings||[]).some(b=>b.hasFloor&&buildingDistance(x,y,b)<0);
+ return [.2,.5,.8].every(t=>{
+   const x=wall.x1+dx*t,y=wall.y1+dy*t;
+   return inside(x+ox,y+oy)&&inside(x-ox,y-oy);
+ });
+}
+
 function drawLowerStoreyWallContinuations(sc,upperIndex){
  const upper=sc.floors[upperIndex],level=floorLevel(sc,upperIndex);
  const underIndex=floorIndexForLevel(sc,level-1,false);
@@ -499,6 +512,7 @@ function drawLowerStoreyWallContinuations(sc,upperIndex){
  const slabs = upper.areas.filter(a=>isStructuralSlab(a)||isRoofMaterial(a.mat))
    .map(area=>isRoofMaterial(area.mat)?effectiveRoofBounds(sc,upper,area):area);
  const walls = [...beneath.walls, ...lowerOpeningWallSpans(beneath)]
+   .filter(wall=>!isLowerInteriorPartition(wall,beneath))
    .flatMap(wall => exposedLowerWallSpans(wall, slabs));
  for(const wall of walls){
    const covered=(upper.walls||[]).some(other=>
