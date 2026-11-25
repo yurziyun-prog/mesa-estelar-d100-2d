@@ -313,7 +313,9 @@ function drawExternalBuildingTop(){
  const actor=activeActor();if(!actor||actor.sceneId!==state.activeSceneId)return;
  const scene=getScene(),current=floorLevel(scene,actor.floor);
  const higher=scene.floors.filter(f=>f.level>current);
- const candidates=externalBuildingSurfaces(scene,current);
+ const viewFloor=scene.floors[actor.floor];
+ const candidates=externalBuildingSurfaces(scene,current).filter(({area})=>
+   !caveMountainMasksRoof(viewFloor,area));
  if(!candidates.length)return;
  const highest=Math.max(...candidates.map(e=>e.level));
  const top=candidates.filter(e=>e.level===highest);

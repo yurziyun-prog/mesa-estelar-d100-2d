@@ -135,6 +135,29 @@ function drawCaveBase(cave,floor=null){
  for(const opening of caveOpenings(cave))drawCaveOpening(opening);
 }
 
+// Test the rendered mountain silhouette, including its overhang.
+function overlapsCaveMountain(cave,rect){
+ const b=caveBounds(cave),cx=b.x+b.w/2,cy=b.y+b.h/2;
+ const outline={points:cave.points.map(p=>({x:cx+(p.x-cx)*1.08,y:cy+(p.y-cy)*1.08}))};
+ const {x,y,w,h}=rect;
+ if(outline.points.some(p=>pointInArchitectArea(rect,p.x,p.y)))return true;
+ if([[x,y],[x+w,y],[x,y+h],[x+w,y+h]].some(([px,py])=>insideCave(outline,px,py)))return true;
+ return outline.points.some((a,i)=>{
+   const next=outline.points[(i+1)%outline.points.length],dx=next.x-a.x,dy=next.y-a.y;
+   return (dx!==0&&[x,x+w].some(edge=>{
+     const t=(edge-a.x)/dx,at=a.y+t*dy;
+     return t>=0&&t<=1&&at>=y&&at<=y+h;
+   }))||(dy!==0&&[y,y+h].some(edge=>{
+     const t=(edge-a.y)/dy,at=a.x+t*dx;
+     return t>=0&&t<=1&&at>=x&&at<=x+w;
+   }));
+ });
+}
+
+function caveMountainMasksRoof(floor,rect){
+ return floor.level>=0&&(floor.caves||[]).some(cave=>!cave.subsurface&&overlapsCaveMountain(cave,rect));
+}
+
 // Prevent house roofs projected from the same or a higher floor from covering the cave.
 function clipOutsideCaves(caves,bounds){
  for(const cave of caves||[]){

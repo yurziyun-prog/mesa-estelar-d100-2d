@@ -526,7 +526,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     const inside=actor&&actor.floor===floorIdx&&actor.sceneId===state.activeSceneId
       &&a.roof&&a.roofAttic&&pointInArchitectArea(a,actor.x,actor.y);
     if(inside&&state.mode!=='architect')return; // 阁楼内部不被屋顶贴图覆盖
-    if(interior)return;
+    if(interior||(!isBelow&&state.mode!=='architect'&&(a.roof||isRoofMaterial(a.mat))&&caveMountainMasksRoof(floor,a)))return;
     ctx.save();
     if(a.roof||isRoofMaterial(a.mat))clipOutsideCaves(floor.caves,a);
     if(a.fromBuildingId){traceBuilding(a);ctx.clip();}
