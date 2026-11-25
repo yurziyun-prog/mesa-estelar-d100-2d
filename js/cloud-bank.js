@@ -1,6 +1,6 @@
 // Reuse the main Mesa Estelar Firebase app configuration and account.
 const mesaFirebaseConfig = {
-  apiKey: 'AIzaSyDw_DB5qhwyqPI7_q6NgVA-U90atRGJ4mQ',
+  apiKey: 'AIzaSyC298c9kpwDc4r6VL2Ryrpgzj0M5LdZSGE',
   authDomain: 'd100-mesa-estelar.firebaseapp.com',
   projectId: 'd100-mesa-estelar',
   appId: '1:1000414403401:web:fae7d2feaad04cc8bd9898'
