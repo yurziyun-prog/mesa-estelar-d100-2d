@@ -515,6 +515,22 @@ function drawLowerStoreyWallContinuations(sc,upperIndex){
  }
  ctx.restore();
 }
+function clipLowerFloorUnderSlabs(sc,floorIdx){
+ const upper=sc.floors[state.currentFloor],lower=sc.floors[floorIdx];
+ if(!upper||upper===lower)return;
+ const cover=[...upper.areas.filter(a=>isStructuralSlab(a)||isRoofMaterial(a.mat)),
+   ...(upper.buildings||[]).filter(room=>room.hasFloor)];
+ if(!cover.length)return;
+ const viewport={x:-state.camera.x/state.camera.zoom,y:-state.camera.y/state.camera.zoom,
+   w:canvas.width/state.camera.zoom,h:canvas.height/state.camera.zoom};
+ for(const area of cover){
+   ctx.beginPath();
+   ctx.rect(viewport.x,viewport.y,viewport.w,viewport.h);
+   ctx.rect(area.x,area.y,area.w,area.h);
+   ctx.clip('evenodd');
+ }
+}
+
 function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
   const floor = sc.floors[floorIdx];
   if (!floor) return;

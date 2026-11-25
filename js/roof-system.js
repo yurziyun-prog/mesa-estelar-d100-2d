@@ -188,6 +188,7 @@ function drawRoofOpenings(floor,region=null){
  }
  for(const o of openings){
   if(region&&!pointInArchitectArea(region,o.x,o.y))continue;
+  if(!region&&!floor.areas.some(a=>isRoofMaterial(a.mat)&&pointInArchitectArea(a,o.x,o.y)))continue;
   ctx.save();ctx.translate(o.x,o.y);
   ctx.fillStyle='#263039';ctx.fillRect(-o.w/2-5,-o.h/2-5,o.w+10,o.h+10);
   ctx.fillStyle=o.type==='skylight'?'#6dc7d4':'#202c37';
@@ -326,18 +327,29 @@ function effectiveRoofBounds(scene,floor,roof){
    h:Math.max(roof.y+roof.h,support.y+support.h+wallMargin)-y};
 }
 
+function savedRoofHasSupport(scene,floor,area){
+ const below=roofSupportFloor(scene,floor,area);
+ if(below&&(effectiveRoofBounds(scene,floor,area)!==area||roofHasStructuralSupport(below,area)))return true;
+ // Historic roofs can have an outdated support level or snap beyond the old
+ // validation tolerance. Require a real building footprint directly below.
+ const adjacent=scene.floors.find(candidate=>candidate.level===floor.level-1);
+ if(!adjacent)return false;
+ const ox=area.x+area.w/2,oy=area.y+area.h/2;
+ const intersects=(b)=>{
+   const width=Math.max(0,Math.min(area.x+area.w,b.x+b.w)-Math.max(area.x,b.x));
+   const height=Math.max(0,Math.min(area.y+area.h,b.y+b.h)-Math.max(area.y,b.y));
+   return width*height>=area.w*area.h*.55&&pointInArchitectArea(b,ox,oy);
+ };
+ return (adjacent.buildings||[]).some(intersects)||
+   (adjacent.walls||[]).length>=4&&Boolean(roofSupportingBounds(adjacent)&&intersects(roofSupportingBounds(adjacent)));
+}
+
 function externalBuildingSurfaces(scene,current){
  const candidates=[];
  for(const floor of scene.floors){
   if(floor.level<=current)continue;
   const areas=floor.areas||[];
-  const roofs=areas.filter(area=>{
-   if(!area.roof||!isRoofMaterial(area.mat))return false;
-   const below=roofSupportFloor(scene,floor,area);
-   if(!below)return false;
-   const footprint=effectiveRoofBounds(scene,floor,area);
-   return footprint!==area||roofHasStructuralSupport(below,area);
-  });
+  const roofs=areas.filter(area=>isRoofMaterial(area.mat)&&savedRoofHasSupport(scene,floor,area));
   const surfaces=roofs.length?roofs:areas.filter(area=>
    !area.attic&&!area.fromBuildingId&&isStructuralSlab(area));
   for(const area of surfaces)candidates.push({area,level:floor.level,floor});
