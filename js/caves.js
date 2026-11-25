@@ -14,15 +14,21 @@ function insideCave(cave,x,y){
  return inside;
 }
 
+// Fixed world units keep the shell thickness independent of the cave's span.
+const CAVE_FOOT_MARGIN=12;
+const CAVE_MOUNTAIN_TIERS=[[CAVE_FOOT_MARGIN,1],[8,.8],[4,.58],[0,.34]];
+
 function caveWallBlocks(floor,x,y){
  return (floor.caves||[]).some(cave=>{
    if(mergedBoundary(floor,cave,x,y))return false;
    if(caveOpenings(cave).some(door=>(door.kind==='door'||door.kind==='passage')&&door.open&&
-     caveDoorThreshold(door,x,y,24)))return false;
+     caveDoorThreshold(door,x,y,CAVE_FOOT_MARGIN+24)))return false;
+   const outside=!insideCave(cave,x,y);
+   const foot=outside&&floor.level>=0&&!cave.subsurface?CAVE_FOOT_MARGIN:0;
+   const clearance=Math.max(cave.thickness/2,foot)+10;
    return caveWallPieces(cave,true).some(([a,b])=>
-     distToSegment(x,y,a.x,a.y,b.x,b.y)<cave.thickness/2+10);
+     distToSegment(x,y,a.x,a.y,b.x,b.y)<clearance);
  });
-
 }
 
 function currentCaveBrushRadius(){
@@ -135,16 +141,11 @@ function drawCaveBase(cave,floor=null){
  for(const opening of caveOpenings(cave))drawCaveOpening(opening);
 }
 
-const CAVE_MOUNTAIN_RINGS=[[1.08,1],[.91,.8],[.70,.58],[.46,.34]];
-function caveMountainRing(cave,bounds,scale,offsetX=0,offsetY=0){
- const cx=bounds.x+bounds.w/2,cy=bounds.y+bounds.h/2;
- return cave.points.map(p=>({x:cx+(p.x-cx)*scale+offsetX,y:cy+(p.y-cy)*scale+offsetY}));
-}
-
 function overlapsCaveMountain(cave,rect){
- const bounds=caveBounds(cave);
- return CAVE_MOUNTAIN_RINGS.some(([scale])=>polygonOverlapsRoof(
-   caveMountainRing(cave,bounds,scale,-9*(1-scale),-13*(1-scale)),rect));
+ const margin=CAVE_FOOT_MARGIN+2;
+ return polygonOverlapsRoof(cave.points,{
+   x:rect.x-margin,y:rect.y-margin,w:rect.w+2*margin,h:rect.h+2*margin
+ });
 }
 
 function polygonOverlapsRoof(points,rect){
@@ -171,11 +172,8 @@ function caveMountainMasksRoof(floor,rect){
 // Prevent house roofs projected from the same or a higher floor from covering the cave.
 function clipOutsideCaves(caves,bounds){
  for(const cave of caves||[]){
-   const b=caveBounds(cave),pad=55;
-   if(b.x-pad>bounds.x+bounds.w||b.x+b.w+pad<bounds.x||
-      b.y-pad>bounds.y+bounds.h||b.y+b.h+pad<bounds.y)continue;
-   const cx=b.x+b.w/2,cy=b.y+b.h/2;
-   cavePath(cave.points.map(p=>({x:cx+(p.x-cx)*1.12,y:cy+(p.y-cy)*1.12})),true);
+   if(!overlapsCaveMountain(cave,bounds))continue;
+   cavePath(cave.points,true);
    ctx.rect(bounds.x-1,bounds.y-1,bounds.w+2,bounds.h+2);
    ctx.clip('evenodd');
  }
@@ -196,20 +194,27 @@ function drawCaveMountain(cave,roof,showOpenings=true){
  const b=caveBounds(cave);
  ctx.save();
  ctx.lineJoin='round';
- const ring=(scale,x,y)=>caveMountainRing(cave,b,scale,x,y);
- cavePath(ring(1.12,7,10),true);
- ctx.fillStyle='rgba(7,10,13,.48)';ctx.fill();
- for(const [scale,depth] of CAVE_MOUNTAIN_RINGS){
-   cavePath(ring(scale,-9*(1-scale),-13*(1-scale)),true);
-   ctx.fillStyle=mesaTerrainPaint(roof)||getTerrainPattern(ctx,roof);
-   ctx.fill();
+ ctx.save();ctx.translate(3,5);
+ cavePath(cave.points,true);
+ ctx.fillStyle='rgba(7,10,13,.42)';ctx.fill();
+ ctx.strokeStyle='rgba(7,10,13,.42)';ctx.lineWidth=CAVE_FOOT_MARGIN*2;ctx.stroke();
+ ctx.restore();
+ for(const [margin,depth] of CAVE_MOUNTAIN_TIERS){
+   cavePath(cave.points,true);
+   const texture=mesaTerrainPaint(roof)||getTerrainPattern(ctx,roof);
    const light=ctx.createLinearGradient(b.x,b.y,b.x+b.w,b.y+b.h);
    light.addColorStop(0,'rgba(218,206,181,'+(.29*(1-depth)+.11)+')');
    light.addColorStop(.52,'rgba(48,49,52,.07)');
    light.addColorStop(1,'rgba(12,15,22,'+(.46*depth+.19)+')');
+   if(margin){
+     ctx.lineWidth=margin*2+2;ctx.strokeStyle='rgba(26,28,34,.56)';ctx.stroke();
+     ctx.lineWidth=margin*2;ctx.strokeStyle=texture;ctx.stroke();
+     ctx.strokeStyle=light;ctx.stroke();
+   }
+   ctx.fillStyle=texture;ctx.fill();
    ctx.fillStyle=light;ctx.fill();
-   ctx.lineWidth=2+depth*2;ctx.strokeStyle='rgba(26,28,34,.56)';ctx.stroke();
  }
+ ctx.lineWidth=2;ctx.strokeStyle='rgba(26,28,34,.68)';ctx.stroke();
  if(showOpenings)for(const entrance of caveOpenings(cave))drawCaveOpening(entrance);
  ctx.restore();
 }
