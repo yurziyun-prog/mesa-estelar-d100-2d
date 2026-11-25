@@ -212,8 +212,16 @@ function roofHiddenByMountain(rect){
  return Boolean(roofViewFloors?.some(floor=>caveMountainMasksRoof(floor,rect)));
 }
 
+function roofHiddenInCaveCourtyard(rect){
+ const floor=roofViewFloors?.at(-1);
+ if(!floor||!caveCourtyardContains(floor,rect.x+rect.w/2,rect.y+rect.h/2))return false;
+ // A slab alone is insufficient evidence of a real house in the courtyard.
+ return !roofHasStructuralSupport({...floor,areas:[]},rect);
+}
+
 function drawRoofSurface(x,y,w,h,mat,pitchValue=null,roofHeight=null){
- if(roofHiddenByMountain({x,y,w,h}))return;
+ const bounds={x,y,w,h};
+ if(roofHiddenByMountain(bounds)||roofHiddenInCaveCourtyard(bounds))return;
  ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
  const palettes={
   roof_tile:['#9a493e','#c06d54','#5d3431'],
@@ -320,7 +328,7 @@ function drawExternalBuildingTop(){
  const higher=scene.floors.filter(f=>f.level>current);
  const viewFloor=scene.floors[actor.floor];
  const candidates=externalBuildingSurfaces(scene,current).filter(({area})=>
-   !caveMountainMasksRoof(viewFloor,area)&&!roofHiddenByMountain(area));
+   !caveMountainMasksRoof(viewFloor,area)&&!roofHiddenByMountain(area)&&!roofHiddenInCaveCourtyard(area));
  if(!candidates.length)return;
  const highest=Math.max(...candidates.map(e=>e.level));
  const top=candidates.filter(e=>e.level===highest);

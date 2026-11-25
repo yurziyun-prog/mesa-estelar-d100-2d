@@ -169,6 +169,34 @@ function caveMountainMasksRoof(floor,rect){
  return floor.level>=0&&(floor.caves||[]).some(cave=>!cave.subsurface&&overlapsCaveMountain(cave,rect));
 }
 
+// A curved cave can surround an open courtyard without intersecting it.
+const caveCourtyardHulls=new WeakMap();
+function caveCourtyardHull(points){
+ let hull=caveCourtyardHulls.get(points);
+ if(hull)return hull;
+ const sorted=points.slice().sort((a,b)=>a.x-b.x||a.y-b.y);
+ const half=list=>{
+   const edge=[];
+   for(const p of list){
+     while(edge.length>=2){
+       const a=edge.at(-2),b=edge.at(-1);
+       if((b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x)>0)break;
+       edge.pop();
+     }
+     edge.push(p);
+   }
+   return edge.slice(0,-1);
+ };
+ hull=half(sorted).concat(half(sorted.reverse()));
+ caveCourtyardHulls.set(points,hull);
+ return hull;
+}
+
+function caveCourtyardContains(floor,x,y){
+ return floor.level>=0&&(floor.caves||[]).some(cave=>!cave.subsurface&&
+   insideCave({points:caveCourtyardHull(cave.points)},x,y));
+}
+
 // Prevent house roofs projected from the same or a higher floor from covering the cave.
 function clipOutsideCaves(caves,bounds){
  for(const cave of caves||[]){
