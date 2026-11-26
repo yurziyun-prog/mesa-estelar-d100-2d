@@ -10,7 +10,24 @@ const finishTextures=new Map([
  ['crystalGrid',['Cristal em módulos','水晶方砖',null,'crystalFloor']],
  ['cyberGrid',['Placas de neon','霓虹方砖',null,'cyberFloor']]
 ]);
+const referenceGroundTextures=[
+ ['pebbledTurf','pebbled-turf',224,'Relva com pedregulhos','碎石草地'],
+ ['mossJointPaving','moss-joint-paving',304,'Lajes com juntas verdes','草缝石板路'],
+ ['deepGreenGrass','deep-green-grass',152,'Relva verde-forte','浓绿草地'],
+ ['fineGrass','fine-grass',168,'Relva de folhas finas','细叶草地'],
+ ['leafyRocks','leafy-rocks',264,'Rochas entre folhagens','绿叶岩地'],
+ ['mossyPaving','mossy-paving',216,'Pavimento com musgo','苔藓石路'],
+ ['patchyBedrock','patchy-bedrock',236,'Rocha com manchas de relva','草斑岩地'],
+ ['overgrownCobbles','overgrown-cobbles',256,'Calçamento tomado pela vegetação','长草石砖路'],
+ ['tallMeadow','tall-meadow',216,'Capim alto de bosque','林间高草'],
+ ['tallBlades','tall-blades',124,'Capim alto de folhas largas','阔叶高草']
+];
+const highGrassColors={
+ tallMeadow:['#2e4322','#546a36','#7d8e49'],
+ tallBlades:['#254936','#4c783e','#8cae54']
+};
 const originalMesaTextures={
+ ...Object.fromEntries(referenceGroundTextures.map(([id,file,size])=>[id,[file,size,'#535c39']])),
  wood:['madeira',288,'#795a40'],
  wallBrick:['tijolo',192,'#ae6047'],
  mesaGrass:['grama',192,'#566933']
@@ -89,7 +106,7 @@ function drawMesaBrickWall(x1,y1,x2,y2,width){
 }
 
 function finishTerrainPaint(id){
- if(id==='wood'||id==='mesaGrass')return originalMesaPaint(id);
+ if(id!=='wallBrick'&&Object.hasOwn(originalMesaTextures,id))return originalMesaPaint(id);
  if(!finishTextures.has(id)&&id!=='rockyDunes'&&!/^paving[1-9]$/.test(id))return null;
  if(!finishPatterns.has(id)){
    const tile=getFinishTile(id);
@@ -155,6 +172,10 @@ function initTerrainFinishes(){
    ['ochreSand','Areia ocre','赭色沙地'],['rockyDunes','Dunas rochosas','岩石沙丘']
   ]],
   ['Gramas do Mesa Estelar','Mesa Estelar 草地',[['mesaGrass','Grama original','原版草地']]],
+  ['Relva e pavimentos naturais','草地与自然铺装',referenceGroundTextures
+    .filter(([id])=>!Object.hasOwn(highGrassColors,id)).map(([id,,,pt,zh])=>[id,pt,zh])],
+  ['Capim alto','高草',referenceGroundTextures
+    .filter(([id])=>Object.hasOwn(highGrassColors,id)).map(([id,,,pt,zh])=>[id,pt,zh])],
   ['Águas','水域',[['riverWater','Água de rio','河流水面']]],
   ['Calçamentos','石板道路',pavingRects.map((_,i)=>['paving'+(i+1),'Calçamento '+(i+1),'石板道路 '+(i+1)])]
  ];

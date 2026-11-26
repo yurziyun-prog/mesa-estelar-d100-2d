@@ -229,7 +229,8 @@ function setupInputs() {
 // LOOP E RENDERIZAÇÃO
 let animTick = 0;
 let lastFrameTime = null;
-const WALK_SPEED = 128;
+const WALK_SPEED = 64;
+const HIGH_GRASS_SPEED_FACTOR = .6;
 const SPRINT_SPEED = 224;
 const MAX_MOVEMENT_STEP = 4;
 
@@ -269,7 +270,10 @@ function updateSimulation(elapsed) {
         const len = Math.hypot(dx, dy);
         ent.facingX=dx/len; ent.facingY=dy/len;
         if(state.mode==='player'&&!isPanning)cameraFollowsActor=true;
-        const distance = (keys['shift'] ? SPRINT_SPEED : WALK_SPEED) * elapsed;
+        const floor=getScene().floors[ent.floor];
+        const grass=highGrassAt(floor,ent.x,ent.y);
+        const distance = (keys['shift'] ? SPRINT_SPEED : WALK_SPEED) * elapsed *
+          (grass ? HIGH_GRASS_SPEED_FACTOR : 1);
         const steps = Math.max(1, Math.ceil(distance / MAX_MOVEMENT_STEP));
         const vx = ent.facingX * distance / steps;
         const vy = ent.facingY * distance / steps;

@@ -370,6 +370,18 @@ function topMapSurfaceAt(floor,x,y) {
     :pointInArchitectArea(surface,x,y)&&(!surface.fromBuildingId||buildingDistance(x,y,surface)<=0));
 }
 
+function highGrassAt(floor,x,y) {
+  const surface=topMapSurfaceAt(floor,x,y);
+  if(!surface){
+    if((floor.buildings||[]).some(room=>room.hasFloor&&buildingDistance(x,y,room)<=0))return null;
+    if((floor.caves||[]).some(cave=>insideCave(cave,x,y)))return null;
+    const bounds=floor.terrainBounds||floor.bounds;
+    if(!bounds||!pointInArchitectArea(bounds,x,y))return null;
+  }
+  const mat=surface?.mat||floor.baseTerrain;
+  return Object.hasOwn(highGrassColors,mat)?mat:null;
+}
+
 function terrainIsBlocked(mat) {
   return ['water','kenney_water','swampWater','lava','lavaAbyss','mesaShallows','riverWater','coastSea','space','void'].includes(mat);
 }

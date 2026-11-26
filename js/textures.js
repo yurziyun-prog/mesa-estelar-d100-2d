@@ -757,7 +757,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
 
 
   state.entities.filter(e => e.sceneId === state.activeSceneId && e.floor === floorIdx).forEach(ent => {
-    drawCharacterToken(ent, isBelow);
+    drawCharacterToken(ent,isBelow,highGrassAt(floor,ent.x,ent.y));
   });
   // 镂空楼梯对下方人物显示台阶遮挡；攀爬时人物绘制在台阶上方。
   floor.stairs.filter(s=>s.dir!=='down'&&stairVisualShape(s.shape)==='open' &&
@@ -775,7 +775,21 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
   }
 }
 
-function drawCharacterToken(ent, isBelow) {
+function drawGrassOverToken(x,y,colors){
+  // O capim na frente do personagem cobre as pernas, mantendo rosto e nome legíveis.
+  for(let base=Math.ceil((x-15)/3)*3;base<=x+15;base+=3){
+    const seed=Math.abs(Math.sin(base*4.17+Math.floor(y/5)*6.28));
+    const offset=base-x, tip=seed*11-5;
+    ctx.strokeStyle=colors[Math.floor(seed*colors.length)];
+    ctx.lineWidth=1.8;
+    ctx.beginPath();
+    ctx.moveTo(offset,16+seed*5);
+    ctx.quadraticCurveTo(offset+tip*.35,7,offset+tip,1+seed*10);
+    ctx.stroke();
+  }
+}
+
+function drawCharacterToken(ent, isBelow, grass=null) {
   const cx=ent.x,cy=ent.y,now=performance.now();
   if(ent.sleepPose&&TENT_TYPES.has(ent.sleepBed?.type))return;
   if(ent.sleepPose){
@@ -856,6 +870,7 @@ function drawCharacterToken(ent, isBelow) {
     ctx.strokeStyle='#f5b942';ctx.lineWidth=2;
     ctx.beginPath();ctx.ellipse(0,5,21,17,0,0,7);ctx.stroke();
   }
+  if(grass&&lift<9)drawGrassOverToken(cx,cy,highGrassColors[grass]);
   ctx.restore();
   ctx.save();
   if(state.mode==='gm'&&ent.id===gmPreviewId){ctx.strokeStyle='#e6c466';ctx.lineWidth=3;ctx.setLineDash([6,4]);ctx.beginPath();ctx.arc(cx,cy-lift,28,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#e6c466';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('TAB · ENTER',cx,cy-56-lift);}
