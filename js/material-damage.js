@@ -120,12 +120,11 @@ function diggableAt(floor,x,y,trim=false){
  if((floor.buildings||[]).some(b=>b.hasFloor&&buildingDistance(x,y,b)<0))return false;
  if((floor.caves||[]).some(c=>insideCave(c,x,y)))return false;
  if((floor.reliefs||[]).some(a=>pointInArchitectArea(a,x,y)))return false;
- const paint=[...(floor.brushStrokes||[])].reverse().find(stroke=>
-   !stroke.mesaScatter&&stroke.points.some((p,i)=>brushPointInside(stroke,p,x,y,i)));
- const area=[...floor.areas].reverse().find(a=>pointInArchitectArea(a,x,y));
+ const top=topMapSurfaceAt(floor,x,y);
+ const roof=floor.areas.findLast(a=>!isStackedArea(a)&&pointInArchitectArea(a,x,y));
  const bounds=floor.terrainBounds||floor.bounds;
- const surface=paint?.mat||area?.mat||(bounds&&pointInArchitectArea(bounds,x,y)?floor.baseTerrain:null);
- const vegetation=['grass','grassLush','grassDry','mesaAutumn','forest'];
+ const surface=roof?.mat||top?.mat||(bounds&&pointInArchitectArea(bounds,x,y)?floor.baseTerrain:null);
+ const vegetation=['grass','grassLush','grassDry','mesaAutumn','mesaGrass','forest'];
  return (trim?vegetation:[...vegetation,'dirt','sand','mud','sandDesert','snow']).includes(surface);
 }
 

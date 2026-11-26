@@ -6,7 +6,7 @@ function isRoofMaterial(mat){return ROOF_TYPES.has(mat);}
 function pointInArchitectArea(a,x,y,pad=0){
  return x>=a.x-pad&&y>=a.y-pad&&x<=a.x+a.w+pad&&y<=a.y+a.h+pad;
 }
-const NON_STRUCTURAL_SURFACES = new Set(['grass','sand','dirt','snow','water','kenney_water','void','cave','mud','carpet','forest','space']);
+const NON_STRUCTURAL_SURFACES = new Set(['grass','sand','dirt','snow','water','kenney_water','riverWater','mesaGrass','void','cave','mud','carpet','forest','space']);
 function isStructuralSlab(area){
  return !area.roof && !isRoofMaterial(area.mat) && !NON_STRUCTURAL_SURFACES.has(area.mat) && !mesaTerrainById.has(area.mat) && (!Object.hasOwn(TERRAIN_PALETTES,area.mat)||catalogInteriorFloors.has(area.mat));
 }

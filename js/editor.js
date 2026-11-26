@@ -248,7 +248,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
     let stroke=window.activeBrushStroke;
     if(!isDrag || !stroke){
       stroke={mat:brush.mat,shape:brush.shape,size:brush.size,texture:brush.texture,points:[]};
-      floor.brushStrokes.push(stroke);window.activeBrushStroke=stroke;
+      floor.brushStrokes.push(moveSurfaceToEdge(floor,stroke,true));window.activeBrushStroke=stroke;
     }
     const last=stroke.points[stroke.points.length-1];
     if(!last||Math.hypot(last.x-wx,last.y-wy)>=Math.max(3,stroke.size/6))stroke.points.push({x:wx,y:wy});
@@ -382,7 +382,7 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
       const x=Math.min(dragStart.x,wx),y=Math.min(dragStart.y,wy);
       const w=Math.abs(wx-dragStart.x),h=Math.abs(wy-dragStart.y);
       if(w>0&&h>0){
-        floor.areas.push({x,y,w,h,mat:state.brush.mat,flowAngle:Math.atan2(wy-dragStart.y,wx-dragStart.x)});
+        floor.areas.push(moveSurfaceToEdge(floor,{x,y,w,h,mat:state.brush.mat,flowAngle:Math.atan2(wy-dragStart.y,wx-dragStart.x)},true));
         expandFloorToInclude(floor,x,y);
         expandFloorToInclude(floor,x+w,y+h);
       }
@@ -416,9 +416,9 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
       placeArchitectRoof({x,y,w,h});
       dragStart=null;previewRect=null;return;
     }
-    floor.areas.push({x,y,w,h,mat:state.material,
+    floor.areas.push(moveSurfaceToEdge(floor,{x,y,w,h,mat:state.material,
        ...(state.material==='checker'?{tile:structuredClone(state.tileConfig||{})}:{}),
-       ...(state.material==='carpet'?{color:state.propColor}:{})});
+       ...(state.material==='carpet'?{color:state.propColor}:{})},true));
     selectedMapObject = {kind:'areas', index:floor.areas.length - 1};
     if(typeof onArchitectSelectionChange==='function')onArchitectSelectionChange();
   } else if (state.tool === 'wall' && dragStart && Math.hypot(wx - dragStart.x, wy - dragStart.y) > 12) {
@@ -457,6 +457,7 @@ function pasteSelectedObject() {
   const copy = structuredClone(item);
   if (kind === 'walls') {copy.x1 += 32;copy.x2 += 32;copy.y1 += 32;copy.y2 += 32;}
   else {copy.x += 32; copy.y += 32;}
+  if(kind==='areas'&&isStackedArea(copy))moveSurfaceToEdge(floor,copy,true);
   floor[kind].push(copy);
   selectedMapObject = {kind,index:floor[kind].length - 1};
   if(kind === 'walls') state.selectedWallIdx = selectedMapObject.index;
@@ -594,7 +595,8 @@ function hitArchitectObjectAt(wx,wy){
  }
  for(let i=floor.areas.length-1;i>=0;i--){
    const a=floor.areas[i];
-   if(wx>=a.x&&wx<=a.x+a.w&&wy>=a.y&&wy<=a.y+a.h)return {kind:'areas',index:i};
+   if(!isStackedArea(a)&&pointInArchitectArea(a,wx,wy))return {kind:'areas',index:i};
  }
- return null;
+ const area=orderedSurfaces(floor).findLast(item=>!item.points&&pointInArchitectArea(item,wx,wy));
+ return area?{kind:'areas',index:floor.areas.indexOf(area)}:null;
 }

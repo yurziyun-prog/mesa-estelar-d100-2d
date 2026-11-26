@@ -340,6 +340,36 @@ const TERRAIN_GROUPS = [
   ['Solos alienígenas', [['alienMycelium','Micélio Violáceo'],['alienCrystal','Solo Cristalino'],['alienCrimson','Solo Carmesim'],['alienBlight','Solo Corrompido']]]
 ];
 
+function isStackedArea(area) {
+  return !area.roof && !isRoofMaterial(area.mat);
+}
+
+function orderedSurfaces(floor) {
+  const areas=(floor.areas||[]).filter(isStackedArea);
+  const strokes=(floor.brushStrokes||[]).filter(stroke=>!stroke.mesaScatter);
+  // Mapas antigos não têm uma ordem compartilhada. Preserve as pinceladas
+  // sobre as áreas existentes e deixe as pontes antigas visíveis.
+  return [...areas.filter(area=>!isBridgeMaterial(area.mat)),...strokes,
+    ...areas.filter(area=>isBridgeMaterial(area.mat))]
+    .sort((a,b)=>(a.surfaceOrder||0)-(b.surfaceOrder||0));
+}
+
+function moveSurfaceToEdge(floor,surface,front) {
+  let edge=0;
+  for(const item of orderedSurfaces(floor)){
+    const order=item.surfaceOrder||0;
+    edge=front?Math.max(edge,order):Math.min(edge,order);
+  }
+  surface.surfaceOrder=edge+(front?1:-1);
+  return surface;
+}
+
+function topMapSurfaceAt(floor,x,y) {
+  return orderedSurfaces(floor).findLast(surface=>surface.points
+    ?surface.points.some((point,i)=>brushPointInside(surface,point,x,y,i))
+    :pointInArchitectArea(surface,x,y)&&(!surface.fromBuildingId||buildingDistance(x,y,surface)<=0));
+}
+
 function terrainIsBlocked(mat) {
   return ['water','kenney_water','swampWater','lava','lavaAbyss','mesaShallows','riverWater','coastSea','space','void'].includes(mat);
 }
@@ -464,7 +494,7 @@ function applyTerrainBrush(floor,x,y,isDrag) {
   let stroke=window.activeBrushStroke;
   if(!isDrag||!stroke){
     stroke={mat,shape:mode==='spray'?'spray':mode==='square'?'quadrado':'redondo',size,softness,terrain:true,points:[]};
-    (floor.brushStrokes ||= []).push(stroke);
+    (floor.brushStrokes ||= []).push(moveSurfaceToEdge(floor,stroke,true));
     window.activeBrushStroke=stroke;
     stroke.last=null;
   }

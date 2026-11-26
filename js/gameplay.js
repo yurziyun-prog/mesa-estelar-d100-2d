@@ -95,17 +95,13 @@ function setMode(mode) {
 function onPaintedGround(floor, x, y) {
   if(caveEntranceGround(floor,x,y))return true;
   const hit = (a) => x >= a.x && x <= a.x+a.w && y >= a.y && y <= a.y+a.h;
-  for(const stroke of [...(floor.brushStrokes||[])].reverse()){
-    if(stroke.mesaScatter)continue;
-    for(let i=stroke.points.length-1;i>=0;i--){
-      if(brushPointInside(stroke,stroke.points[i],x,y,i))return !terrainIsBlocked(stroke.mat);
-    }
-  }
+  const surface=topMapSurfaceAt(floor,x,y);
+  if(surface?.points||isBridgeMaterial(surface?.mat))return !terrainIsBlocked(surface.mat);
   const cave=(floor.caves||[]).findLast(c=>insideCave(c,x,y));
   if(cave)return !terrainIsBlocked(cave.ground);
   const building=(floor.buildings||[]).findLast(b=>b.hasFloor&&buildingDistance(x,y,b)<=0);
   if(building)return !terrainIsBlocked(building.floorMaterial);
-  const painted = [...floor.areas].reverse().find(a=>hit(a)&&(!a.fromBuildingId||buildingDistance(x,y,a)<=0));
+  const painted = floor.areas.findLast(a=>!isStackedArea(a)&&hit(a))||surface;
   if(painted?.roof){
     const pitch=roofPitchFor(painted.mat,painted.roofPitch);
     if(pitch==='flat')return true;
@@ -127,7 +123,7 @@ function onPlacedBridge(floor, x, y) {
   });
 }
 function walkableFloor(floor, x, y) {
-  return floor.areas.some(a=>isBridgeMaterial(a.mat)&&pointInArchitectArea(a,x,y)) || onPaintedGround(floor, x, y) || onPlacedBridge(floor, x, y);
+  return onPaintedGround(floor, x, y) || onPlacedBridge(floor, x, y);
 }
 function openedDoorLeaf(d){
   const mechanism=d.mechanism||(d.style==='futurist'?'sliding':'hinged');
@@ -192,9 +188,6 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
     Math.abs(nx-o.x)<o.w/2+r&&Math.abs(ny-o.y)<o.h/2+r &&
     floor.areas.some(a=>a.roof&&roofPitchFor(a.mat,a.roofPitch)==='flat' &&
       nx>=a.x&&nx<=a.x+a.w&&ny>=a.y&&ny<=a.y+a.h)))return false;
-  const onWater = floor.areas.some(a => ['water','kenney_water','riverWater','mesaShallows','swampWater'].includes(a.mat) && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
-  const onBridge = floor.areas.some(a => isBridgeMaterial(a.mat) && nx >= a.x && nx <= a.x + a.w && ny >= a.y && ny <= a.y + a.h);
-  if (onWater && !onBridge && !onPlacedBridge(floor,nx,ny)) return false;
   const lift=[...floor.props.filter(p=>p.type==='hoverLift'),...remoteLifts(getScene(),floorIdx).map(x=>x.prop)]
     .some(p=>Math.hypot(p.x-nx,p.y-ny)<26*(p.scale||1));
   if (!walkableFloor(floor,nx,ny)&&!reliefAt(floor,nx,ny)&&

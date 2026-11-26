@@ -216,11 +216,9 @@ function brushPointInside(stroke,point,x,y,index){
  if(stroke.shape==='spray')return dx*dx+dy*dy<r*r && hash%1>.28;
  return dx*dx+dy*dy<=r*r;
 }
-function drawBrushStrokes(floor){
- for(const stroke of (floor.brushStrokes||[])){
-  if(!stroke.points?.length)continue;
-  if(stroke.mesaScatter){drawMesaScatter(stroke);continue;}
-  if(stroke.terrain){drawTerrainStroke(stroke);continue;}
+function drawBrushStroke(stroke){
+  if(!stroke.points?.length)return;
+  if(stroke.terrain){drawTerrainStroke(stroke);return;}
   const r=stroke.size/2;
   for(let pi=0;pi<stroke.points.length;pi++){
    const p=stroke.points[pi];ctx.save();ctx.beginPath();
@@ -245,7 +243,6 @@ function drawBrushStrokes(floor){
    }
    ctx.restore();
   }
- }
 }
 // Escadas arquitetônicas em perspectiva top-down: patamar, profundidade e sombra.
 // Escada vazada tem degraus parcialmente oclusivos e fundo transparente.
@@ -549,7 +546,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
   }
 
   const actor=typeof activeActor==='function'?activeActor():null;
-  floor.areas.forEach(a=>{
+  const drawArea=a=>{
     if(isBelow&&a.mat==='carpet')return;
     const inside=actor&&actor.floor===floorIdx&&actor.sceneId===state.activeSceneId
       &&a.roof&&a.roofAttic&&pointInArchitectArea(a,actor.x,actor.y);
@@ -561,8 +558,13 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     const shape=isRoofMaterial(a.mat)?effectiveRoofBounds(sc,floor,a):a;
     drawTexturedArea(shape.x,shape.y,shape.w,shape.h,a.mat,a.color,a.tile,a.roofPitch,a.roofHeight,a.flowAngle);
     ctx.restore();
-  });
-  drawBrushStrokes(floor);
+  };
+  for(const surface of orderedSurfaces(floor)){
+    if(surface.points)drawBrushStroke(surface);
+    else drawArea(surface);
+  }
+  for(const area of floor.areas)if(!isStackedArea(area))drawArea(area);
+  for(const stroke of floor.brushStrokes||[])if(stroke.mesaScatter&&stroke.points?.length)drawMesaScatter(stroke);
   if(!interior&&!isBelow)drawStructureStorey(sc,floorIdx);
   drawReliefs(floor);
   for(const cave of interior?connectedCaves(floor,interior):(floor.caves||[])){

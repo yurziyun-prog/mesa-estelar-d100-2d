@@ -348,20 +348,30 @@ function openArchitectContextMenu(sx,sy,clientX,clientY){
  if(state.mode!=='architect'||state.tool!=='move')return false;
  const {wx,wy}=screenToWorld(sx,sy);
  const clicked=architectSelectionHit(wx,wy);
+ const floor=getScene().floors[state.currentFloor];
+ const clickedArea=clicked?.kind==='areas'?objectForSelection(clicked):null;
+ const surface=(!clicked||(clickedArea&&isStackedArea(clickedArea)))?topMapSurfaceAt(floor,wx,wy):null;
  const bounds=architectSelectionBounds();
  const insideSelection=bounds && rectContains(bounds,wx,wy);
  if(clicked&&!insideSelection&&!architectSelections.some(ref=>ref.kind===clicked.kind&&ref.index===clicked.index)){
    architectSelections=expandArchitectSelection([clicked]);
    updateArchitectSelectionUI();
  }
- if(!architectSelections.length)return false;
+ if(!architectSelections.length&&!surface)return false;
  closeArchitectContextMenu();
  const menu=document.createElement('div');
  menu.id='architectContextMenu';menu.className='architect-context-menu';
  const grouped=architectSelections.some(ref=>Boolean(objectForSelection(ref)?.archGroupId));
  const single=architectSelections.length===1?architectSelections[0]:null;
  const wall=clicked?.kind==='walls'?objectForSelection(clicked):null;
+ const reorder=front=>{
+   beginEdit();
+   moveSurfaceToEdge(floor,surface,front);
+   finishEdit();
+   closeArchitectContextMenu();
+ };
  const items=[
+  ...(surface?[['Trazer superfície para frente',()=>reorder(true)],['Enviar superfície para trás',()=>reorder(false)]]:[]),
   ...(wall?[['Estender parede +3 m',()=>{closeArchitectContextMenu();extendWallUp(wall);}]]:[]),
   ...(single&&['windows','doors','chests','props','walls','stairs'].includes(single.kind)?[['✏️ Editar propriedades',()=>{closeArchitectContextMenu();editArchitectObject(single);}]]:[]),
   ...(architectSelections.length>1?[['🔗 Agrupar',architectGroupSelection]]:[]),
@@ -369,7 +379,7 @@ function openArchitectContextMenu(sx,sy,clientX,clientY){
  ];
  if(!items.length)return false;
  for(const [label,fn] of items){
-   const btn=document.createElement('button');btn.type='button';btn.textContent=label;
+   const btn=document.createElement('button');btn.type='button';btn.textContent=translateSiteText(label);
    btn.addEventListener('click',e=>{e.stopPropagation();fn();});menu.append(btn);
  }
  menu.style.left=Math.min(clientX,window.innerWidth-170)+'px';
