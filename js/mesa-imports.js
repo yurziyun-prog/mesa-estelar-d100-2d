@@ -26,7 +26,7 @@ function drawMesaScatterPattern(ctx,P){
  for(const q of sm){
   const n=Math.max(1,Math.round(dens*raio*raio*(est==='areia'||est==='neve'?26:est==='cascalho'?5:est==='spray'?16:est==='sangue'?3:est==='folhas'?5:est==='flores'?2.2:est==='pelos'?10:est==='mato'?9:est==='palha'?10:14)));
   for(let i=0;i<n;i++){const a=r()*6.283,d=Math.sqrt(r())*raio,x=q.x+Math.cos(a)*d,y=q.y+Math.sin(a)*d;
-   if(est==='grama'||est==='mato'||est==='palha'){const len=(est==='mato'?.5:est==='palha'?.38:.26)*(.6+r()*.8),an=-Math.PI/2+(r()-.5)*(est==='palha'?2.6:1.1),cu=(r()-.5)*.25;ctx.globalAlpha=.9;ctx.strokeStyle=mix(cor,.5,r);ctx.lineWidth=(est==='mato'?.034:est==='palha'?.03:.04)*S;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x*S,y*S);ctx.quadraticCurveTo((x+Math.cos(an+cu)*len*.55)*S,(y+Math.sin(an+cu)*len*.55)*S,(x+Math.cos(an+cu*2)*len)*S,(y+Math.sin(an+cu*2)*len)*S);ctx.stroke();}
+   if(est==='grama'||est==='mato'||est==='palha'){const len=(est==='mato'?.5*(P.height||1):est==='palha'?.38:.26)*(.6+r()*.8),an=-Math.PI/2+(r()-.5)*(est==='palha'?2.6:1.1),cu=(r()-.5)*.25;ctx.globalAlpha=.9;ctx.strokeStyle=mix(cor,.5,r);ctx.lineWidth=(est==='mato'?.034:est==='palha'?.03:.04)*S;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x*S,y*S);ctx.quadraticCurveTo((x+Math.cos(an+cu)*len*.55)*S,(y+Math.sin(an+cu)*len*.55)*S,(x+Math.cos(an+cu*2)*len)*S,(y+Math.sin(an+cu*2)*len)*S);ctx.stroke();}
    else if(est==='folhas'){E(x,y,.07+r()*.07,.035+r()*.03,r()*6.28,mix(cor,.7,r),.85);}
    else if(est==='flores'){const c=r()<.5?mix(cor,.2,r):(r()<.5?'rgb(240,240,245)':'rgb(220,110,150)');E(x,y,.05+r()*.04,.05+r()*.04,0,c,.95);E(x,y,.018,.018,0,'rgb(250,200,40)',1);}
    else if(est==='areia'){E(x,y,.014+r()*.022,.014+r()*.022,0,mix(cor,.28,r),.45+r()*.45);}
@@ -53,10 +53,25 @@ const MESA_FURNITURE=[
  ['mesaMoldedChair','Cadeira moldada','模压椅','rf_cadeira_moldada',30]
 ];
 const MESA_SCATTER=[
- ['mato','Mato alto','高草','#9aa43e'],['folhas','Folhas caídas','落叶','#c0702a'],
+ ['mato','Mato alto','高草','#9aa43e',1],
+ ['matoVerde','Capim alto verde','高大翠绿草','#568749',1.65],
+ ['matoDourado','Capim alto dourado','高大金黄草','#bf9949',1.75],
+ ['matoRoxo','Capim alto roxo','高大紫草','#997299',1.6],
+ ['folhas','Folhas caídas','落叶','#c0702a'],
  ['flores','Flores espalhadas','零散野花','#f2d34a'],['pegada_pata','Pegadas de pata','动物脚印','#4a3220'],
  ['pegada_bota','Pegadas de bota','靴印','#3a2a1c']
 ];
+const scatterById=new Map(MESA_SCATTER.map(item=>[item[0],item]));
+const scatterGroups=[
+ ['Capins altos',MESA_SCATTER.filter(item=>item[4])],
+ ['Folhagem e flores',MESA_SCATTER.filter(item=>['folhas','flores'].includes(item[0]))],
+ ['Rastros',MESA_SCATTER.filter(item=>item[0].startsWith('pegada'))]
+];
+
+function tallScatterAt(floor,x,y){
+ return (floor.brushStrokes||[]).findLast(stroke=>stroke.mesaScatter?.estilo==='mato'&&
+   stroke.points.some(p=>(p.x-x)**2+(p.y-y)**2<=(stroke.size/2)**2));
+}
 const mesaTerrainById=new Map(MESA_TERRAINS.map(item=>[item[0],item]));
 const mesaFurnitureById=new Map(MESA_FURNITURE.map(item=>[item[0],item]));
 const mesaImages=new Map();
@@ -138,12 +153,11 @@ function createMesaPreview(id){
  return preview;
 }
 
-function addMesaScatterPoint(floor,x,y,isDrag,size){
+function addMesaScatterPoint(floor,x,y,isDrag,size,id){
  let stroke=window.activeBrushStroke;
  if(!isDrag||!stroke){
-   const id=document.getElementById('mesaScatterStyle').value;
-   const [estilo,,,cor]=MESA_SCATTER.find(item=>item[0]===id)||MESA_SCATTER[0];
-   stroke={size,mesaScatter:{estilo,cor,seed:Math.floor(Math.random()*0xffffffff)},points:[]};
+   const [style,,,cor,height]=scatterById.get(id);
+   stroke={size,mesaScatter:{estilo:height?'mato':style,cor,height,seed:Math.floor(Math.random()*0xffffffff)},points:[]};
    (floor.brushStrokes ||= []).push(stroke);
    window.activeBrushStroke=stroke;
  }
@@ -180,6 +194,5 @@ function initMesaImports(){
  SITE_ZH.set('Terrenos do Mesa Estelar','Mesa Estelar 地形');
  SITE_ZH.set('Móveis do Mesa Estelar','Mesa Estelar 家具');
  SITE_ZH.set('Dispersão do Mesa Estelar','Mesa Estelar 散布画笔');
- const select=document.getElementById('mesaScatterStyle');
- for(const [id,name] of MESA_SCATTER)select.add(new Option(name,id));
+ for(const [pt,zh] of [['Capins altos','高草'],['Folhagem e flores','落叶与野花'],['Rastros','足迹']])SITE_ZH.set(pt,zh);
 }

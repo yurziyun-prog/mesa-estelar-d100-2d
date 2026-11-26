@@ -66,36 +66,6 @@ function addCurvedWall(floor,points){
  }
 }
 
-const coastOutlineCache=new WeakMap();
-function drawShoreBreakers(stroke,diameter,waves){
- if(stroke.shape!=='redondo'||diameter<24||!stroke.points.length)return;
- let cached=coastOutlineCache.get(stroke);
- if(!cached||cached.points!==stroke.points||cached.count!==stroke.points.length){
-   cached={points:stroke.points,count:stroke.points.length,
-     outline:caveBrushContour(stroke.points,diameter/2)};
-   coastOutlineCache.set(stroke,cached);
- }
- if(cached.outline.length<3)return;
- const time=terrainMotionPreference.matches?0:performance.now()/1000;
- const crest=(2+(Math.sin(time*1.8)+1)*2)*waves;
- const foam=Math.min(1,waves);
- ctx.save();
- cavePath(cached.outline,true);
- ctx.clip();
- ctx.lineJoin='round';ctx.lineCap='round';
- for(const [width,color,dash,pace] of [
-   [crest+17,'rgba(112,230,220,.36)',[],0],
-   [crest+7,'rgba(203,252,240,.39)',[31,8,12,5],4],
-   [crest,'rgba(241,254,247,.84)',[26,9,4,7],9]
- ]){
-   ctx.globalAlpha=pace?foam:1;
-   ctx.lineWidth=width;ctx.strokeStyle=color;
-   ctx.setLineDash(dash);ctx.lineDashOffset=-time*pace;
-   if(width>0&&ctx.globalAlpha>0)ctx.stroke();
- }
- ctx.restore();
-}
-
 function rayWallDistance(x,y,dx,dy,wall,radius){
  const sx=wall.x2-wall.x1,sy=wall.y2-wall.y1;
  const denominator=dx*sy-dy*sx;

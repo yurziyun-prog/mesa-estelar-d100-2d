@@ -545,8 +545,15 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     if(a.mat==='bridgeCovered'&&!onBridge)drawRoofSurface(a.x,a.y,a.w,a.h,'roof_tile','gable');
     ctx.restore();
   };
-  for(const surface of orderedSurfaces(floor)){
-    if(surface.points)drawBrushStroke(surface);
+  const surfaces=orderedSurfaces(floor);
+  for(let i=0;i<surfaces.length;i++){
+    const surface=surfaces[i],waterKey=interior?'':waterSurfaceKey(surface);
+    if(waterKey){
+      let end=i+1;
+      while(end<surfaces.length&&waterSurfaceKey(surfaces[end])===waterKey)end++;
+      drawJoinedWater(surfaces.slice(i,end));
+      i=end-1;
+    }else if(surface.points)drawBrushStroke(surface);
     else drawArea(surface);
   }
   for(const area of floor.areas)if(!isStackedArea(area))drawArea(area);
@@ -877,7 +884,18 @@ function drawCharacterToken(ent, isBelow, grass=null) {
     ctx.strokeStyle='#f5b942';ctx.lineWidth=2;
     ctx.beginPath();ctx.ellipse(0,5,21,17,0,0,7);ctx.stroke();
   }
-  if(grass&&lift<9)drawGrassOverToken(cx,cy,highGrassColors[grass]);
+  if(grass&&lift<9){
+    if(typeof grass==='string')drawGrassOverToken(cx,cy,highGrassColors[grass]);
+    else{
+      ctx.save();
+      ctx.translate(-cx,lift-cy);
+      ctx.beginPath();
+      ctx.rect(cx-22,cy-2,44,24);
+      ctx.clip();
+      drawMesaScatter(grass);
+      ctx.restore();
+    }
+  }
   ctx.restore();
   ctx.save();
   if(state.mode==='gm'&&ent.id===gmPreviewId){ctx.strokeStyle='#e6c466';ctx.lineWidth=3;ctx.setLineDash([6,4]);ctx.beginPath();ctx.arc(cx,cy-lift,28,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#e6c466';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('TAB · ENTER',cx,cy-56-lift);}

@@ -377,8 +377,10 @@ function topMapSurfaceAt(floor,x,y) {
 
 function highGrassAt(floor,x,y) {
   const surface=topMapSurfaceAt(floor,x,y);
+  if(isBridgeMaterial(surface?.mat)||(floor.buildings||[]).some(room=>room.hasFloor&&buildingDistance(x,y,room)<=0))return null;
+  const scatter=tallScatterAt(floor,x,y);
+  if(scatter)return scatter;
   if(!surface){
-    if((floor.buildings||[]).some(room=>room.hasFloor&&buildingDistance(x,y,room)<=0))return null;
     if((floor.caves||[]).some(cave=>insideCave(cave,x,y)))return null;
     const bounds=floor.terrainBounds||floor.bounds;
     if(!bounds||!pointInArchitectArea(bounds,x,y))return null;
@@ -409,6 +411,23 @@ function drawTerrainMotion(mat,x,y,w,h,flow=0,water=null){
   const right=Math.min(x+w,(canvas.width-state.camera.x)/zoom+40);
   const bottom=Math.min(y+h,(canvas.height-state.camera.y)/zoom+40);
   if(left>=right||top>=bottom)return;
+  if(water){
+    const river=mat==='riverWater';
+    const strength=river?water.speed:water.waves;
+    if(!strength)return;
+    const shift=time*strength*(river?14:mat==='coastSea'?6:2);
+    const dx=river?Math.cos(flow)*shift:Math.sin(shift*.17)*13;
+    const dy=river?Math.sin(flow)*shift:Math.cos(shift*.13)*9;
+    ctx.save();
+    ctx.beginPath();ctx.rect(left,top,right-left,bottom-top);ctx.clip();
+    ctx.translate(dx%192,dy%192);
+    ctx.globalAlpha*=Math.min(.26,.08+strength*.065);
+    ctx.globalCompositeOperation='screen';
+    ctx.fillStyle=waterPattern(mat,water.color);
+    ctx.fillRect(left-dx%192,top-dy%192,right-left,bottom-top);
+    ctx.restore();
+    return;
+  }
   ctx.save();
   if(kind==='lava'){
     ctx.globalCompositeOperation='screen';
@@ -514,13 +533,25 @@ function waterPattern(mat,color){
   const g=tile.getContext('2d');
   const pixels=g.createImageData(size,size);
   const rgb=[1,3,5].map(offset=>parseInt(color.slice(offset,offset+2),16));
+  const noise=(x,y,frequency)=>{
+    const ix=Math.floor(x),iy=Math.floor(y);
+    let a=x-ix,b=y-iy;
+    a=a*a*(3-2*a);b=b*b*(3-2*b);
+    const at=(u,v)=>{
+      const seed=Math.sin((u%frequency)*127.1+(v%frequency)*311.7)*43758.5453;
+      return seed-Math.floor(seed);
+    };
+    const top=at(ix,iy)*(1-a)+at(ix+1,iy)*a;
+    const bottom=at(ix,iy+1)*(1-a)+at(ix+1,iy+1)*a;
+    return top*(1-b)+bottom*b;
+  };
   for(let y=0;y<size;y++){
     for(let x=0;x<size;x++){
-      const u=x*Math.PI*2/size,v=y*Math.PI*2/size;
-      const depth=Math.sin(u*2+v+Math.sin(v*3))*.19+Math.cos(v*2-u)*.16;
-      const ripple=Math.abs(Math.sin(u*7+v*3+Math.sin(v*5-u*2)*1.4));
-      const grain=Math.sin(u*37+v*43)*Math.cos(u*29-v*53)*6;
-      const shine=(mat==='water'?14:22)*Math.pow(1-ripple,5);
+      const sample=f=>noise(x*f/size,y*f/size,f);
+      const depth=(sample(5)-.5)*.47+(sample(11)-.5)*.24;
+      const shimmer=sample(mat==='coastSea'?19:24);
+      const grain=(sample(64)-.5)*11;
+      const shine=(mat==='water'?15:24)*Math.pow(shimmer,3);
       const i=(y*size+x)*4;
       for(let channel=0;channel<3;channel++)pixels.data[i+channel]=rgb[channel]*(.94+depth)+shine+grain;
       pixels.data[i+3]=255;
@@ -540,6 +571,43 @@ function drawWaterSurface(mat,x,y,w,h,flow,settings){
   drawTerrainMotion(mat,x,y,w,h,flow,appearance);
 }
 
+function waterSurfaceKey(surface){
+  if((surface.points&&!surface.terrain)||!waterDefaults[surface.mat])return '';
+  const {color,speed,waves}=waterAppearance(surface.mat,surface.water);
+  return [surface.mat,color,speed,waves].join('|');
+}
+
+function drawJoinedWater(surfaces){
+  const first=surfaces[0];
+  let left=Infinity,top=Infinity,right=-Infinity,bottom=-Infinity;
+  const addRect=(x,y,w,h)=>{
+    left=Math.min(left,x);top=Math.min(top,y);
+    right=Math.max(right,x+w);bottom=Math.max(bottom,y+h);
+  };
+  ctx.save();
+  ctx.beginPath();
+  for(const surface of surfaces){
+    if(!surface.points){
+      addRect(surface.x,surface.y,surface.w,surface.h);
+      ctx.rect(surface.x,surface.y,surface.w,surface.h);
+      continue;
+    }
+    const radius=surface.size*(surface.shape==='spray'?.18:1)/2;
+    for(const {x,y} of surface.points){
+      addRect(x-radius,y-radius,radius*2,radius*2);
+      if(surface.shape==='quadrado')ctx.rect(x-radius,y-radius,radius*2,radius*2);
+      else{ctx.moveTo(x+radius,y);ctx.arc(x,y,radius,0,Math.PI*2);}
+    }
+  }
+  if(Number.isFinite(left)){
+    ctx.clip();
+    const start=first.points?.[0],end=first.points?.at(-1);
+    const flow=start&&end?Math.atan2(end.y-start.y,end.x-start.x):first.flowAngle||0;
+    drawWaterSurface(first.mat,left,top,right-left,bottom-top,flow,first.water);
+  }
+  ctx.restore();
+}
+
 function drawCachedTerrain(mat,x,y,w,h,flow,settings) {
   if(waterDefaults[mat]){
     drawWaterSurface(mat,x,y,w,h,flow,settings);
@@ -557,6 +625,10 @@ function drawCachedTerrain(mat,x,y,w,h,flow,settings) {
 function chooseTerrainMaterial(mat) {
   state.brush.mat=mat;
   syncWaterControls('brushWater',mat);
+  const scatter=scatterById.has(mat);
+  for(const id of ['terrainPaintModeRow','terrainPaintEdgeRow']){
+    document.getElementById(id).classList.toggle('hidden',scatter);
+  }
   selectTool('terrainBrush');
 }
 
@@ -572,11 +644,19 @@ function initTerrainTools() {
     }
     brush.append(group);
   }
+  for(const [label,items] of scatterGroups){
+    const group=document.createElement('optgroup');
+    group.label=label;
+    for(const [id,name] of items)group.append(new Option(name,id));
+    brush.append(group);
+  }
 }
 
 function applyTerrainBrush(floor,x,y,isDrag) {
   const mode=document.getElementById('terrainPaintMode').value;
   const mat=state.brush.mat;
+  const size=Number(document.getElementById('terrainPaintSize').value);
+  if(scatterById.has(mat)){addMesaScatterPoint(floor,x,y,isDrag,size,mat);return;}
   if(mode==='fill'){
     if(!isDrag){floor.baseTerrain=mat;floor.water=waterDefaults[mat]?readWaterControls('brushWater',mat):null;dragStart=mat==='riverWater'?{x,y,baseFlow:true}:null;}
     else if(dragStart?.baseFlow)floor.flowAngle=Math.atan2(y-dragStart.y,x-dragStart.x);
@@ -588,8 +668,6 @@ function applyTerrainBrush(floor,x,y,isDrag) {
       w:Math.abs(x-dragStart.x),h:Math.abs(y-dragStart.y),mat,water:waterDefaults[mat]?readWaterControls('brushWater',mat):null};
     return;
   }
-  const size=Number(document.getElementById('terrainPaintSize').value);
-  if(mode==='mesaScatter'){addMesaScatterPoint(floor,x,y,isDrag,size);return;}
   const softness=Number(document.getElementById('terrainPaintEdge').value);
   let stroke=window.activeBrushStroke;
   if(!isDrag||!stroke){
@@ -643,10 +721,6 @@ function drawTerrainStroke(stroke) {
     ctx.globalAlpha=alpha;
     trace(diameter);
     ctx.fill();
-  }
-  if(water){
-    const breakers=stroke.mat==='coastSea'?water.waves:stroke.mat==='riverWater'?water.speed*.36:0;
-    drawShoreBreakers(stroke,size,breakers);
   }
   if(terrainMotionKinds.has(stroke.mat)&&!terrainMotionPreference.matches){
     let left=Infinity,top=Infinity,right=-Infinity,bottom=-Infinity;

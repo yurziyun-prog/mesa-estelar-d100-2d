@@ -284,6 +284,7 @@ const catalogThumbnailCache=new Map();
 function catalogThumbnail(kind,id){
  const imported=createFinishThumbnail(id)||createMesaPreview(id);
  if(imported)return imported;
+ if(kind==='terrain'&&scatterById.has(id))return null;
  if(kind==='terrain'||(kind==='mat'&&Object.hasOwn(TERRAIN_PALETTES,id)))return createTerrainThumbnail(id);
  if(!['prop','mat','wallFinish','roof'].includes(kind)&&!(kind==='tool'&&id==='wall'))return null;
  const key=[kind,id,state.buildStyle].join(':');
@@ -316,7 +317,8 @@ function catalogThumbnail(kind,id){
 }
 
 function catalogEntries(category){
- if(category==='terrain')return TERRAIN_GROUPS.flatMap(([group,items])=>items.map(([id,label])=>[id,'',label,'terrain',group]));
+ if(category==='terrain')return [...TERRAIN_GROUPS,...scatterGroups].flatMap(([group,items])=>
+   items.map(([id,label])=>[id,'',label,'terrain',group]));
  const entries=ARCHITECT_LIBRARY[category]||[];
  if(category==='architecture')return [...entries,
    ...catalogWalls.map(([id,label])=>[id,'',label,'wallFinish','Paredes texturizadas']),
