@@ -26,6 +26,11 @@ Colocar|放置
 Personagens disponíveis (marque e clique em Colocar):|可用角色（勾选后点击放置）
 Coleção de construção|建筑风格
 Normal|普通
+Todos os estilos|全部风格
+Medieval|中世纪
+Moderno|现代
+Iluminação e decoração|照明与装饰
+Instalações fixas|固定设施
 Retro-futurista|复古未来
 Arábia|阿拉伯风格
 Define a aparência dos próximos elementos. Misture livremente no mesmo mapa. O terreno não muda.|设置接下来放置的物件风格。同一地图可以混搭，地形保持原样。

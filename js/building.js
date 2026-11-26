@@ -149,12 +149,14 @@ function drawBuildingRoofs(floor,index,onTop=false) {
     if(state.mode==='gm'&&!showGmBuildingRoofs)continue;
     if(state.mode==='architect'&&!onTop)continue;
     if(state.mode==='player'&&actor?.floor===index&&actor.sceneId===state.activeSceneId&&buildingDistance(actor.x,actor.y,b)<0)continue;
+    const views=!onTop&&actor?.floor===index&&actor.sceneId===state.activeSceneId
+      ?exteriorSightThroughOpenings(floor,actor):[];
     ctx.save();
     if(state.mode==='gm')ctx.globalAlpha=.25;
     clipOutsideCaves(floor.caves,b);
     if(!onTop&&actor?.floor===index&&actor.sceneId===state.activeSceneId){
       clipRoofAtDoors(floor,b,actor);
-      clipCoverForExteriorSight(b,exteriorSightThroughOpenings(floor,actor));
+      clipCoverForExteriorSight(b,views);
     }
     traceBuilding(b);
     ctx.clip();
@@ -172,7 +174,7 @@ function drawBuildingRoofs(floor,index,onTop=false) {
     ctx.lineWidth=5;
     ctx.strokeStyle='#1e2430';
     ctx.stroke();
-    markVisibleRoofCover(b);
+    markVisibleRoofCover(b,b,views);
     ctx.restore();
   }
 }

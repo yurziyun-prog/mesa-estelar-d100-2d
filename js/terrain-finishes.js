@@ -146,6 +146,7 @@ const furnitureFinishes=[
 const furnitureFinishById=new Map(furnitureFinishes.map(item=>[item[0],item]));
 
 function drawFireEffect(prop,coreOnly=false){
+ if(prop.decorationOff)return;
  const hearing=Boolean(fireplaceDesign(prop.type));
  if(hearing&&prop.fireLit===false)return;
  if(!hearing&&!['braziers','campfire'].includes(prop.type))return;

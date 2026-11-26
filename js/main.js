@@ -106,6 +106,22 @@ function screenToWorld(sx, sy) {
   };
 }
 
+function startFurnitureDrag(ent,wx,wy){
+  const floor=getScene().floors[ent.floor];
+  if(!floor||ent.sleepPose||liftRides.has(ent))return false;
+  const prop=floor.props.filter(isMovableFurniture)
+    .map(item=>({item,d:Math.hypot(item.x-wx,item.y-wy)}))
+    .filter(({item,d})=>d<Math.max(24,28*(item.scale||1))&&Math.hypot(item.x-ent.x,item.y-ent.y)<105)
+    .sort((a,b)=>a.d-b.d)[0]?.item;
+  const carpet=!prop&&floor.areas.findLast(item=>item.mat==='carpet'&&pointInArchitectArea(item,wx,wy));
+  const item=prop||carpet;
+  if(!item||Math.hypot(wx-ent.x,wy-ent.y)>105)return false;
+  if(isPortableLadder(item)&&uprightPortableLadder(item))return false;
+  beginEdit();
+  draggingProp={item,ent,offsetX:item.x-wx,offsetY:item.y-wy};
+  return true;
+}
+
 function setupInputs() {
   window.addEventListener('keydown', e => {
     if(e.key==='Escape'&&document.getElementById('architectContextMenu')){closeArchitectContextMenu();return;}
@@ -199,7 +215,7 @@ function setupInputs() {
         gmPreviewId = clicked.id;
         refreshGmFocus();
         beginEdit();draggingEntity = clicked;
-      }
+      }else if(activeActor()&&!worldAction)startFurnitureDrag(activeActor(),wx,wy);
     } else if (activeActor()) {
       const ent = activeActor();
       if (!ent || ent.sceneId !== state.activeSceneId) return;
@@ -210,8 +226,7 @@ function setupInputs() {
         else inspectOrDamage(ent,floor,wx,wy);
         return;
       }
-      const movable=floor.props.find(p=>(p.type==='log'||isPortableLadder(p)) && Math.hypot(p.x-wx,p.y-wy)<42 && Math.hypot(p.x-ent.x,p.y-ent.y)<110);
-      if(movable) {beginEdit();draggingProp={item:movable,ent};return;}
+      if(startFurnitureDrag(ent,wx,wy))return;
       interactNearby(ent);
     }
   });
@@ -236,12 +251,17 @@ function setupInputs() {
       architectCtrlHeld=e.ctrlKey||e.metaKey;
       applyArchitectAction(wx, wy, true);
     } else if (draggingProp && activeActor()) {
-      const ent=draggingProp.ent;
-      if(isPortableLadder(draggingProp.item)&&uprightPortableLadder(draggingProp.item))return;
+      const {ent,item,offsetX,offsetY}=draggingProp;
       const dx=wx-ent.x,dy=wy-ent.y,dist=Math.hypot(dx,dy);
       const factor=dist>105?105/dist:1;
-      draggingProp.item.x=ent.x+dx*factor;
-      draggingProp.item.y=ent.y+dy*factor;
+      const x=ent.x+dx*factor+offsetX,y=ent.y+dy*factor+offsetY;
+      const floor=getScene().floors[ent.floor];
+      const cx=item.mat==='carpet'?item.w/2:0,cy=item.mat==='carpet'?item.h/2:0;
+      if(!crossesWall(floor,item.x+cx,item.y+cy,x+cx,y+cy)&&
+         (item.type==='log'||walkableFloor(floor,x+cx,y+cy))){
+        item.x=x;
+        item.y=y;
+      }
     } else if (draggingEntity && state.mode === 'gm') {
       draggingEntity.x = wx;
       draggingEntity.y = wy;
@@ -440,11 +460,7 @@ function drawMapOverlays(sc,interior){
     ctx.fillStyle=lighting.evening?`rgba(212,132,125,${lighting.warm})`:`rgba(250,166,93,${lighting.warm})`;
     ctx.fillRect(0,0,canvas.width,canvas.height);
   }
-  if(lighting.dark){
-    ctx.fillStyle=`rgba(8,15,35,${lighting.dark})`;
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-  }
-  renderSceneryLights(sc.floors[state.currentFloor],interior);
+  drawNightLighting(sc.floors[state.currentFloor],interior,lighting.dark);
   drawIndoorSightMask(sc.floors[state.currentFloor],interior);
   drawArchitectSelectionHUD();
   drawArchitectMapGuides();

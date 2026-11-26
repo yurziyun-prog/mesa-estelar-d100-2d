@@ -8,6 +8,96 @@ const sceneryItems=new Map([
  ['sandstoneRuin',['Ruína de arenito','砂岩废墟',6,112,null,0,true]],
  ['snowyRuin',['Ruína nevada','覆雪废墟',7,112,null,0,true]]
 ]);
+const decorationItems=new Map([
+ ['wallLantern',['Lanterna de parede','壁挂灯笼','light','#f5bc83',123,'medieval']],
+ ['hangingTorch',['Tocha de parede','壁挂火把','fire','#ffb86b',137,'medieval']],
+ ['candleCluster',['Velas','蜡烛组','fire','#ffe4b3',76,'medieval']],
+ ['ceilingBulb',['Lâmpada de teto','吸顶灯','light','#fff0cd',178,'modern']],
+ ['tubeLight',['Lâmpada fluorescente','荧光灯管','light','#c9ecff',190,'modern']],
+ ['festiveLights',['Luzes festivas','节日串灯','string','#f5c98a',108,'modern']],
+ ['arabHangingLamp',['Lanterna árabe suspensa','阿拉伯吊灯','light','#ffcb71',137,'arabia']],
+ ['futureLightPanel',['Painel de luz','未来照明板','light','#86edff',192,'futurist']],
+ ['grimePatch',['Mancha de sujeira','污渍','grime',null,0]],
+ ['cobweb',['Teia de aranha','蜘蛛网','web',null,0]],
+ ['graffitiMark',['Grafite','涂鸦','mark',null,0,'modern']],
+ ['foldedBlanket',['Manta','毛毯','cloth',null,0]],
+ ['tablecloth',['Toalha de mesa','桌布','cloth',null,0]],
+ ['wallConduit',['Eletroduto','固定电线管','conduit',null,0,'modern']],
+ ['futuristConduit',['Duto de energia','能量管线','conduit',null,0,'futurist']],
+ ['floorLampshade',['Abajur de piso','落地灯罩','light','#ffe1a6',115,'modern']]
+]);
+const fixedConduits=new Set(['wallConduit','futuristConduit']);
+const overheadDecorations=new Set(['wallLantern','hangingTorch','ceilingBulb','tubeLight',
+ 'festiveLights','arabHangingLamp','futureLightPanel','neonSignCyan','neonTubeMagenta','lamp','holoSign']);
+
+function drawDecorationItem(prop){
+ const item=decorationItems.get(prop.type);
+ if(!item)return false;
+ const [,,kind,light]=item;
+ if(prop.decorationOff&&!light&&kind!=='cloth')return true;
+ ctx.save();
+ ctx.translate(prop.x,prop.y);ctx.rotate((prop.rot||0)*Math.PI/2);
+ const lit=prop.decorationOff!==true;
+ const color=light&&lit?light:'#4a4e5b';
+ if(kind==='light'||kind==='fire'){
+   ctx.fillStyle='#363846';ctx.fillRect(-17,-8,34,16);
+   ctx.fillStyle=color;
+   if(kind==='fire'){
+     ctx.fillRect(-9,4,18,4);
+     ctx.beginPath();ctx.moveTo(-8,4);ctx.quadraticCurveTo(-13,-5,2,-13);
+     ctx.quadraticCurveTo(11,-3,8,4);ctx.fill();
+   }else{
+     ctx.beginPath();ctx.roundRect(-13,-4,26,8,2);ctx.fill();
+   }
+ }else if(kind==='string'){
+   ctx.strokeStyle='#41483a';ctx.beginPath();ctx.moveTo(-28,-3);ctx.quadraticCurveTo(0,17,28,-3);ctx.stroke();
+   for(let i=0;i<7;i++){
+     ctx.fillStyle=lit?['#ffcc5a','#e6736d','#83c883','#9fc4f4'][i%4]:'#515964';
+     ctx.beginPath();ctx.arc(-27+i*9,6-((i-3)**2)*.8,2.7,0,Math.PI*2);ctx.fill();
+   }
+ }else if(kind==='web'){
+   ctx.strokeStyle='rgba(227,232,225,.68)';ctx.beginPath();
+   for(let i=0;i<6;i++){
+     const a=i*Math.PI/3;
+     ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*19,Math.sin(a)*19);
+   }
+   for(const r of [5,11,17]){
+     ctx.moveTo(r,0);
+     for(let i=1;i<=6;i++)ctx.lineTo(Math.cos(i*Math.PI/3)*r,Math.sin(i*Math.PI/3)*r);
+   }
+   ctx.stroke();
+ }else if(kind==='grime'){
+   ctx.fillStyle='rgba(55,43,27,.47)';
+   for(let i=0;i<12;i++){
+     ctx.beginPath();ctx.ellipse(Math.sin(i*2.4)*16,Math.cos(i*1.8)*10,4+i%7,3+i%4,i,0,Math.PI*2);ctx.fill();
+   }
+ }else if(kind==='mark'){
+   ctx.strokeStyle=prop.color||'#c879ab';ctx.lineWidth=4;
+   ctx.beginPath();ctx.moveTo(-20,6);ctx.lineTo(-10,-8);ctx.lineTo(0,7);ctx.lineTo(10,-8);ctx.lineTo(20,6);ctx.stroke();
+ }else if(kind==='cloth'){
+   const h=lit?11:5;
+   ctx.fillStyle=prop.color||'#a67481';ctx.fillRect(-20,-h,40,h*2);
+   ctx.strokeStyle='#d4b594';ctx.strokeRect(-17,-h+2,34,h*2-4);
+ }else{
+   ctx.fillStyle='#535769';ctx.fillRect(-29,-6,58,12);
+   ctx.fillStyle=prop.type==='futuristConduit'?'#67c5d5':'#96929a';ctx.fillRect(-28,-2,56,4);
+   ctx.fillStyle='#333945';
+   for(const x of [-23,0,23])ctx.fillRect(x-2,-7,4,14);
+ }
+ ctx.restore();
+ return true;
+}
+
+function toggleNearbyDecoration(floor,actor){
+ const nearest=floor.props.map(prop=>({prop,d:Math.hypot(prop.x-actor.x,prop.y-actor.y)}))
+   .filter(({prop,d})=>d<52&&!fixedConduits.has(prop.type)&&
+     (decorationItems.has(prop.type)||['lamp','oilLamp','torch','campfire','braziers','neonSignCyan','neonTubeMagenta'].includes(prop.type)))
+   .sort((a,b)=>a.d-b.d)[0];
+ if(!nearest)return false;
+ nearest.prop.decorationOff=!nearest.prop.decorationOff;
+ return true;
+}
+
 const sceneryArt=new Image();
 sceneryArt.src='assets/nature/scenery-atlas.webp';
 
@@ -17,7 +107,7 @@ function sceneryEntries(){
 
 function scenerySolidRadius(type){
  const item=sceneryItems.get(type);
- return item?.[6]?item[3]*.31:0;
+ return fixedConduits.has(type)?14:type==='floorLampshade'?11:item?.[6]?item[3]*.31:0;
 }
 
 function drawSceneryProp(prop){
@@ -238,8 +328,8 @@ function drawChimneySection(prop,cap){
  ctx.restore();
 }
 
-function markVisibleRoofCover(bounds,roof=bounds){
- renderedRoofCovers.push(bounds);
+function markVisibleRoofCover(bounds,roof=bounds,views=[]){
+ renderedRoofCovers.push({bounds,views});
  for(const chimney of visibleChimneys){
    if(chimney.top.roof===roof)drawChimneySection(chimney.prop,true);
  }
@@ -255,6 +345,9 @@ function lightWallsWithOpenings(floor){
 }
 
 function sceneryEmitter(prop){
+ if(prop.decorationOff)return null;
+ const decoration=decorationItems.get(prop.type);
+ if(decoration?.[3])return {prop,color:decoration[3],radius:decoration[4],fire:decoration[2]==='fire'};
  const item=sceneryItems.get(prop.type);
  if(item?.[4])return {prop,color:item[4],radius:item[5]};
  if(fireplaceDesign(prop.type))return prop.fireLit===false?null:{prop,color:'#ffc992',radius:485,fire:true};
@@ -286,15 +379,46 @@ function lightFromLowerStairs(floor){
  });
 }
 
+const darknessLayer=document.createElement('canvas');
+
+function drawNightLighting(floor,interior,darkness){
+ if(!darkness)return;
+ if(darknessLayer.width!==canvas.width||darknessLayer.height!==canvas.height){
+   darknessLayer.width=canvas.width;darknessLayer.height=canvas.height;
+ }
+ const sceneContext=ctx;
+ const shade=darknessLayer.getContext('2d');
+ const tint=`rgba(8,15,35,${darkness})`;
+ shade.clearRect(0,0,canvas.width,canvas.height);
+ shade.fillStyle=tint;
+ shade.fillRect(0,0,canvas.width,canvas.height);
+ ctx=shade;
+ try{
+   renderSceneryLights(floor,interior);
+   shade.save();
+   shade.translate(state.camera.x,state.camera.y);
+   shade.scale(state.camera.zoom,state.camera.zoom);
+   shade.fillStyle=tint;
+   for(const {bounds,views} of renderedRoofCovers){
+     shade.save();
+     clipCoverForExteriorSight(bounds,views);
+     shade.clearRect(bounds.x,bounds.y,bounds.w,bounds.h);
+     shade.fillRect(bounds.x,bounds.y,bounds.w,bounds.h);
+     shade.restore();
+   }
+   shade.restore();
+ }finally{ctx=sceneContext;}
+ ctx.drawImage(darknessLayer,0,0);
+}
+
 function renderSceneryLights(floor,interior){
  if(!floor)return;
- const darkness=daylightLighting().dark;
  const emitters=[...floor.props.map(sceneryEmitter).filter(Boolean),...lightFromLowerStairs(floor)];
  if(!emitters.length)return;
  const walls=lightWallsWithOpenings(floor);
  ctx.save();ctx.translate(state.camera.x,state.camera.y);ctx.scale(state.camera.zoom,state.camera.zoom);
- ctx.globalCompositeOperation='screen';
- for(const {prop,color,radius,strength=1,fire} of emitters){
+ ctx.globalCompositeOperation='destination-out';
+ for(const {prop,radius,strength=1,fire} of emitters){
    const x=prop.x,y=prop.y,r=radius*(prop.scale||1),zoom=state.camera.zoom;
    if(x*zoom+state.camera.x<-r*zoom||y*zoom+state.camera.y<-r*zoom||
       x*zoom+state.camera.x>canvas.width+r*zoom||y*zoom+state.camera.y>canvas.height+r*zoom)continue;
@@ -304,15 +428,6 @@ function renderSceneryLights(floor,interior){
    const nearby=walls.filter(wall=>wall.source!==prop&&distToSegment(x,y,wall.x1,wall.y1,wall.x2,wall.y2)<r);
    ctx.save();
    if(interior)clipCaveInterior(floor,interior);
-   for(const roof of renderedRoofCovers){
-     if(roof.x>=x+r||roof.y>=y+r||roof.x+roof.w<=x-r||roof.y+roof.h<=y-r)continue;
-     ctx.beginPath();
-     ctx.rect(Math.min(x-r,roof.x),Math.min(y-r,roof.y),
-       Math.max(x+r,roof.x+roof.w)-Math.min(x-r,roof.x),
-       Math.max(y+r,roof.y+roof.h)-Math.min(y-r,roof.y));
-     ctx.rect(roof.x,roof.y,roof.w,roof.h);
-     ctx.clip('evenodd');
-   }
    ctx.beginPath();
    for(let i=0;i<96;i++){
      const angle=i*Math.PI/48,dx=Math.cos(angle),dy=Math.sin(angle);
@@ -323,26 +438,21 @@ function renderSceneryLights(floor,interior){
    }
    ctx.closePath();ctx.clip();
    const gradient=ctx.createRadialGradient(x,y,0,x,y,r);
-   gradient.addColorStop(0,color+'a8');
-   gradient.addColorStop(.28,color+(fire?'94':'52'));
-   gradient.addColorStop(.60,color+(fire?'58':'20'));
-   gradient.addColorStop(1,color+'00');
+   gradient.addColorStop(0,'rgba(0,0,0,.97)');
+   gradient.addColorStop(.28,fire?'rgba(0,0,0,.85)':'rgba(0,0,0,.65)');
+   gradient.addColorStop(.60,fire?'rgba(0,0,0,.52)':'rgba(0,0,0,.25)');
+   gradient.addColorStop(1,'rgba(0,0,0,0)');
    ctx.fillStyle=gradient;
    const flicker=terrainMotionPreference.matches?1:.91+.09*Math.sin(performance.now()/140+x);
-   ctx.globalAlpha=Math.min(1,.48+darkness*.72)*flicker*strength;
+   ctx.globalAlpha=flicker*strength;
    ctx.fillRect(x-r,y-r,r*2,r*2);
-   if(fire){
-     ctx.globalCompositeOperation='source-over';
-     ctx.globalAlpha=1;
-     drawFireEffect(prop,true);
-   }
    ctx.restore();
  }
  ctx.restore();
 }
 
 function initSceneryCatalog(){
- for(const [label,zh] of sceneryItems.values())SITE_ZH.set(label,zh);
+ for(const [label,zh] of [...sceneryItems.values(),...decorationItems.values()])SITE_ZH.set(label,zh);
  SITE_ZH.set('Cenografia','场景装饰');
  SITE_ZH.set('Parede curva','弧形墙');
  SITE_ZH.set('Mar costeiro','海洋');

@@ -475,13 +475,13 @@ function migrateFixedTerrain() {
 }
 
 function setBuildStyle(style) {
-  if(state.mode!=='architect' || !['normal','futurist','arabia'].includes(style))return;
+  if(state.mode!=='architect' || !['normal','medieval','modern','futurist','arabia'].includes(style))return;
   state.buildStyle=style;
   document.getElementById('sceneStyleSelect').value=style;
   if(typeof renderArchitectLibrary==='function'){
     renderArchitectLibrary();
   }
-  logEvent('🧱 Coleção de construção: '+(style==='arabia'?'Arábia':style==='futurist'?'Retro-futurista':'Normal'));
+  logEvent('🧱 '+document.getElementById('sceneStyleSelect').selectedOptions[0].textContent);
 }
 function migrateBuildStyles(){
   if(!state.buildStyle || state.buildStyle==='downloads')state.buildStyle='normal';

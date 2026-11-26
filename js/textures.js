@@ -777,7 +777,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     liftVisualOffset(liftViewer):0;
   for(const {prop} of remoteLifts(sc,floorIdx))drawProp({...prop,y:prop.y-liftOffset(prop)});
   [...floor.props].sort((a,b)=>(a.baseMetres||0)-(b.baseMetres||0)||reliefAt(floor,a.x,a.y)-reliefAt(floor,b.x,b.y)||(a.y-b.y)).forEach(p => {
-    if(submergedRocks.has(p))return;
+    if(submergedRocks.has(p)||overheadDecorations.has(p.type))return;
     if(plantTypes.has(p.type))drawPlantBase(p);
     else{drawProp({...p,y:p.y-(p.baseMetres||0)*7-liftOffset(p)});drawFireEffect(p);}
   });
@@ -805,6 +805,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
       ((e.stairClimb.linkId&&e.stairClimb.linkId===s.linkId)||
        (!e.stairClimb.linkId&&Math.hypot(e.stairClimb.x-s.x,e.stairClimb.y-s.y)<5))))
     .forEach(s=>drawArchitecturalStair(s,true));
+  for(const prop of floor.props)if(overheadDecorations.has(prop.type))drawProp(prop);
   const viewer=activeActor();
   const underCanopy=viewer?.floor===floorIdx&&viewer.sceneId===state.activeSceneId?viewer:null;
   for(const p of floor.props)if(plantTypes.has(p.type))drawPlantCanopy(p,underCanopy);
@@ -1141,7 +1142,7 @@ function drawProp(p) {
   if(isKenneyObject(p.type)){drawKenneyObject(p);return;}
   if(isKenneyRoguelikeObject(p.type)){drawKenneyRoguelikeObject(p);return;}
   if(isSleepingFurniture(p)&&!TENT_TYPES.has(p.type)){drawSleepingFurniture(p);return;}
-  if(drawWorldFixture(p)||drawSceneryProp(p)||drawMesaFurniture(p)||drawMaterialFurniture(p)||drawGeologyProp(p)||drawCatalogProp(p)||drawExpandedProp(p))return;
+  if(drawDecorationItem(p)||drawWorldFixture(p)||drawSceneryProp(p)||drawMesaFurniture(p)||drawMaterialFurniture(p)||drawGeologyProp(p)||drawCatalogProp(p)||drawExpandedProp(p))return;
   if(p.type==='key'){
     ctx.save();ctx.translate(p.x,p.y);ctx.strokeStyle='#e7be4c';ctx.lineWidth=4;
     ctx.beginPath();ctx.arc(-5,-2,5,0,Math.PI*2);ctx.moveTo(0,0);ctx.lineTo(15,11);ctx.moveTo(9,6);ctx.lineTo(7,11);ctx.moveTo(13,9);ctx.lineTo(11,14);ctx.stroke();

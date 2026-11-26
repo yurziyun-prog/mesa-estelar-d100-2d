@@ -163,16 +163,26 @@ function placeArchitectCharacter(x,y){
  logEvent('🎭 '+entity.name+' colocado pelo Arquiteto.');
 }
 
+const themedCatalogItems={
+ medieval:new Set(['hearth','brickHearth','roof_thatch','roof_tile','dungeonBrick','tavernWood','sandstoneRuin','snowyRuin',
+   'tavernBar','roundTable','longTable','statue','ironGrate','arcaneCircle','braziers','bones','cobweb','torch','campfire','chest']),
+ modern:new Set(['ironStove','lamp','sofaBooth','modernTable','planter','campTent','screen','roof_concrete','poolTable']),
+ arabia:new Set(['desertTree','cactus','tent','oilLamp','cushions','lowTable','urn','rug','fountain','roundPavilion','sandstoneRuin']),
+ futurist:new Set(['console','capsuleBed','chestFuture','neonSignCyan','neonTubeMagenta','industrialPipe','industrialGenerator',
+   'holoTable','scifiConsole','medBed','cargoContainer','reactorCore','scifiMetal','scifiGrate','cyberFloor','roof_metal','scifiBulkhead'])
+};
+
 function isItemInBuildCollection(id,category){
- const style=state?.buildStyle||'normal';
- // Terrenos são universais. Os itens básicos podem coexistir em todos os estilos.
- if(category==='terrain'||category==='architecture'||category==='characters'||category==='downloads')return true;
- if(id==='capsuleBed')return style==='futurist';
- const arabia=new Set(['palm','desertTree','cactus','tent','oilLamp','cushions','lowTable','urn','rug','fountain']);
- const futurist=new Set(['console','lamp','crystal','capsuleBed']);
- if(style==='arabia')return !futurist.has(id);
- if(style==='futurist')return !arabia.has(id) || id==='palm';
- return !futurist.has(id) && !arabia.has(id);
+ const style=state.buildStyle||'normal';
+ if(style==='normal'||['terrain','characters','downloads'].includes(category))return true;
+ const decorationStyle=decorationItems.get(id)?.[5];
+ if(decorationStyle)return decorationStyle===style;
+ if(themedCatalogItems[style]?.has(id))return true;
+ if(Object.values(themedCatalogItems).some(items=>items.has(id)))return false;
+ if(worldFixtures.has(id))return style==='futurist'||(style==='modern'&&['poolTable','loungeChair','loungeSofa','kitchenStove','vendingFridge'].includes(id));
+ if(mesaFurnitureById.has(id)&&id!=='mesaDesk')return style==='futurist'||style==='modern';
+ if(id.startsWith('alien'))return style==='futurist';
+ return true;
 }
 
 function setArchitectBrush(key,value){

@@ -201,7 +201,7 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false, waterAccess = null) {
   if(floor.props.some(p=>geologyPropRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+geologyPropRadius(p.type)*(p.scale||1)))return false;
   if(floor.props.some(p=>fixtureRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+fixtureRadius(p.type)*(p.scale||1)))return false;
   if(floor.props.some(p=>scenerySolidRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+scenerySolidRadius(p.type)*(p.scale||1)))return false;
-  const solidProps = ['table', 'bookshelf', 'hearth', 'barrel', 'cabinet', 'sofa', 'sofaBlue', 'sofaRed', 'sofaGreen'];
+  const solidProps = ['table','chair','bench','desk','lowTable','crate','screen','bookshelf','barrel','cabinet','sofa','sofaBlue','sofaRed','sofaGreen','fountain'];
   if (floor.props.some(p => (solidProps.includes(p.type)||fireplaceDesign(p.type)) && Math.hypot(p.x - nx, p.y - ny) < r + 14*(p.scale||1))) return false;
   if (floor.props.some(p => isKenneyObject(p.type) && KENNEY_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17*(p.scale||1)))return false;
   if (floor.props.some(p => isKenneyRoguelikeObject(p.type) && KENNEY_ROGUELIKE_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17*(p.scale||1)))return false;
@@ -318,6 +318,7 @@ function interactNearby(entity) {
     updateUI();
     return;
   }
+  if(toggleNearbyDecoration(floor,entity))return;
   const fire=floor.props.filter(p=>fireplaceDesign(p.type))
     .map(p=>({p,distance:Math.hypot(p.x-entity.x,p.y-entity.y)}))
     .sort((a,b)=>a.distance-b.distance)[0];

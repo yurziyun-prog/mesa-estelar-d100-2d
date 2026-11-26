@@ -174,7 +174,7 @@ function catalogWallPaint(wall){
 }
 function catalogPropIsSolid(type){
  return ['roundTable','longTable','tavernBar','armchair','statue','sofaBooth','modernTable','planter',
-  'holoTable','scifiConsole','medBed','cargoContainer','reactorCore'].includes(type);
+  'holoTable','scifiConsole','medBed','cargoContainer','reactorCore','ironGrate'].includes(type);
 }
 
 function drawCatalogProp(p){
@@ -316,18 +316,54 @@ function catalogThumbnail(kind,id){
  return preview;
 }
 
+const fixedSceneryIds=new Set(['industrialGenerator','industrialPipe','sandstoneRuin','snowyRuin']);
+const fixedCatalogIds=new Set(['ironGrate','statue','reactorCore']);
+const decorationCatalogIds=new Set(['treasurePile','arcaneCircle','braziers','bones']);
+const movableBasicProps=new Set(['log','rug','table','chair','bed','bedDouble','sleepingBag','capsuleBed',
+ 'bookshelf','barrel','bench','cabinet','desk','sofa','sofaBlue','sofaRed','sofaGreen','lowTable','console',
+ 'floorLampshade','cushions','urn','crate','screen','cushion','tent','campTent','roundPavilion']);
+function isMovableFurniture(prop){
+ return movableBasicProps.has(prop.type)||isPortableLadder(prop)||
+   mesaFurnitureById.has(prop.type)||furnitureFinishById.has(prop.type)||
+   (catalogPropStyles.has(prop.type)&&!fixedCatalogIds.has(prop.type)&&!decorationCatalogIds.has(prop.type))||
+   (worldFixtures.has(prop.type)&&!['hoverLift','holoSign','handgunPickup','industrialStove','holoTerminal','hydroRack','medStation'].includes(prop.type));
+}
+
 function catalogEntries(category){
  if(category==='terrain')return [...TERRAIN_GROUPS,...scatterGroups].flatMap(([group,items])=>
    items.map(([id,label])=>[id,'',label,'terrain',group]));
  const entries=ARCHITECT_LIBRARY[category]||[];
+ const themeProps=catalogProps.flatMap(([group,,props])=>props.map(([id,label])=>[id,'',label,'prop',group]));
+ const decorationEntries=[...decorationItems].map(([id,[label]])=>[id,'',label,'prop','Iluminação e decoração']);
+ const fixedFixtures=new Set(['hoverLift','industrialStove','holoTerminal','hydroRack','medStation']);
  if(category==='architecture')return [...entries,
+   ...decorationEntries.filter(([id])=>fixedConduits.has(id)),
+   ...sceneryEntries().filter(([id])=>fixedSceneryIds.has(id)),
+   ...themeProps.filter(([id])=>fixedCatalogIds.has(id)),
+   ...[...worldFixtures].filter(([id])=>fixedFixtures.has(id)).map(([id,[label]])=>[id,'',label,'prop','Instalações fixas']),
+   ['hearth','','Lareira','prop'],['brickHearth','','Lareira de tijolos','prop'],['ironStove','','Fogão a lenha','prop'],
+   ['fountain','','Fonte','prop'],
    ...catalogWalls.map(([id,label])=>[id,'',label,'wallFinish','Paredes texturizadas']),
    ...[...finishTextures].map(([id,[label]])=>[id,'',label,'mat','Pisos texturizados']),
    ...[['bridgeCovered','Ponte coberta'],['bridgeMetal','Ponte metálica'],['bridgeMarble','Ponte de mármore'],['bridgeStone','Ponte de pedra']].map(([id,label])=>[id,'',label,'mat','Pisos texturizados']),
    ...catalogFloors.slice(6).map(([id,label])=>[id,'',label,'mat','Pisos texturizados'])];
- if(category==='nature')return [...entries,...geologyEntries('nature'),...extraPlantIds.map(id=>[id,'',plantTypes.get(id)[0],'prop']),...catalogNature.map(([id,label])=>[id,'',label,'prop'])];
- if(category==='furniture')return [...entries,['brickHearth','','Lareira de tijolos','prop'],['ironStove','','Fogão a lenha','prop'],...worldFixtureEntries(false),...furnitureFinishes.map(([id,label])=>[id,'',label,'prop','Materiais de mesa e cadeira']),...MESA_FURNITURE.map(([id,label])=>[id,'',label,'prop','Móveis do Mesa Estelar']),...catalogProps.flatMap(([group,,props])=>props.map(([id,label])=>[id,'',label,'prop',group]))];
- if(category==='props')return [...entries,['windowCurtain','','Cortina de janela','prop'],...geologyEntries('props'),...sceneryEntries(),...worldFixtureEntries(true)];
+ if(category==='nature')return [...entries,...geologyEntries('nature'),...extraPlantIds.map(id=>[id,'',plantTypes.get(id)[0],'prop']),...catalogNature.filter(([id])=>id!=='campfire').map(([id,label])=>[id,'',label,'prop'])];
+ if(category==='furniture')return [
+   ...entries.filter(([id])=>!['hearth','lamp'].includes(id)),
+   ...ARCHITECT_LIBRARY.props.filter(([id])=>movableBasicProps.has(id)),
+   ...sceneryEntries().filter(([id])=>movableBasicProps.has(id)),
+   ...decorationEntries.filter(([id])=>id==='floorLampshade'),
+   ...worldFixtureEntries(false).filter(([id])=>!fixedFixtures.has(id)),
+   ...furnitureFinishes.map(([id,label])=>[id,'',label,'prop','Materiais de mesa e cadeira']),
+   ...MESA_FURNITURE.map(([id,label])=>[id,'',label,'prop','Móveis do Mesa Estelar']),
+   ...themeProps.filter(([id])=>!fixedCatalogIds.has(id)&&!decorationCatalogIds.has(id))];
+ if(category==='props')return [
+   ...entries.filter(([id])=>!movableBasicProps.has(id)&&id!=='fountain'),
+   ['windowCurtain','','Cortina de janela','prop'],['lamp','','Luminária','prop'],['campfire','','Fogueira','prop'],
+   ...decorationEntries.filter(([id])=>!fixedConduits.has(id)&&id!=='floorLampshade'),
+   ...themeProps.filter(([id])=>decorationCatalogIds.has(id)),
+   ...sceneryEntries().filter(([id])=>!fixedSceneryIds.has(id)&&!movableBasicProps.has(id)),
+   ...worldFixtureEntries(true).filter(([id])=>!fixedFixtures.has(id))];
  return entries;
 }
 
