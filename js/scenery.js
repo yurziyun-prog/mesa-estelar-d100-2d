@@ -307,3 +307,53 @@ function drawIndoorSightMask(floor,interior){
  ctx.fillStyle='#0b111b';ctx.fill('evenodd');
  ctx.restore();
 }
+
+// The same openings that allow a view out also allow a limited view in.
+function exteriorSightThroughOpenings(floor,actor){
+ if(state.mode!=='player'||!actor)return [];
+ const slabs=floor.areas.filter(isStructuralSlab).concat(floor.buildings||[]);
+ const inside=(x,y)=>slabs.some(a=>pointInArchitectArea(a,x,y));
+ if(inside(actor.x,actor.y))return [];
+ const openings=[
+   ...(floor.doors||[]).map(opening=>({opening,width:opening.width||68,pass:opening.open})),
+   ...(floor.windows||[]).map(opening=>({opening,width:opening.width||40,pass:true}))
+ ].map(item=>({...item,edge:sightOpeningEdge(item.opening,item.width)}));
+ const solid=sightWallsWithOpenings(lightOccluders(floor).filter(w=>!w.source),openings);
+ const walls=solid.concat(openings.map(item=>item.edge));
+ const {x,y}=actor;
+ const nearest=(x,y,dx,dy,limit)=>walls.reduce((r,w)=>rayWallDistance(x,y,dx,dy,w,r),limit);
+ const views=[];
+ for(const {opening,edge,pass} of openings){
+   const proximity=Math.hypot(opening.x-x,opening.y-y);
+   if(!pass||proximity>=128)continue;
+   const points=[];
+   for(let i=0;i<=32;i++){
+     const t=(i+.02)/32.04;
+     const px=edge.x1+(edge.x2-edge.x1)*t,py=edge.y1+(edge.y2-edge.y1)*t;
+     const length=Math.hypot(px-x,py-y);
+     if(length<.01)continue;
+     const dx=(px-x)/length,dy=(py-y)/length;
+     const sx=px+dx*.01,sy=py+dy*.01;
+     if(nearest(x,y,dx,dy,length)<length-.01||!inside(sx,sy)){
+       points.push({near:{x:px,y:py},far:{x:px,y:py}});continue;
+     }
+     const range=Math.min(slabSightLimit(slabs,sx,sy,dx,dy),320*Math.min(1,(128-proximity)/36));
+     const reach=nearest(sx,sy,dx,dy,range);
+     points.push({near:{x:px,y:py},far:{x:sx+dx*reach,y:sy+dy*reach}});
+   }
+   if(points.some(({near,far})=>Math.hypot(far.x-near.x,far.y-near.y)>1))
+     views.push({opening,points:points.map(p=>p.near).concat(points.slice().reverse().map(p=>p.far))});
+ }
+ return views;
+}
+
+function clipCoverForExteriorSight(bounds,views){
+ for(const {opening,points} of views){
+   if(!pointInArchitectArea(bounds,opening.x,opening.y,4))continue;
+   ctx.beginPath();
+   ctx.rect(bounds.x-2,bounds.y-2,bounds.w+4,bounds.h+4);
+   ctx.moveTo(points[0].x,points[0].y);
+   for(const p of points.slice(1))ctx.lineTo(p.x,p.y);
+   ctx.closePath();ctx.clip('evenodd');
+ }
+}

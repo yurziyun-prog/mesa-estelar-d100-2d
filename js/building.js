@@ -143,7 +143,10 @@ function drawBuildingRoofs(floor,index,onTop=false) {
     ctx.save();
     if(state.mode==='gm')ctx.globalAlpha=.25;
     clipOutsideCaves(floor.caves,b);
-    if(!onTop&&actor?.floor===index&&actor.sceneId===state.activeSceneId)clipRoofAtDoors(floor,b,actor);
+    if(!onTop&&actor?.floor===index&&actor.sceneId===state.activeSceneId){
+      clipRoofAtDoors(floor,b,actor);
+      clipCoverForExteriorSight(b,exteriorSightThroughOpenings(floor,actor));
+    }
     traceBuilding(b);
     ctx.clip();
     if(b.roofType==='upperFloorBase')drawTexturedArea(b.x,b.y,b.w,b.h,'wood');

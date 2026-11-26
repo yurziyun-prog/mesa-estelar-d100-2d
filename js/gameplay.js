@@ -242,17 +242,11 @@ function interactWithBed(ent,bed){
 function interactNearby(entity) {
   const floor = getScene().floors[entity.floor];
   if(entity.sleepPose||liftRides.has(entity))return;
-  if(useExcavation(entity)||pickupWorldTool(entity,floor)||interactCaveDoor(floor,entity)||interactPortableLadder(entity)||interactVending(entity,floor))return;
-  const nearBed=floor.props.filter(isSleepingFurniture).map(p=>({p,d:Math.hypot(p.x-entity.x,p.y-entity.y)})).sort((a,b)=>a.d-b.d)[0];
-  if(nearBed && nearBed.d<(TENT_TYPES.has(nearBed.p.type)?48*(nearBed.p.scale||1):90)){interactWithBed(entity,nearBed.p);return;}
-  const keyIndex=floor.props.findIndex(p=>p.type==='key'&&Math.hypot(p.x-entity.x,p.y-entity.y)<48);
-  if(keyIndex!==-1){const key=floor.props.splice(keyIndex,1)[0];entity.inventory.push(key.keyId);updateUI();logEvent('🔑 '+entity.name+' recolheu '+(key.label||'uma chave')+'.');return;}
-
-  const stair=floor.stairs.find(s=>Math.hypot(s.x-entity.x,s.y-entity.y)<48);
-  // E continua funcionando em escadas antigas; as novas também se atravessam caminhando.
-  if(stair && transferOnStair(entity,stair,false))return;
-
-  const door = floor.doors.find(d => Math.hypot(d.x - entity.x, d.y - entity.y) < 58);
+  const door = floor.doors.map(d=>{
+    const leaf=d.open?openedDoorLeaf(d):null;
+    const center=Math.hypot(d.x-entity.x,d.y-entity.y);
+    return {d,distance:leaf?Math.min(center,distToSegment(entity.x,entity.y,leaf.x1,leaf.y1,leaf.x2,leaf.y2)):center};
+  }).filter(hit=>hit.distance<58).sort((a,b)=>a.distance-b.distance)[0]?.d;
   if (door) {
     if (door.lockCode && !door.open) {
       const answer=prompt('Digite o código de acesso:');
@@ -272,6 +266,16 @@ function interactNearby(entity) {
     }
     return;
   }
+
+  if(useExcavation(entity)||pickupWorldTool(entity,floor)||interactCaveDoor(floor,entity)||interactPortableLadder(entity)||interactVending(entity,floor))return;
+  const nearBed=floor.props.filter(isSleepingFurniture).map(p=>({p,d:Math.hypot(p.x-entity.x,p.y-entity.y)})).sort((a,b)=>a.d-b.d)[0];
+  if(nearBed && nearBed.d<(TENT_TYPES.has(nearBed.p.type)?48*(nearBed.p.scale||1):90)){interactWithBed(entity,nearBed.p);return;}
+  const keyIndex=floor.props.findIndex(p=>p.type==='key'&&Math.hypot(p.x-entity.x,p.y-entity.y)<48);
+  if(keyIndex!==-1){const key=floor.props.splice(keyIndex,1)[0];entity.inventory.push(key.keyId);updateUI();logEvent('🔑 '+entity.name+' recolheu '+(key.label||'uma chave')+'.');return;}
+
+  const stair=floor.stairs.find(s=>Math.hypot(s.x-entity.x,s.y-entity.y)<48);
+  // E continua funcionando em escadas antigas; as novas também se atravessam caminhando.
+  if(stair && transferOnStair(entity,stair,false))return;
 
   const chest = floor.chests.find(c => Math.hypot(c.x - entity.x, c.y - entity.y) < 58);
   if (chest) {

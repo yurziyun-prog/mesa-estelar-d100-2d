@@ -425,6 +425,7 @@ function drawExternalBuildingTop(){
  const scene=getScene(),current=floorLevel(scene,actor.floor);
  const higher=scene.floors.filter(f=>f.level>current);
  const viewFloor=scene.floors[actor.floor];
+ const outsideViews=exteriorSightThroughOpenings(viewFloor,actor);
  const candidates=externalBuildingSurfaces(scene,current).filter(({area})=>
    !caveMountainMasksRoof(viewFloor,area)&&!roofHiddenByMountain(area)&&!roofHiddenInCaveCourtyard(area));
  if(!candidates.length)return;
@@ -450,6 +451,7 @@ function drawExternalBuildingTop(){
     if(right>x&&bottom>y)ctx.rect(x,y,right-x,bottom-y);
     ctx.clip('evenodd');
    }
+   clipCoverForExteriorSight(area,outsideViews);
    drawTexturedArea(area.x,area.y,area.w,area.h,area.mat,area.color,area.tile);
    ctx.restore();
    continue;
@@ -467,6 +469,7 @@ function drawExternalBuildingTop(){
   ctx.save();ctx.globalAlpha=fade.alpha;
   clipOutsideCaves(scene.floors[actor.floor].caves,area);
   if(!clipRoofOverhang(viewFloor,area,actor))clipRoofAtDoors(viewFloor,area,actor);
+  clipCoverForExteriorSight(area,outsideViews);
   drawRoofSurface(area.x,area.y,area.w,area.h,area.mat,area.roofPitch,area.roofHeight);
   drawRoofOpenings(floor,area);
   ctx.restore();

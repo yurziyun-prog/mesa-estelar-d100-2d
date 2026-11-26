@@ -104,7 +104,7 @@ function setupInputs() {
       }
       // O modo Jogador nunca exclui personagens.
     }
-    if (e.key.toLowerCase() === 'e' && activeActor()) {
+    if (e.key.toLowerCase() === 'e' && !e.repeat && activeActor()) {
       const ent = activeActor();
       if (ent && ent.sceneId === state.activeSceneId) interactNearby(ent);
     }
