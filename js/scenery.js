@@ -115,9 +115,78 @@ function lightOccluders(floor){
  return walls;
 }
 
+const daylightPresets={dawn:390,day:720,dusk:1050,night:1320};
+let daylightSeconds=0;
+
+function daylightMinute(){
+ return Number.isFinite(state.daylightMinute)
+   ?((Math.floor(state.daylightMinute)%1440)+1440)%1440
+   :daylightPresets[state.timeOfDay]??720;
+}
+
+function daylightLighting(minute=daylightMinute()){
+ const angle=(minute-360)*Math.PI/720;
+ const elevation=Math.sin(angle);
+ const day=Math.max(0,elevation);
+ const twilight=Math.max(0,1-Math.abs(elevation)*5);
+ return {
+   shadow:day>0?{x:-Math.cos(angle)*(1.8-1.15*day),y:.28+.53*(1-day),alpha:.18+.14*day}:null,
+   dark:.61*Math.max(0,Math.min(1,(.15-elevation)/.48)),
+   warm:twilight*.14,
+   evening:minute>=720
+ };
+}
+
+function updateDaylightControls(){
+ const minute=daylightMinute();
+ document.getElementById('mapTime').value=String(Math.floor(minute/60)).padStart(2,'0')+':'+String(minute%60).padStart(2,'0');
+ document.getElementById('mapTimeAuto').checked=Boolean(state.daylightAuto);
+ document.getElementById('timeOfDaySelect').value=state.timeOfDay||'day';
+}
+
+function setMapDaylight(minute){
+ state.daylightMinute=((minute%1440)+1440)%1440;
+ const time=state.daylightMinute;
+ state.timeOfDay=time<330||time>=1140?'night':time<435?'dawn':time>=1020?'dusk':'day';
+ updateDaylightControls();
+}
+
+function advanceMapDaylight(elapsed){
+ if(!state.daylightAuto){daylightSeconds=0;return;}
+ daylightSeconds+=elapsed;
+ const minutes=Math.floor(daylightSeconds);
+ if(!minutes)return;
+ daylightSeconds-=minutes;
+ setMapDaylight(daylightMinute()+minutes);
+}
+
+function drawSunShadows(floor){
+ const sun=daylightLighting().shadow;
+ if(!sun)return;
+ ctx.save();
+ ctx.fillStyle='#111923';
+ ctx.globalAlpha*=sun.alpha*.72;
+ ctx.beginPath();
+ const cast=(x1,y1,x2,y2)=>{
+   const dx=sun.x*34,dy=sun.y*34;
+   ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+   ctx.lineTo(x2+dx,y2+dy);ctx.lineTo(x1+dx,y1+dy);ctx.closePath();
+ };
+ for(const wall of floor.walls||[])cast(wall.x1,wall.y1,wall.x2,wall.y2);
+ for(const b of floor.buildings||[]){
+   cast(b.x,b.y,b.x+b.w,b.y);
+   cast(b.x+b.w,b.y,b.x+b.w,b.y+b.h);
+   cast(b.x+b.w,b.y+b.h,b.x,b.y+b.h);
+   cast(b.x,b.y+b.h,b.x,b.y);
+ }
+ ctx.fill();
+ ctx.restore();
+ for(const prop of floor.props)if(plantTypes.has(prop.type))drawPlantSunShadow(prop,sun);
+}
+
 function renderSceneryLights(floor,interior){
  if(!floor)return;
- const night=state.timeOfDay==='night';
+ const darkness=daylightLighting().dark;
  const emitters=floor.props.map(prop=>{
    const item=sceneryItems.get(prop.type);
    if(item?.[4])return {prop,color:item[4],radius:item[5]};
@@ -156,7 +225,7 @@ function renderSceneryLights(floor,interior){
    gradient.addColorStop(0,color+'bc');gradient.addColorStop(.32,color+'69');gradient.addColorStop(1,color+'00');
    ctx.fillStyle=gradient;
    const flicker=terrainMotionPreference.matches?1:.91+.09*Math.sin(performance.now()/140+x);
-   ctx.globalAlpha=(night?.92:.48)*flicker;
+   ctx.globalAlpha=(.48+darkness*.72)*flicker;
    ctx.fillRect(x-r,y-r,r*2,r*2);ctx.restore();
  }
  ctx.restore();

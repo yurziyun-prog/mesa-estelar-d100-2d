@@ -14,6 +14,70 @@ const plantTypes=new Map([
 const extraPlantIds=['winterTree','deadTree','alienPodTree','alienFanTree','alienShelfTree'];
 const plantCanopies=new Map();
 const plantBases=new Map();
+const cleanCanopyTiles=new Map();
+const plantShadowMasks=new WeakMap();
+
+function clearCanopyMatte(pixels,sprite){
+ for(let i=0;i<pixels.length;i+=4){
+   const dark=Math.min(pixels[i],pixels[i+1],pixels[i+2]);
+   const bright=Math.max(pixels[i],pixels[i+1],pixels[i+2]);
+   const chroma=bright-dark;
+   const alpha=pixels[i+3];
+   const lightMatte=dark>140&&chroma<(sprite===2||sprite===4?61:44);
+   const paleFringe=alpha<224&&dark>135&&bright>174;
+   const weight=lightMatte?0:paleFringe?Math.max(0,(alpha-155)/90):Math.max(0,(alpha-72)/151);
+   pixels[i+3]=Math.round(alpha*Math.min(1,weight));
+ }
+}
+
+function cleanCanopyTile(sprite){
+ if(cleanCanopyTiles.has(sprite))return cleanCanopyTiles.get(sprite);
+ const tile=document.createElement('canvas');
+ const w=overheadCanopyArt.naturalWidth/3,h=overheadCanopyArt.naturalHeight/2;
+ tile.width=w;tile.height=h;
+ const g=tile.getContext('2d',{willReadFrequently:true});
+ g.drawImage(overheadCanopyArt,(sprite%3)*w,Math.floor(sprite/3)*h,w,h,0,0,w,h);
+ const data=g.getImageData(0,0,w,h);
+ clearCanopyMatte(data.data,sprite);
+ g.putImageData(data,0,0);
+ cleanCanopyTiles.set(sprite,tile);
+ return tile;
+}
+
+function plantCanopyImage(type){
+ const sprite=illustratedCanopies.get(type);
+ if(sprite!==undefined&&overheadCanopyArt.complete&&overheadCanopyArt.naturalWidth>0){
+   return {image:cleanCanopyTile(sprite),size:(plantTypes.get(type)[2]+7)*2};
+ }
+ const image=makePlantCanopy(type);
+ return {image,size:image.width/2};
+}
+
+function drawPlantSunShadow(p,sun){
+ const [, ,radius,kind]=plantTypes.get(p.type);
+ if(!plantTallKinds.has(kind))return;
+ const bare=kind==='dead'||kind==='winter';
+ const {image,size}=bare?{image:plantBases.get(p.type),size:(radius+14)*2}:plantCanopyImage(p.type);
+ if(!image)return;
+ let mask=plantShadowMasks.get(image);
+ if(!mask){
+   mask=document.createElement('canvas');mask.width=image.width;mask.height=image.height;
+   const g=mask.getContext('2d');
+   g.drawImage(image,0,0);
+   g.globalCompositeOperation='source-in';g.fillStyle='#111923';
+   g.fillRect(0,0,mask.width,mask.height);
+   plantShadowMasks.set(image,mask);
+ }
+ const scale=(p.scale||1)*treeSizeFactor(p),w=size*scale;
+ const reach=radius*.76*scale;
+ ctx.save();
+ ctx.globalAlpha*=sun.alpha;
+ ctx.translate(p.x+sun.x*reach,p.y+sun.y*reach);
+ ctx.scale(1,.68);
+ ctx.rotate((p.rot||0)*Math.PI/2+(p.freeAngle||0));
+ ctx.drawImage(mask,-w/2,-w/2,w,w);
+ ctx.restore();
+}
 const illustratedCanopies=new Map([
  ['tree',0],['fruitTree',0],['pine',1],['palm',2],
  ['alienPodTree',3],['alienShelfTree',4],['alienFanTree',5]
@@ -136,8 +200,8 @@ function drawPlantBase(p){
    layer.width=layer.height=(r+14)*4;
    const g=layer.getContext('2d');
    g.translate(layer.width/2,layer.height/2);g.scale(2,2);
-   g.fillStyle=kind==='winter'||kind==='dead'?'rgba(15,20,25,.18)':'rgba(15,20,25,.31)';
-   g.beginPath();g.ellipse(8,9,r*.86,r*.66,.36,0,Math.PI*2);g.fill();
+   g.fillStyle='rgba(15,20,25,.22)';
+   g.beginPath();g.ellipse(2,3,r*.2,r*.14,.36,0,Math.PI*2);g.fill();
    drawPlantBranches(g,r,kind);
    plantBases.set(p.type,layer);
  }
@@ -151,21 +215,17 @@ function drawPlantCanopy(p,actor=null){
  const [, ,radius,kind]=plantTypes.get(p.type);
  if(kind==='dead'||kind==='winter')return;
  const actorUnderCanopy=plantTallKinds.has(kind)&&actor&&Math.hypot(actor.x-p.x,actor.y-p.y)<radius*.79*(p.scale||1)*treeSizeFactor(p);
- const sprite=illustratedCanopies.get(p.type);
- const hasArt=sprite!==undefined&&overheadCanopyArt.complete&&overheadCanopyArt.naturalWidth>0;
- const art=hasArt?overheadCanopyArt:makePlantCanopy(p.type);
- const size=hasArt?(radius+7)*2:art.width/2;
+ const {image:art,size}=plantCanopyImage(p.type);
  const wind=ctx.canvas===canvas&&!terrainMotionPreference.matches?(state.windStrength??.35):0;
  const phase=performance.now()/1000*2+p.x*.055+p.y*.024;
  beginPlantTransform(p);
  if(actorUnderCanopy)ctx.globalAlpha*=.34;
  ctx.rotate(Math.sin(phase)*wind*.065);
  ctx.translate(Math.sin(phase)*wind*4,Math.cos(phase*.83)*wind*2);
- if(hasArt){
-   const w=art.naturalWidth/3,h=art.naturalHeight/2;
-   ctx.drawImage(art,(sprite%3)*w,Math.floor(sprite/3)*h,w,h,-size/2,-size/2,size,size);
-   if(p.type==='fruitTree')for(const [x,y] of [[-13,-13],[10,-8],[7,10],[-14,7]])plantDisc(ctx,x,y,2.4,'#e97757');
- }else ctx.drawImage(art,-size/2,-size/2,size,size);
+ ctx.drawImage(art,-size/2,-size/2,size,size);
+ if(p.type==='fruitTree'&&art===cleanCanopyTiles.get(0)){
+   for(const [x,y] of [[-13,-13],[10,-8],[7,10],[-14,7]])plantDisc(ctx,x,y,2.4,'#e97757');
+ }
  ctx.restore();
 }
 

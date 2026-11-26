@@ -92,6 +92,7 @@ function setMode(mode) {
   updateUI();
   refreshGmFocus();
   document.getElementById('plantWind').value=String(state.windStrength??.35);
+  updateDaylightControls();
   recenterView(false);
 }
 
@@ -393,8 +394,7 @@ function changeAttitude(val) {
 }
 
 function changeTimeOfDay(val) {
-  state.timeOfDay = val;
-  logEvent(`Horário: ${val.toUpperCase()}`);
+  if(Object.hasOwn(daylightPresets,val))setMapDaylight(daylightPresets[val]);
 }
 
 function speakSelected() {

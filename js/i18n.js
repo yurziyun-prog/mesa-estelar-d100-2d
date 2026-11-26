@@ -73,6 +73,8 @@ Estatísticas da sessão|本局统计
 Tab: selecionar · Enter: controlar · Esc: liberar · Del: retirar do cenário|Tab 选择 · Enter 接管 · Esc 释放 · Del 移出场景
 Remover selecionado do cenário|将所选角色移出场景
 Ambiente & Horário|环境与时间
+Hora do mapa|地图时间
+Tempo automático|时间自动推进
 Amanhecer|黎明
 Dia Claro|白天
 Entardecer|黄昏

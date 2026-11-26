@@ -287,6 +287,7 @@ function gameLoop(now) {
   const elapsed = lastFrameTime===null ? 1/60 : Math.min(.15,(now-lastFrameTime)/1000);
   lastFrameTime = now;
   animTick += 0.03;
+  advanceMapDaylight(elapsed);
   updateSimulation(elapsed);
   updateSkeletonAutonomy();
   followCamera();
@@ -430,15 +431,14 @@ function renderMapSurfaces(sc,visible,currentLevel,interior){
 }
 
 function drawMapOverlays(sc,interior){
-  const ambientColors = {
-    dawn: 'rgba(255, 160, 90, 0.13)',
-    day: 'rgba(0, 0, 0, 0)',
-    dusk: 'rgba(180, 80, 120, 0.2)',
-    night: 'rgba(8, 12, 28, 0.55)'
-  };
-  if (ambientColors[state.timeOfDay]) {
-    ctx.fillStyle = ambientColors[state.timeOfDay];
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const lighting=daylightLighting();
+  if(lighting.warm){
+    ctx.fillStyle=lighting.evening?`rgba(212,132,125,${lighting.warm})`:`rgba(250,166,93,${lighting.warm})`;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+  if(lighting.dark){
+    ctx.fillStyle=`rgba(8,15,35,${lighting.dark})`;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
   }
   renderSceneryLights(sc.floors[state.currentFloor],interior);
   drawIndoorSightMask(sc.floors[state.currentFloor],interior);

@@ -558,7 +558,10 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
   }
   for(const area of floor.areas)if(!isStackedArea(area))drawArea(area);
   for(const stroke of floor.brushStrokes||[])if(stroke.mesaScatter&&stroke.points?.length)drawMesaScatter(stroke);
-  if(!interior&&!isBelow)drawStructureStorey(sc,floorIdx);
+  if(!interior&&!isBelow){
+    drawSunShadows(floor);
+    drawStructureStorey(sc,floorIdx);
+  }
   drawReliefs(floor);
   for(const cave of interior?connectedCaves(floor,interior):(floor.caves||[])){
     if(!interior)drawCaveApron(cave,floor);
