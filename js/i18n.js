@@ -31,6 +31,10 @@ Arábia|阿拉伯风格
 Define a aparência dos próximos elementos. Misture livremente no mesmo mapa. O terreno não muda.|设置接下来放置的物件风格。同一地图可以混搭，地形保持原样。
 Construção & Ajuste|建造与调整
 Expandir Mapa|扩大地图
+Cor da água|水面主色
+Velocidade da corrente|水流速度
+Intensidade das ondas|波浪强度
+Lago|湖泊
 Editar chão do mapa|修改地图地面
 Editar terreno base|修改当前地图地面
 Terreno base|基础地形

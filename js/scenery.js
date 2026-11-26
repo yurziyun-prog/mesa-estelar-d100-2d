@@ -67,7 +67,7 @@ function addCurvedWall(floor,points){
 }
 
 const coastOutlineCache=new WeakMap();
-function drawShoreBreakers(stroke,diameter){
+function drawShoreBreakers(stroke,diameter,waves){
  if(stroke.shape!=='redondo'||diameter<24||!stroke.points.length)return;
  let cached=coastOutlineCache.get(stroke);
  if(!cached||cached.points!==stroke.points||cached.count!==stroke.points.length){
@@ -77,7 +77,8 @@ function drawShoreBreakers(stroke,diameter){
  }
  if(cached.outline.length<3)return;
  const time=terrainMotionPreference.matches?0:performance.now()/1000;
- const crest=3+(Math.sin(time*1.8)+1)*2;
+ const crest=(2+(Math.sin(time*1.8)+1)*2)*waves;
+ const foam=Math.min(1,waves);
  ctx.save();
  cavePath(cached.outline,true);
  ctx.clip();
@@ -87,9 +88,10 @@ function drawShoreBreakers(stroke,diameter){
    [crest+7,'rgba(203,252,240,.39)',[31,8,12,5],4],
    [crest,'rgba(241,254,247,.84)',[26,9,4,7],9]
  ]){
+   ctx.globalAlpha=pace?foam:1;
    ctx.lineWidth=width;ctx.strokeStyle=color;
    ctx.setLineDash(dash);ctx.lineDashOffset=-time*pace;
-   ctx.stroke();
+   if(width>0&&ctx.globalAlpha>0)ctx.stroke();
  }
  ctx.restore();
 }
@@ -194,9 +196,7 @@ function initSceneryCatalog(){
  for(const [label,zh] of sceneryItems.values())SITE_ZH.set(label,zh);
  SITE_ZH.set('Cenografia','场景装饰');
  SITE_ZH.set('Parede curva','弧形墙');
- SITE_ZH.set('Mar costeiro','海岸水域');
- SITE_ZH.set('Costas','海岸');
- TERRAIN_GROUPS.push(['Costas',[['coastSea','Mar costeiro']]]);
+ SITE_ZH.set('Mar costeiro','海洋');
  sceneryArt.addEventListener('load',()=>{
    for(const key of catalogThumbnailCache.keys()){
      if(sceneryItems.has(key.split(':')[1]))catalogThumbnailCache.delete(key);

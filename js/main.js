@@ -337,7 +337,6 @@ function updateSimulation(elapsed) {
         const vy = ent.facingY * distance / steps;
         for(let step=0;step<steps;step++){
           if(tryWalkingStair(ent,ent.facingX,ent.facingY))break;
-          if(tryFallThroughStairOpening(ent,ent.x+vx,ent.y+vy,ent.facingX,ent.facingY))break;
           if(vx&&canWalkStep(ent,ent.x+vx,ent.y))ent.x+=vx;
           if(vy&&canWalkStep(ent,ent.x,ent.y+vy))ent.y+=vy;
         }
@@ -419,7 +418,7 @@ function renderMapSurfaces(sc,visible,currentLevel,interior){
       ctx.stroke();
     } else {
       ctx.globalAlpha = 0.6;
-      drawTexturedArea(previewRect.x, previewRect.y, previewRect.w, previewRect.h, previewRect.mat, null, previewRect.tile);
+      drawTexturedArea(previewRect.x, previewRect.y, previewRect.w, previewRect.h, previewRect.mat, null, previewRect.tile,null,null,0,previewRect.water);
       ctx.globalAlpha = 1;
       ctx.strokeStyle = '#fff';
       ctx.strokeRect(previewRect.x, previewRect.y, previewRect.w, previewRect.h);

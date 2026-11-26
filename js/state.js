@@ -233,12 +233,13 @@ function onSceneSelectChange(id) {
   }
 }
 
-function createNewSceneAsArchitect(terrain='grass', width=540, length=400) {
+function createNewSceneAsArchitect(terrain='grass', width=540, length=400, water=null) {
   const input = document.getElementById('newSceneName');
   const name = input.value.trim() || `Cenário ${Object.keys(state.scenes).length + 1}`;
   beginEdit();
   const id = 'scene_' + Date.now();
   const f0 = createEmptyFloor(terrain);
+  f0.water=water;
   f0.bounds = { x: 120, y: 100, w: width, h: length };
   f0.terrainBounds = {...f0.bounds};
   state.scenes[id] = { name, style: getScene()?.style || 'normal', floors: [f0, createEmptyFloor(null)] };

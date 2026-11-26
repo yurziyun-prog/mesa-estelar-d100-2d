@@ -176,7 +176,7 @@ function initTerrainFinishes(){
     .filter(([id])=>!Object.hasOwn(highGrassColors,id)).map(([id,,,pt,zh])=>[id,pt,zh])],
   ['Capim alto','高草',referenceGroundTextures
     .filter(([id])=>Object.hasOwn(highGrassColors,id)).map(([id,,,pt,zh])=>[id,pt,zh])],
-  ['Águas','水域',[['riverWater','Água de rio','河流水面']]],
+  ['Águas','水域',[['riverWater','Água de rio','河流'],['water','Lago','湖泊'],['coastSea','Mar costeiro','海洋']]],
   ['Calçamentos','石板道路',pavingRects.map((_,i)=>['paving'+(i+1),'Calçamento '+(i+1),'石板道路 '+(i+1)])]
  ];
  for(const [name,zh,items] of groups){
@@ -196,7 +196,7 @@ function terrainFinishFallback(mat){
 }
 
 function createFinishThumbnail(id){
- if(id==='riverWater')return createTerrainThumbnail('water');
+ if(waterDefaults[id])return createTerrainThumbnail(id);
  const original=Object.hasOwn(originalMesaTextures,id)?originalMesaTextures[id]:null;
  if(!original&&!finishTextures.has(id)&&id!=='rockyDunes'&&!/^paving[1-9]$/.test(id))return null;
  const canvas=document.createElement('canvas');

@@ -11,7 +11,9 @@ function openTerrainDialog(creating) {
     ?'Cria outro mapa vazio e mantém o mapa atual.'
     :'Altera apenas o terreno base e suas dimensões. Construções, pinturas, objetos e personagens ficam onde estão.';
   document.getElementById('terrainTitle').textContent=creating?'Configurar novo cenário':'Editar terreno base';
-  document.getElementById('terrainKind').value=creating?'grass':floor.baseTerrain||'';
+  const material=creating?'grass':floor.baseTerrain||'';
+  document.getElementById('terrainKind').value=material;
+  syncWaterControls('baseWater',material,creating?null:floor.water??null);
   document.getElementById('terrainWidth').value=bounds.w/MAP_UNITS_PER_METER;
   document.getElementById('terrainLength').value=bounds.h/MAP_UNITS_PER_METER;
   dialog.showModal();
@@ -24,8 +26,9 @@ function applyTerrainSettings(event) {
   const width=Number(document.getElementById('terrainWidth').value)*MAP_UNITS_PER_METER;
   const length=Number(document.getElementById('terrainLength').value)*MAP_UNITS_PER_METER;
   if(state.mode!=='architect'||![width,length].every(n=>n>=32&&n<=8192))return;
+  const water=waterDefaults[terrain]?readWaterControls('baseWater',terrain):null;
   if(dialog.dataset.creating==='true'){
-    createNewSceneAsArchitect(terrain,width,length);
+    createNewSceneAsArchitect(terrain,width,length,water);
     centerMap();
   }else{
     const floor=getScene().floors[Number(dialog.dataset.floor)];
@@ -36,6 +39,7 @@ function applyTerrainSettings(event) {
     const {x,y}=floor.terrainBounds||floor.bounds;
     beginEdit();
     floor.baseTerrain=terrain;
+    floor.water=water;
     floor.terrainBounds={x,y,w:width,h:length};
     if(terrain){
       expandFloorToInclude(floor,x,y,0);
@@ -393,7 +397,7 @@ function finalizeArchitectDrag(wx, wy, shiftHeld = false) {
       const x=Math.min(dragStart.x,wx),y=Math.min(dragStart.y,wy);
       const w=Math.abs(wx-dragStart.x),h=Math.abs(wy-dragStart.y);
       if(w>0&&h>0){
-        floor.areas.push(moveSurfaceToEdge(floor,{x,y,w,h,mat:state.brush.mat,flowAngle:Math.atan2(wy-dragStart.y,wx-dragStart.x)},true));
+        floor.areas.push(moveSurfaceToEdge(floor,{x,y,w,h,mat:state.brush.mat,water:previewRect?.water,flowAngle:Math.atan2(wy-dragStart.y,wx-dragStart.x)},true));
         expandFloorToInclude(floor,x,y);
         expandFloorToInclude(floor,x+w,y+h);
       }

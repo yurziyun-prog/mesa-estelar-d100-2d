@@ -382,55 +382,6 @@ function advanceStairClimb(ent){
  }
  return true;
 }
-// Falling is separate from walking down the steps. Sideways entry into
-// the uncovered upper-floor shaft causes a drop if a real lower landing exists.
-function tryFallThroughStairOpening(ent,nx,ny,dx,dy){
- if(!ent||ent.stairClimb||performance.now()<(ent.stairCooldown||0))return false;
- const scene=getScene(),floor=scene.floors[ent.floor];if(!floor)return false;
- if(crossesWall(floor,ent.x,ent.y,nx,ny,true))return false;
- for(const stair of floor.stairs||[]){
-  if(stair.dir!=='down'||stairVisualShape(stair.shape)==='caveRamp')continue;
-  if(!hasBuiltFloorAt(floor,stair.x,stair.y))continue;
-  const local=stairLocal(stair,nx-stair.x,ny-stair.y);
-  const move=stairLocal(stair,dx,dy);
-  const inside=stairVisualShape(stair.shape)==='spiral'?
-    Math.hypot(local.x,local.y)<29:(Math.abs(local.x)<25&&Math.abs(local.y)<42);
-  if(!inside)continue;
-  // Heading normally from the upper landing towards the stairs is managed
-  // by tryWalkingStair before this function. Off-axis moves miss the steps.
-  if(stairEntryAllowed(stair,ent,dx,dy)||(move.y>.45&&Math.abs(local.x)<=20&&local.y<=14))continue;
-  const previous=stairLocal(stair,ent.x-stair.x,ent.y-stair.y);
-  const alreadyInside=stairVisualShape(stair.shape)==='spiral'?Math.hypot(previous.x,previous.y)<29:
-    Math.abs(previous.x)<25&&Math.abs(previous.y)<42;
-  if(alreadyInside)continue;
-  const target=stairLinkedIndex(scene,ent.floor,stair);
-  if(target<0)continue;
-  const lower=scene.floors[target];
-  const search=[[nx,ny],[stair.x,stair.y],[nx+32,ny],[nx-32,ny],[nx,ny+32],[nx,ny-32]];
-  let landing=null;
-  for(const [px,py] of search){
-   if(canMoveTo(target,px,py)&&stairLandingUnoccupied(scene,target,px,py,ent.id)){
-    landing=[px,py];break;
-   }
-  }
-  if(!landing){
-   ent.stairCooldown=performance.now()+400;
-   logEvent('⚠️ 楼板洞口下方没有安全落脚点，人物不能在这里完成坠落。');
-   return true;
-  }
-  const sourceFloor=ent.floor;
-  ent.floor=target;ent.x=landing[0];ent.y=landing[1];
-  ent.stairCooldown=performance.now()+900;
-  ent.stairTransitionAt=performance.now();
-  ent.fallUntil=performance.now()+430;
-  applyFallDamage(ent,Math.abs(floorLevel(scene,sourceFloor)-floorLevel(scene,target))||1,'踩空楼梯');
-  state.currentFloor=target;updateFloorLabel();
-  if(typeof refreshGmFocus==='function')refreshGmFocus();
-  logEvent('↘️ '+ent.name+' 从楼板开口跌落到了 '+floorName(floorLevel(scene,target))+'。');
-  return true;
- }
- return false;
-}
 function tryWalkingStair(ent,dx,dy){
  if(!ent||(!dx&&!dy)||ent.stairClimb)return false;
  const floor=getScene().floors[ent.floor];if(!floor)return false;

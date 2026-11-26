@@ -329,14 +329,19 @@ function createTerrainThumbnail(mat) {
   thumbnail.width=thumbnail.height=32;
   thumbnail.className='terrain-preview';
   thumbnail.setAttribute('aria-hidden','true');
-  thumbnail.getContext('2d').drawImage(getTerrainTile(mat),72,72,96,96,0,0,32,32);
+  const g=thumbnail.getContext('2d');
+  if(waterDefaults[mat]){
+    g.fillStyle=waterPattern(mat,waterDefaults[mat].color);
+    g.scale(1/3,1/3);
+    g.fillRect(0,0,96,96);
+  }else g.drawImage(getTerrainTile(mat),72,72,96,96,0,0,32,32);
   return thumbnail;
 }
 
 const TERRAIN_GROUPS = [
   ['Campos e florestas', [['grass','Grama Campestre'],['grassLush','Grama Densa'],['grassDry','Savana'],['dirt','Terra Batida'],['mud','Lama'],['sand','Areia do Deserto']]],
   ['Climas extremos', [['snow','Neve Profunda'],['ice','Gelo Glacial'],['gravel','Cascalho']]],
-  ['Subsolo e líquidos', [['cave','Chão de caverna'],['basalt','Basalto'],['lava','Lava'],['water','Água Cristalina'],['swampWater','Água Pantanosa']]],
+  ['Subsolo e líquidos', [['cave','Chão de caverna'],['basalt','Basalto'],['lava','Lava'],['swampWater','Água Pantanosa']]],
   ['Solos alienígenas', [['alienMycelium','Micélio Violáceo'],['alienCrystal','Solo Cristalino'],['alienCrimson','Solo Carmesim'],['alienBlight','Solo Corrompido']]]
 ];
 
@@ -394,7 +399,7 @@ const terrainMotionKinds=new Map([
   ['lava','lava'],['lavaAbyss','lava']
 ]);
 
-function drawTerrainMotion(mat,x,y,w,h,flow=0){
+function drawTerrainMotion(mat,x,y,w,h,flow=0,water=null){
   const kind=terrainMotionKinds.get(mat);
   if(!kind||ctx.canvas!==canvas||terrainMotionPreference.matches)return;
   const time=performance.now()/1000;
@@ -432,22 +437,25 @@ function drawTerrainMotion(mat,x,y,w,h,flow=0){
           ctx.quadraticCurveTo(px+offset+wind*1.2,py-blade*.58,px+offset*1.5+wind*4,py-blade);
         }
       }else if(kind==='river'){
-        const travel=(time*.48+n)%1;
+        const travel=(time*.48*(water?.speed??1)+n)%1;
         const distance=(travel-.5)*cell;
         const dx=Math.cos(flow),dy=Math.sin(flow);
         const sx=px+dx*distance,sy=py+dy*distance;
-        const shine=.36*Math.sin(Math.PI*travel);
+        const shine=(.17+.17*(water?.speed??1))*Math.sin(Math.PI*travel);
         ctx.strokeStyle='rgba(204,250,255,'+shine.toFixed(3)+')';
         ctx.lineWidth=1.4;
         ctx.moveTo(sx-dx*11,sy-dy*11);
         ctx.quadraticCurveTo(sx-dy*4,sy+dx*4,sx+dx*13,sy+dy*13);
       }else{
-        const offset=wind*6, rise=Math.cos(time*1.45-phase)*4;
-        const light=.16+.13*Math.sin(time*1.7+n*6.28);
+        const strength=water?.waves??1;
+        if(!strength)continue;
+        const ocean=mat==='coastSea', span=ocean?24:14;
+        const offset=wind*6*strength, rise=Math.cos(time*1.45-phase)*4*strength;
+        const light=(.12+.1*Math.sin(time*1.7+n*6.28))*strength;
         ctx.strokeStyle='rgba(190,247,255,'+light.toFixed(3)+')';
         ctx.lineWidth=1.35;
-        ctx.moveTo(px-14+offset,py+rise);
-        ctx.bezierCurveTo(px-4+offset,py-6+rise,px+5+offset,py+5+rise,px+15+offset,py+rise);
+        ctx.moveTo(px-span+offset,py+rise);
+        ctx.bezierCurveTo(px-4+offset,py-6+rise,px+5+offset,py+5+rise,px+span+offset,py+rise);
         ctx.moveTo(px-6+offset,py+9+rise);
         ctx.quadraticCurveTo(px+offset,py+6+rise,px+8+offset,py+8+rise);
       }
@@ -457,7 +465,86 @@ function drawTerrainMotion(mat,x,y,w,h,flow=0){
   ctx.restore();
 }
 
-function drawCachedTerrain(mat,x,y,w,h,flow) {
+const waterDefaults={
+  riverWater:{color:'#237b79',speed:1},
+  water:{color:'#326f79',waves:.55},
+  coastSea:{color:'#226b83',waves:1.45}
+};
+const waterPatterns=new Map();
+
+function waterAppearance(mat,settings){
+  const defaults=waterDefaults[mat];
+  if(!defaults)return null;
+  const number=(value,fallback)=>Number.isFinite(value)?Math.max(0,Math.min(3,value)):fallback;
+  return {
+    color:/^#[0-9a-f]{6}$/i.test(settings?.color)?settings.color.toLowerCase():defaults.color,
+    speed:number(settings?.speed,defaults.speed||0),
+    waves:number(settings?.waves,defaults.waves||0)
+  };
+}
+
+function syncWaterControls(prefix,mat,settings){
+  const box=document.getElementById(prefix+'Settings');
+  const appearance=waterAppearance(mat,settings);
+  box.classList.toggle('hidden',!appearance);
+  if(appearance&&(settings!==undefined||box.dataset.material!==mat)){
+    document.getElementById(prefix+'Color').value=appearance.color;
+    document.getElementById(prefix+'Flow').value=appearance.speed;
+    document.getElementById(prefix+'Waves').value=appearance.waves;
+  }
+  document.getElementById(prefix+'FlowRow').classList.toggle('hidden',mat!=='riverWater');
+  document.getElementById(prefix+'WavesRow').classList.toggle('hidden',mat==='riverWater');
+  box.dataset.material=mat;
+}
+
+function readWaterControls(prefix,mat){
+  return waterAppearance(mat,{
+    color:document.getElementById(prefix+'Color').value,
+    speed:Number(document.getElementById(prefix+'Flow').value),
+    waves:Number(document.getElementById(prefix+'Waves').value)
+  });
+}
+
+function waterPattern(mat,color){
+  const key=mat+color;
+  if(waterPatterns.has(key))return waterPatterns.get(key);
+  const tile=document.createElement('canvas');
+  const size=192;
+  tile.width=tile.height=size;
+  const g=tile.getContext('2d');
+  const pixels=g.createImageData(size,size);
+  const rgb=[1,3,5].map(offset=>parseInt(color.slice(offset,offset+2),16));
+  for(let y=0;y<size;y++){
+    for(let x=0;x<size;x++){
+      const u=x*Math.PI*2/size,v=y*Math.PI*2/size;
+      const depth=Math.sin(u*2+v+Math.sin(v*3))*.19+Math.cos(v*2-u)*.16;
+      const ripple=Math.abs(Math.sin(u*7+v*3+Math.sin(v*5-u*2)*1.4));
+      const grain=Math.sin(u*37+v*43)*Math.cos(u*29-v*53)*6;
+      const shine=(mat==='water'?14:22)*Math.pow(1-ripple,5);
+      const i=(y*size+x)*4;
+      for(let channel=0;channel<3;channel++)pixels.data[i+channel]=rgb[channel]*(.94+depth)+shine+grain;
+      pixels.data[i+3]=255;
+    }
+  }
+  g.putImageData(pixels,0,0);
+  const pattern=ctx.createPattern(tile,'repeat');
+  if(waterPatterns.size>=32)waterPatterns.delete(waterPatterns.keys().next().value);
+  waterPatterns.set(key,pattern);
+  return pattern;
+}
+
+function drawWaterSurface(mat,x,y,w,h,flow,settings){
+  const appearance=waterAppearance(mat,settings);
+  ctx.fillStyle=waterPattern(mat,appearance.color);
+  ctx.fillRect(x,y,w,h);
+  drawTerrainMotion(mat,x,y,w,h,flow,appearance);
+}
+
+function drawCachedTerrain(mat,x,y,w,h,flow,settings) {
+  if(waterDefaults[mat]){
+    drawWaterSurface(mat,x,y,w,h,flow,settings);
+    return true;
+  }
   const imported=finishTerrainPaint(mat)||mesaTerrainPaint(mat);
   const fallback=terrainFinishFallback(mat);
   if(!imported&&!Object.hasOwn(TERRAIN_PALETTES,fallback))return false;
@@ -469,6 +556,7 @@ function drawCachedTerrain(mat,x,y,w,h,flow) {
 
 function chooseTerrainMaterial(mat) {
   state.brush.mat=mat;
+  syncWaterControls('brushWater',mat);
   selectTool('terrainBrush');
 }
 
@@ -490,14 +578,14 @@ function applyTerrainBrush(floor,x,y,isDrag) {
   const mode=document.getElementById('terrainPaintMode').value;
   const mat=state.brush.mat;
   if(mode==='fill'){
-    if(!isDrag){floor.baseTerrain=mat;dragStart=mat==='riverWater'?{x,y,baseFlow:true}:null;}
+    if(!isDrag){floor.baseTerrain=mat;floor.water=waterDefaults[mat]?readWaterControls('brushWater',mat):null;dragStart=mat==='riverWater'?{x,y,baseFlow:true}:null;}
     else if(dragStart?.baseFlow)floor.flowAngle=Math.atan2(y-dragStart.y,x-dragStart.x);
     return;
   }
   if(mode==='rect'){
     dragStart ||= {x,y};
     previewRect={x:Math.min(x,dragStart.x),y:Math.min(y,dragStart.y),
-      w:Math.abs(x-dragStart.x),h:Math.abs(y-dragStart.y),mat};
+      w:Math.abs(x-dragStart.x),h:Math.abs(y-dragStart.y),mat,water:waterDefaults[mat]?readWaterControls('brushWater',mat):null};
     return;
   }
   const size=Number(document.getElementById('terrainPaintSize').value);
@@ -506,6 +594,7 @@ function applyTerrainBrush(floor,x,y,isDrag) {
   let stroke=window.activeBrushStroke;
   if(!isDrag||!stroke){
     stroke={mat,shape:mode==='spray'?'spray':mode==='square'?'quadrado':'redondo',size,softness,terrain:true,points:[]};
+    if(waterDefaults[mat])stroke.water=readWaterControls('brushWater',mat);
     (floor.brushStrokes ||= []).push(moveSurfaceToEdge(floor,stroke,true));
     window.activeBrushStroke=stroke;
     stroke.last=null;
@@ -547,14 +636,18 @@ function drawTerrainStroke(stroke) {
     trace(size*(1+stroke.softness)+2);
     ctx.fill();
   }
-  ctx.fillStyle=finishTerrainPaint(stroke.mat)||mesaTerrainPaint(stroke.mat)||getTerrainPattern(ctx,terrainFinishFallback(stroke.mat));
+  const water=waterAppearance(stroke.mat,stroke.water);
+  ctx.fillStyle=water?waterPattern(stroke.mat,water.color):finishTerrainPaint(stroke.mat)||mesaTerrainPaint(stroke.mat)||getTerrainPattern(ctx,terrainFinishFallback(stroke.mat));
   for(const [diameter,alpha] of [[size*(1+stroke.softness),stroke.softness*.6],[size,1]]){
     if(!alpha)continue;
     ctx.globalAlpha=alpha;
     trace(diameter);
     ctx.fill();
   }
-  if(stroke.mat==='coastSea')drawShoreBreakers(stroke,size);
+  if(water){
+    const breakers=stroke.mat==='coastSea'?water.waves:stroke.mat==='riverWater'?water.speed*.36:0;
+    drawShoreBreakers(stroke,size,breakers);
+  }
   if(terrainMotionKinds.has(stroke.mat)&&!terrainMotionPreference.matches){
     let left=Infinity,top=Infinity,right=-Infinity,bottom=-Infinity;
     for(const point of stroke.points){
@@ -564,7 +657,7 @@ function drawTerrainStroke(stroke) {
     ctx.clip();
     const first=stroke.points[0],last=stroke.points.at(-1);
     const angle=first&&last?Math.atan2(last.y-first.y,last.x-first.x):0;
-    drawTerrainMotion(stroke.mat,left-size/2,top-size/2,right-left+size,bottom-top+size,angle);
+    drawTerrainMotion(stroke.mat,left-size/2,top-size/2,right-left+size,bottom-top+size,angle,water);
   }
   ctx.restore();
 }

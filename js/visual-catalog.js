@@ -282,7 +282,7 @@ function drawCatalogProp(p){
 
 const catalogThumbnailCache=new Map();
 function catalogThumbnail(kind,id){
- const imported=id==='coastSea'?createTerrainThumbnail('water'):createFinishThumbnail(id)||createMesaPreview(id);
+ const imported=createFinishThumbnail(id)||createMesaPreview(id);
  if(imported)return imported;
  if(kind==='terrain'||(kind==='mat'&&Object.hasOwn(TERRAIN_PALETTES,id)))return createTerrainThumbnail(id);
  if(!['prop','mat','wallFinish','roof'].includes(kind)&&!(kind==='tool'&&id==='wall'))return null;

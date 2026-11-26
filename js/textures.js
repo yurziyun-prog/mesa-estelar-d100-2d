@@ -114,7 +114,7 @@ function drawCustomTileFinish(x,y,w,h,settings){
   }
  }
 }
-function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null, roofPitch = null, roofHeight = null, flow = 0) {
+function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null, roofPitch = null, roofHeight = null, flow = 0, water = null) {
   if(isRoofMaterial(mat)){drawRoofSurface(x,y,w,h,mat,roofPitch,roofHeight);return;}
   if(mat==='kenney_water')mat='water';
   if(mat==='kenney_wood')mat='wood';
@@ -124,7 +124,7 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
   ctx.rect(x, y, w, h);
   ctx.clip();
 
-  if(drawCachedTerrain(mat,x,y,w,h,flow)){ctx.restore();return;}
+  if(drawCachedTerrain(mat,x,y,w,h,flow,water)){ctx.restore();return;}
   if (mat === 'space' || mat === 'forest') {
     const space=mat==='space', cell=space?48:38;
     ctx.fillStyle=space?'#101529':'#29482e';
@@ -516,7 +516,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
   // Área inicial compacta e expansível
   if (floor.terrainBounds && floor.baseTerrain) {
     const b = floor.terrainBounds;
-    drawTexturedArea(b.x,b.y,b.w,b.h,floor.baseTerrain,null,null,null,null,floor.flowAngle);
+    drawTexturedArea(b.x,b.y,b.w,b.h,floor.baseTerrain,null,null,null,null,floor.flowAngle,floor.water);
   }
   if (floor.bounds) {
     const b = floor.bounds;
@@ -540,7 +540,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     if(a.roof||isRoofMaterial(a.mat))clipOutsideCaves(floor.caves,a);
     if(a.fromBuildingId){traceBuilding(a);ctx.clip();}
     const shape=isRoofMaterial(a.mat)?effectiveRoofBounds(sc,floor,a):a;
-    drawTexturedArea(shape.x,shape.y,shape.w,shape.h,a.mat,a.color,a.tile,a.roofPitch,a.roofHeight,a.flowAngle);
+    drawTexturedArea(shape.x,shape.y,shape.w,shape.h,a.mat,a.color,a.tile,a.roofPitch,a.roofHeight,a.flowAngle,a.water);
     const onBridge=actor?.sceneId===state.activeSceneId&&actor.floor===floorIdx&&pointInArchitectArea(a,actor.x,actor.y);
     if(a.mat==='bridgeCovered'&&!onBridge)drawRoofSurface(a.x,a.y,a.w,a.h,'roof_tile','gable');
     ctx.restore();
@@ -776,16 +776,23 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
 }
 
 function drawGrassOverToken(x,y,colors){
-  // O capim na frente do personagem cobre as pernas, mantendo rosto e nome legíveis.
-  for(let base=Math.ceil((x-15)/3)*3;base<=x+15;base+=3){
-    const seed=Math.abs(Math.sin(base*4.17+Math.floor(y/5)*6.28));
-    const offset=base-x, tip=seed*11-5;
-    ctx.strokeStyle=colors[Math.floor(seed*colors.length)];
-    ctx.lineWidth=1.8;
-    ctx.beginPath();
-    ctx.moveTo(offset,16+seed*5);
-    ctx.quadraticCurveTo(offset+tip*.35,7,offset+tip,1+seed*10);
-    ctx.stroke();
+  const time=terrainMotionPreference.matches?0:performance.now()/650;
+  for(let tuft=-2;tuft<=2;tuft++){
+    const base=tuft*7;
+    const phase=x*.08+y*.05+tuft*1.8;
+    const bend=Math.sin(time+phase)*2;
+    for(let blade=-2;blade<=2;blade++){
+      const tip=base+blade*4+bend;
+      const root=base+blade*.7;
+      const h=13+5*Math.cos(phase+blade*2);
+      const bottom=20-Math.abs(tuft)*1.8;
+      ctx.fillStyle=colors[(blade+tuft+6)%colors.length];
+      ctx.beginPath();
+      ctx.moveTo(root-1.4,bottom);
+      ctx.quadraticCurveTo(root-2,bottom-h*.65,tip,bottom-h);
+      ctx.quadraticCurveTo(root+.6,bottom-h*.48,root+1.4,bottom);
+      ctx.fill();
+    }
   }
 }
 
