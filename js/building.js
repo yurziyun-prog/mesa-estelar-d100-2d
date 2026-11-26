@@ -128,8 +128,17 @@ function drawBuildingBase(b,floor,preview=false) {
   ctx.stroke();
   ctx.lineWidth=b.wallThickness;
   const colors={stone:'#717987',brick:'#a35e4b',wood:'#90663e',marble:'#cbd3dc'};
-  ctx.strokeStyle=catalogWallPaint(b)||colors[b.wallMaterial]||b.wallColor;
+  const brick=b.wallMaterial==='brick'||b.wallMaterial==='wallBrick';
+  ctx.strokeStyle=brick?originalMesaPaint('wallBrick'):catalogWallPaint(b)||colors[b.wallMaterial]||b.wallColor;
   ctx.stroke();
+  if(brick){
+    const radius=buildingRadius(b), half=b.wallThickness/2;
+    const start=b.y+radius+half,end=b.y+b.h-radius-half;
+    if(end>start){
+      drawMesaBrickWall(b.x,start,b.x,end,b.wallThickness);
+      drawMesaBrickWall(b.x+b.w,start,b.x+b.w,end,b.wallThickness);
+    }
+  }
   ctx.restore();
 }
 

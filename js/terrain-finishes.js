@@ -10,6 +10,12 @@ const finishTextures=new Map([
  ['crystalGrid',['Cristal em módulos','水晶方砖',null,'crystalFloor']],
  ['cyberGrid',['Placas de neon','霓虹方砖',null,'cyberFloor']]
 ]);
+const originalMesaTextures={
+ wood:['madeira',288,'#795a40'],
+ wallBrick:['tijolo',192,'#ae6047'],
+ mesaGrass:['grama',192,'#566933']
+};
+
 const pavingRects=[
  [22,20,86,92],[133,20,87,92],[244,21,84,90],
  [22,131,86,88],[133,132,84,87],[244,132,86,87],
@@ -59,7 +65,31 @@ function getFinishTile(id){
  return tile;
 }
 
+function originalMesaPaint(id){
+ const [file,size,fallback]=originalMesaTextures[id];
+ if(!finishPatterns.has(id)){
+   const image=finishImage(file+'.webp');
+   if(!image.complete||!image.naturalWidth)return fallback;
+   const pattern=ctx.createPattern(image,'repeat');
+   pattern.setTransform(new DOMMatrix().scale(size/image.naturalWidth,size/image.naturalHeight));
+   finishPatterns.set(id,pattern);
+ }
+ return finishPatterns.get(id);
+}
+
+function drawMesaBrickWall(x1,y1,x2,y2,width){
+ const dx=x2-x1,dy=y2-y1,length=Math.hypot(dx,dy);
+ if(!length)return;
+ ctx.save();
+ ctx.translate(x1,y1);
+ ctx.rotate(Math.atan2(dy,dx));
+ ctx.fillStyle=originalMesaPaint('wallBrick');
+ ctx.fillRect(-width/2,-width/2,length+width,width);
+ ctx.restore();
+}
+
 function finishTerrainPaint(id){
+ if(id==='wood'||id==='mesaGrass')return originalMesaPaint(id);
  if(!finishTextures.has(id)&&id!=='rockyDunes'&&!/^paving[1-9]$/.test(id))return null;
  if(!finishPatterns.has(id)){
    const tile=getFinishTile(id);
@@ -123,6 +153,7 @@ function initTerrainFinishes(){
    ['purpleSand','Areia violeta','紫色沙地'],['paleSand','Areia clara','浅金沙地'],
    ['ochreSand','Areia ocre','赭色沙地'],['rockyDunes','Dunas rochosas','岩石沙丘']
   ]],
+  ['Gramas do Mesa Estelar','Mesa Estelar 草地',[['mesaGrass','Grama original','原版草地']]],
   ['Águas','水域',[['riverWater','Água de rio','河流水面']]],
   ['Calçamentos','石板道路',pavingRects.map((_,i)=>['paving'+(i+1),'Calçamento '+(i+1),'石板道路 '+(i+1)])]
  ];
@@ -144,14 +175,15 @@ function terrainFinishFallback(mat){
 
 function createFinishThumbnail(id){
  if(id==='riverWater')return createTerrainThumbnail('water');
- if(!finishTextures.has(id)&&id!=='rockyDunes'&&!/^paving[1-9]$/.test(id))return null;
+ const original=Object.hasOwn(originalMesaTextures,id)?originalMesaTextures[id]:null;
+ if(!original&&!finishTextures.has(id)&&id!=='rockyDunes'&&!/^paving[1-9]$/.test(id))return null;
  const canvas=document.createElement('canvas');
  canvas.width=canvas.height=32;canvas.className='terrain-preview';canvas.setAttribute('aria-hidden','true');
  const draw=()=>{
-   const tile=getFinishTile(id);
+   const tile=original?image:getFinishTile(id);
    if(tile)canvas.getContext('2d').drawImage(tile,0,0,32,32);
  };
- const image=id==='rockyDunes'?finishImage('dune-reference.webp'):
+ const image=original?finishImage(original[0]+'.webp'):id==='rockyDunes'?finishImage('dune-reference.webp'):
    id.startsWith('paving')?finishImage('paving-reference.webp'):
    finishTextures.get(id)[2]?finishImage(finishTextures.get(id)[2]+'.webp'):null;
  if(image&&!image.complete)image.addEventListener('load',draw,{once:true});else draw();

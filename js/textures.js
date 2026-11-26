@@ -139,26 +139,6 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
         ctx.fill();
       }
     }
-  } else if (mat === 'wood') {
-    // Tábuas contínuas com veios e pregos; malha fixa no mundo, sem emendas entre áreas.
-    ctx.fillStyle='#744b2d';ctx.fillRect(x,y,w,h);
-    const pw=102,ph=29;
-    for(let row=Math.floor(y/ph)-1;row<Math.ceil((y+h)/ph)+1;row++){
-      const py=row*ph,offset=(row%2)*pw/2;
-      for(let col=Math.floor((x-offset)/pw)-1;col<Math.ceil((x+w-offset)/pw)+1;col++){
-        const px=col*pw+offset;
-        const n=Math.abs(Math.sin(col*12.18+row*44.67));
-        ctx.fillStyle=n>.66?'#996a40':n>.33?'#855934':'#7b502d';
-        ctx.fillRect(px+1,py+1,pw-2,ph-2);
-        ctx.strokeStyle='#3f281c';ctx.lineWidth=2;ctx.strokeRect(px+.5,py+.5,pw-1,ph-1);
-        ctx.strokeStyle='rgba(48,27,15,.27)';ctx.lineWidth=1;
-        for(let k=0;k<3;k++){
-          let fy=py+6+k*8+n*3;
-          ctx.beginPath();ctx.moveTo(px+9,fy);ctx.bezierCurveTo(px+30,fy+3,px+60,fy-2,px+pw-8,fy+1);ctx.stroke();
-        }
-        ctx.fillStyle='#4a3324';ctx.beginPath();ctx.arc(px+7,py+7,1.4,0,Math.PI*2);ctx.arc(px+pw-8,py+ph-7,1.4,0,Math.PI*2);ctx.fill();
-      }
-    }
   } else if (mat === 'checker') {
     drawCustomTileFinish(x,y,w,h,tileConfig);
   } else if (mat === 'carpet') {
@@ -640,6 +620,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     const width=w.width||16,material=w.material||'wallMasonry';
     const dx=w.x2-w.x1,dy=w.y2-w.y1,length=Math.hypot(dx,dy);
     if(!length)return;
+    if(material==='wallBrick')drawMesaBrickWall(w.x1,w.y1,w.x2,w.y2,width);
     ctx.save();ctx.translate(w.x1,w.y1);ctx.rotate(Math.atan2(dy,dx));
     if(material==='wallCeramic'){
       ctx.strokeStyle='#748b98';ctx.lineWidth=2;
@@ -651,12 +632,12 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     }else if(material==='scifiBulkhead'){
       ctx.fillStyle=w.neonColor||'#38bdf8';
       ctx.fillRect(2,-1,Math.max(0,length-4),2);
-    }else if(material==='wallCastle'||material==='wallMasonry'||material==='wallBrick'||material==='wallSandstone'){
-      const joint=material==='wallBrick'?'rgba(79,36,25,.6)':'rgba(58,59,56,.50)';
+    }else if(material==='wallCastle'||material==='wallMasonry'||material==='wallSandstone'){
+      const joint='rgba(58,59,56,.50)';
       ctx.strokeStyle=joint;ctx.lineWidth=1.5;
       for(let row=-1;row<2;row++){
         const offset=(row%2?12:0);
-        for(let t=offset;t<length;t+=material==='wallCastle'?34:material==='wallBrick'?23:29){
+        for(let t=offset;t<length;t+=material==='wallCastle'?34:29){
           const jitter=(Math.sin(t*1.7+row*9.2)+1)*2;
           ctx.beginPath();ctx.moveTo(t+jitter,row*width/3-width/6);ctx.lineTo(t-2+jitter,row*width/3+width/8);ctx.stroke();
         }
