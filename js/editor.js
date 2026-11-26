@@ -299,6 +299,10 @@ function applyArchitectAction(wx, wy, isDrag = false) {
   } else if (state.tool === 'character') {
     if (!isDrag) placeArchitectCharacter(wx,wy);
   } else if (state.tool === 'prop') {
+    if(state.propType==='windowCurtain'){
+      if(!isDrag)installWindowCurtain(floor,wx,wy,architectShiftHeld);
+      return;
+    }
     if (!isDrag) {
       floor.props.push({ ...newGeologyVariant(floor,state.propType), x: wx, y: wy, type: state.propType, rot: state.rotation, color:state.propColor, style: state.propType.startsWith('kenney_')?'downloads':state.buildStyle,...(isPortableLadder({type:state.propType})?{ladderState:state.propType==='foldingLadder'?'folded':'lying',material:'wood'}:{}) });
       const placed=floor.props.at(-1);

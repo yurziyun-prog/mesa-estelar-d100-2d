@@ -704,6 +704,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     ctx.strokeRect(-(win.width||40)/2, -8, win.width||40, 16);
     ctx.strokeStyle='rgba(241,250,252,.55)';ctx.lineWidth=2;
     ctx.beginPath();ctx.moveTo(0,-8);ctx.lineTo(0,8);ctx.stroke();
+    if(win.curtain)drawWindowCurtain(win.width||40,win.curtain);
     ctx.restore();
   });
 
@@ -1061,6 +1062,9 @@ function drawSleepingFurniture(p){
   ctx.restore();
 }
 function drawProp(p) {
+  if(p.type==='windowCurtain'){
+    ctx.save();ctx.translate(p.x,p.y);drawWindowCurtain(54,{closed:true,color:p.color});ctx.restore();return;
+  }
   if(drawPlant(p))return;
   if(p.freeAngle){
     ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.freeAngle);ctx.translate(-p.x,-p.y);

@@ -325,7 +325,7 @@ function catalogEntries(category){
    ...catalogFloors.slice(6).map(([id,label])=>[id,'',label,'mat','Pisos texturizados'])];
  if(category==='nature')return [...entries,...geologyEntries('nature'),...extraPlantIds.map(id=>[id,'',plantTypes.get(id)[0],'prop']),...catalogNature.map(([id,label])=>[id,'',label,'prop'])];
  if(category==='furniture')return [...entries,...worldFixtureEntries(false),...furnitureFinishes.map(([id,label])=>[id,'',label,'prop','Materiais de mesa e cadeira']),...MESA_FURNITURE.map(([id,label])=>[id,'',label,'prop','Móveis do Mesa Estelar']),...catalogProps.flatMap(([group,,props])=>props.map(([id,label])=>[id,'',label,'prop',group]))];
- if(category==='props')return [...entries,...geologyEntries('props'),...sceneryEntries(),...worldFixtureEntries(true)];
+ if(category==='props')return [...entries,['windowCurtain','','Cortina de janela','prop'],...geologyEntries('props'),...sceneryEntries(),...worldFixtureEntries(true)];
  return entries;
 }
 

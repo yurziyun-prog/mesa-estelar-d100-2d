@@ -422,6 +422,10 @@ Solo Corrompido|腐化地表
 Escolha um trecho reto e livre da parede.|请选择一段空闲的直墙。
 Caverna|洞穴
 Solo interno|洞内地形
+Cortina de janela|窗帘
+Clique em uma janela para instalar a cortina. Shift+clique para remover.|点击窗户安装窗帘，按住 Shift 点击可拆除。
+Cortina aberta.|窗帘已打开。
+Cortina fechada.|窗帘已关闭。
 Material aplicado às paredes selecionadas.|已更改所选墙体的材质。
 Forma da parede|墙体形状
 Parede reta|直墙

@@ -259,7 +259,7 @@ function indoorSightPolygon(floor,actor){
  if(!slabs.some(area=>pointInArchitectArea(area,x,y)))return null;
  const openings=[
    ...(floor.doors||[]).map(door=>({opening:door,width:door.width||68,pass:door.open})),
-   ...(floor.windows||[]).map(window=>({opening:window,width:window.width||40,pass:true}))
+   ...(floor.windows||[]).map(window=>({opening:window,width:window.width||40,pass:!window.curtain?.closed}))
  ].map(item=>({...item,edge:sightOpeningEdge(item.opening,item.width)}));
  const solid=sightWallsWithOpenings(lightOccluders(floor).filter(wall=>!wall.source),openings);
  const walls=[...solid,...openings.map(item=>item.edge)];
@@ -319,7 +319,7 @@ function exteriorSightThroughOpenings(floor,actor){
  if(inside(actor.x,actor.y))return [];
  const openings=[
    ...(floor.doors||[]).map(opening=>({opening,width:opening.width||68,pass:opening.open})),
-   ...(floor.windows||[]).map(opening=>({opening,width:opening.width||40,pass:true}))
+   ...(floor.windows||[]).map(opening=>({opening,width:opening.width||40,pass:!opening.curtain?.closed}))
  ].map(item=>({...item,edge:sightOpeningEdge(item.opening,item.width)}));
  const solid=sightWallsWithOpenings(lightOccluders(floor).filter(w=>!w.source),openings);
  const walls=solid.concat(openings.map(item=>item.edge));
@@ -358,5 +358,46 @@ function clipCoverForExteriorSight(bounds,views){
    ctx.moveTo(points[0].x,points[0].y);
    for(const p of points.slice(1))ctx.lineTo(p.x,p.y);
    ctx.closePath();ctx.clip('evenodd');
+ }
+}
+
+function closestCurtainWindow(floor,x,y,radius,installedOnly=false){
+ return (floor.windows||[]).filter(w=>!installedOnly||w.curtain)
+   .map(window=>{
+     const edge=sightOpeningEdge(window,window.width||40);
+     return {window,distance:distToSegment(x,y,edge.x1,edge.y1,edge.x2,edge.y2)};
+   }).filter(hit=>hit.distance<=radius).sort((a,b)=>a.distance-b.distance)[0];
+}
+
+function installWindowCurtain(floor,x,y,remove){
+ const hit=closestCurtainWindow(floor,x,y,25,remove);
+ if(!hit)return false;
+ if(remove)delete hit.window.curtain;
+ else hit.window.curtain={closed:false,color:state.propColor||'#704455'};
+ return true;
+}
+
+function toggleNearbyCurtain(floor,actor,door){
+ const hit=closestCurtainWindow(floor,actor.x,actor.y,46,true);
+ if(!hit)return false;
+ if(door&&Math.hypot(door.x-actor.x,door.y-actor.y)<=hit.distance+8)return false;
+ hit.window.curtain.closed=!hit.window.curtain.closed;
+ say(actor,translateSiteText(hit.window.curtain.closed?'Cortina fechada.':'Cortina aberta.'));
+ return true;
+}
+
+function drawWindowCurtain(width,curtain){
+ const half=width/2;
+ ctx.fillStyle='#352735';ctx.fillRect(-half-4,-7,width+8,3);
+ ctx.strokeStyle='#e1bb7e';ctx.lineWidth=2;
+ ctx.beginPath();ctx.moveTo(-half-4,-6);ctx.lineTo(half+4,-6);ctx.stroke();
+ const strip=curtain.closed?width+2:Math.max(8,width*.18);
+ for(const x of [-half-1,half+1-strip]){
+   ctx.fillStyle=curtain.color||'#704455';ctx.fillRect(x,-4,strip,11);
+   ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=1;
+   ctx.beginPath();
+   for(let t=x+4;t<x+strip-1;t+=5){ctx.moveTo(t,-3);ctx.lineTo(t,6);}
+   ctx.stroke();
+   if(curtain.closed)break;
  }
 }

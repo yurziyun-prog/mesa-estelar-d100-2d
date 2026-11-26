@@ -149,7 +149,9 @@ function selectArchitectLibraryItem(id,label,kind){
  }
  else if(kind==='roofOpening'){state.roofOpeningType=id;selectTool('roofOpening');}
  else if(kind==='character'){architectCharacterTemplate=id;selectTool('character');}
- document.getElementById('architectLibrarySelected').textContent='Selecionado: '+label+' • Clique no mapa para colocar.';
+ document.getElementById('architectLibrarySelected').textContent=id==='windowCurtain'
+  ?translateSiteText('Clique em uma janela para instalar a cortina. Shift+clique para remover.')
+  :'Selecionado: '+label+' • Clique no mapa para colocar.';
  refreshArchitectProperties();
  for(const card of document.querySelectorAll('.library-card'))card.classList.toggle('active',card.textContent.trim().endsWith(translateSiteText(label)));
 }

@@ -1,10 +1,10 @@
 const plantTypes=new Map([
- ['tree',['Carvalho','橡树',34,'oak']],['fruitTree',['Frutífera','果树',34,'oak']],
- ['pine',['Pinheiro','松树',32,'pine']],['palm',['Palmeira','棕榈树',38,'palm']],
+ ['tree',['Carvalho','橡树',61,'oak']],['fruitTree',['Frutífera','果树',49,'oak']],
+ ['pine',['Pinheiro','松树',55,'pine']],['palm',['Palmeira','棕榈树',49,'palm']],
  ['bush',['Arbusto','灌木',21,'bush']],['fern',['Samambaia','蕨类植物',22,'fern']],
  ['desertTree',['Árvore de deserto','沙漠树',30,'winter']],
- ['winterTree',['Árvore de inverno','冬季落叶树',36,'winter']],
- ['deadTree',['Árvore morta','枯树',36,'dead']],
+ ['winterTree',['Árvore de inverno','冬季落叶树',53,'winter']],
+ ['deadTree',['Árvore morta','枯树',48,'dead']],
  ['alienPodTree',['Árvore de vagens lunares','月荚树',42,'pods']],
  ['alienFanTree',['Árvore-leque alienígena','外星扇叶树',39,'fan']],
  ['alienShelfTree',['Árvore de discos luminosos','荧光菌盘树',42,'discs']],
@@ -24,7 +24,7 @@ const plantTallKinds=new Set(['oak','pine','palm','winter','dead','pods','fan','
 
 function plantTrunkRadius(type){
  const plant=plantTypes.get(type);
- return plantTallKinds.has(plant?.[3])?7:0;
+ return plantTallKinds.has(plant?.[3])?Math.max(7,Math.round(plant[2]*.17)):0;
 }
 
 function plantDisc(g,x,y,r,color){
@@ -146,7 +146,7 @@ function drawPlantBase(p){
 function drawPlantCanopy(p,actor=null){
  const [, ,radius,kind]=plantTypes.get(p.type);
  if(kind==='dead'||kind==='winter')return;
- if(plantTallKinds.has(kind)&&actor&&Math.hypot(actor.x-p.x,actor.y-p.y)<radius*.79*(p.scale||1))return;
+ const actorUnderCanopy=plantTallKinds.has(kind)&&actor&&Math.hypot(actor.x-p.x,actor.y-p.y)<radius*.79*(p.scale||1);
  const sprite=illustratedCanopies.get(p.type);
  const hasArt=sprite!==undefined&&overheadCanopyArt.complete&&overheadCanopyArt.naturalWidth>0;
  const art=hasArt?overheadCanopyArt:makePlantCanopy(p.type);
@@ -154,6 +154,7 @@ function drawPlantCanopy(p,actor=null){
  const wind=ctx.canvas===canvas&&!terrainMotionPreference.matches?(state.windStrength??.35):0;
  const phase=performance.now()/1000*2+p.x*.055+p.y*.024;
  beginPlantTransform(p);
+ if(actorUnderCanopy)ctx.globalAlpha*=.34;
  ctx.rotate(Math.sin(phase)*wind*.065);
  ctx.translate(Math.sin(phase)*wind*4,Math.cos(phase*.83)*wind*2);
  if(hasArt){

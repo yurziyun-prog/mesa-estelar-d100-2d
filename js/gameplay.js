@@ -247,6 +247,7 @@ function interactNearby(entity) {
     const center=Math.hypot(d.x-entity.x,d.y-entity.y);
     return {d,distance:leaf?Math.min(center,distToSegment(entity.x,entity.y,leaf.x1,leaf.y1,leaf.x2,leaf.y2)):center};
   }).filter(hit=>hit.distance<58).sort((a,b)=>a.distance-b.distance)[0]?.d;
+  if(toggleNearbyCurtain(floor,entity,door))return;
   if (door) {
     if (door.lockCode && !door.open) {
       const answer=prompt('Digite o código de acesso:');
