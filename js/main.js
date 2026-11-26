@@ -331,8 +331,9 @@ function updateSimulation(elapsed) {
         if(state.mode==='player'&&!isPanning)cameraFollowsActor=true;
         const floor=getScene().floors[ent.floor];
         const grass=highGrassAt(floor,ent.x,ent.y);
-        const distance = (keys['shift'] ? SPRINT_SPEED : WALK_SPEED) * elapsed *
-          (grass ? HIGH_GRASS_SPEED_FACTOR : 1);
+        const depth=waterDepthAt(floor,ent.x,ent.y);
+        const travelSpeed=depth?WALK_SPEED*(depth==='shallow'?.62:.48):(keys['shift']?SPRINT_SPEED:WALK_SPEED);
+        const distance = travelSpeed*elapsed*(grass&&!depth?HIGH_GRASS_SPEED_FACTOR:1);
         const steps = Math.max(1, Math.ceil(distance / MAX_MOVEMENT_STEP));
         const vx = ent.facingX * distance / steps;
         const vy = ent.facingY * distance / steps;
@@ -358,6 +359,7 @@ function render() {
   ensureStructureStoreys(sc);
   renderedRoofCovers.length=0;
   visibleChimneys=findChimneys(sc);
+  chimneyScene=sc;
   const currentLevel=floorLevel(sc,state.currentFloor);
   const interior=viewerCave(sc.floors[state.currentFloor],state.currentFloor);
   const visible=sc.floors.map((floor,i)=>({i,level:floor.level}))

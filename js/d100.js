@@ -16,6 +16,9 @@ function normalizeD100Character(ent){
  ent.system='Mesa Estelar d100';
  ent.d100Version=D100_MIGRATION_VERSION;
  ent.skillsD100=Array.isArray(ent.skillsD100)?ent.skillsD100:parseLegacySkillsD100(ent.skills);
+ if(!ent.skillsD100.some(isSwimmingSkill)){
+   ent.skillsD100.push({name:'Natação',base:null,training:null,total:null,provisional:true});
+ }
  ent.powers=Array.isArray(ent.powers)?ent.powers:[];
  ent.inventory=Array.isArray(ent.inventory)?ent.inventory:[];
  ent.hp=Number.isFinite(Number(ent.hp))?Number(ent.hp):12;
@@ -40,6 +43,9 @@ function parseLegacySkillsD100(skills){
 }
 function migrateD100Characters(){
  for(const ent of state.entities||[])normalizeD100Character(ent);
+}
+function isSwimmingSkill(skill){
+ return /^(natação|natacao|swimming|游泳)$/i.test(String(skill?.name||'').trim());
 }
 function d100Roll(){return Math.floor(Math.random()*100)+1;}
 function testD100Attribute(key){
@@ -109,7 +115,7 @@ function displayD100Skills(ent){
  for(const [index,skill] of skills.entries()){
   const row=document.createElement('button');row.type='button';row.className='list-item d100-skill-row';
   const target=Number.isFinite(skill.total)?skill.total+'%':'A definir';
-  row.textContent='🎯 '+skill.name+' · Base '+(skill.base??'—')+' + Treino '+(skill.training??'—')+' = '+target;
+  row.textContent='🎯 '+translateSiteText(skill.name)+' · Base '+(skill.base??'—')+' + Treino '+(skill.training??'—')+' = '+target;
   row.title='Rolar d100 quando o valor total estiver definido';
   row.onclick=()=>testD100Skill(index);root.append(row);
   if(state.mode==='gm'){

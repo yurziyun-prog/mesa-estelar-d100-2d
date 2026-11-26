@@ -145,7 +145,7 @@ const furnitureFinishes=[
 ];
 const furnitureFinishById=new Map(furnitureFinishes.map(item=>[item[0],item]));
 
-function drawFireEffect(prop){
+function drawFireEffect(prop,coreOnly=false){
  const hearing=Boolean(fireplaceDesign(prop.type));
  if(hearing&&prop.fireLit===false)return;
  if(!hearing&&!['braziers','campfire'].includes(prop.type))return;
@@ -153,9 +153,11 @@ function drawFireEffect(prop){
  ctx.save();ctx.translate(prop.x,prop.y);ctx.rotate((prop.rot||0)*Math.PI/2);
  ctx.scale(prop.scale||1,prop.scale||1);
  ctx.translate(0,hearing?5:0);
- const glow=ctx.createRadialGradient(0,0,1,0,0,32+Math.sin(t*9)*3);
- glow.addColorStop(0,'rgba(255,169,62,.47)');glow.addColorStop(1,'rgba(255,115,30,0)');
- ctx.fillStyle=glow;ctx.fillRect(-40,-40,80,80);
+ if(!coreOnly){
+   const glow=ctx.createRadialGradient(0,0,1,0,0,23+Math.sin(t*9)*2);
+   glow.addColorStop(0,'rgba(255,169,62,.19)');glow.addColorStop(1,'rgba(255,115,30,0)');
+   ctx.fillStyle=glow;ctx.fillRect(-25,-25,50,50);
+ }
  for(let i=0;i<4;i++){
    const flicker=Math.sin(t*(9+i)+i*2.4);
    const x=(i-1.5)*4,h=10+i*2+flicker*4;

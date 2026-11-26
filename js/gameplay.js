@@ -153,14 +153,35 @@ function crossesWall(floor,x1,y1,x2,y2,extensionsOnly=false){
  }
  return false;
 }
+const swimAttempts=new WeakMap();
+
+function canEnterDeepWater(ent,floor){
+ const now=performance.now();
+ const previous=swimAttempts.get(ent);
+ if(previous&&previous.floor===floor&&previous.retryAt>now)return false;
+ const trained=ent.skillsD100?.find(isSwimmingSkill);
+ const target=trained?.total;
+ const roll=Number.isFinite(target)?d100Roll():null;
+ const passed=roll!==null&&roll<=target;
+ if(!passed)swimAttempts.set(ent,{floor,retryAt:now+1400});
+ const message=roll===null?'Defina a perícia Natação na ficha para entrar em água profunda.':
+   passed?'Travessia a nado bem-sucedida.':'Falha na travessia a nado.';
+ logEvent(translateSiteText(message)+(roll===null?'':` (${roll}/${target})`));
+ return passed;
+}
+
 function canWalkStep(ent,x,y){
   const floor=getScene().floors[ent.floor];
-  return Math.abs(reliefAt(floor,x,y)-reliefAt(floor,ent.x,ent.y))<=.25&&canMoveTo(ent.floor,x,y);
+  if(Math.abs(reliefAt(floor,x,y)-reliefAt(floor,ent.x,ent.y))>.25)return false;
+  const depth=waterDepthAt(floor,x,y);
+  if(!canMoveTo(ent.floor,x,y,false,depth))return false;
+  return depth!=='deep'||waterDepthAt(floor,ent.x,ent.y)==='deep'||canEnterDeepWater(ent,floor);
 }
-function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
+function canMoveTo(floorIdx, nx, ny, jumpLanding = false, waterAccess = null) {
   const floor = getScene().floors[floorIdx];
   if (!floor) return false;
   const r = 12;
+  if(chimneyBlocksMovement(getScene(),floorIdx,nx,ny,r))return false;
   if(caveWallBlocks(floor,nx,ny)||buildingWallBlocks(floor,nx,ny))return false;
 
   for (const w of floor.walls) {
@@ -194,7 +215,7 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
       nx>=a.x&&nx<=a.x+a.w&&ny>=a.y&&ny<=a.y+a.h)))return false;
   const lift=[...floor.props.filter(p=>p.type==='hoverLift'),...remoteLifts(getScene(),floorIdx).map(x=>x.prop)]
     .some(p=>Math.hypot(p.x-nx,p.y-ny)<26*(p.scale||1));
-  if (!walkableFloor(floor,nx,ny)&&!reliefAt(floor,nx,ny)&&
+  if (!(waterAccess||waterDepthAt(floor,nx,ny)==='shallow')&&!walkableFloor(floor,nx,ny)&&!reliefAt(floor,nx,ny)&&
       !onStructureTop(getScene(),floorIdx,nx,ny)&&!lift) return false;
 
   return true;

@@ -497,6 +497,7 @@ function waterAppearance(mat,settings){
   const number=(value,fallback)=>Number.isFinite(value)?Math.max(0,Math.min(3,value)):fallback;
   return {
     color:/^#[0-9a-f]{6}$/i.test(settings?.color)?settings.color.toLowerCase():defaults.color,
+    depth:settings?.depth==='shallow'?'shallow':'deep',
     speed:number(settings?.speed,defaults.speed||0),
     waves:number(settings?.waves,defaults.waves||0)
   };
@@ -508,6 +509,7 @@ function syncWaterControls(prefix,mat,settings){
   box.classList.toggle('hidden',!appearance);
   if(appearance&&(settings!==undefined||box.dataset.material!==mat)){
     document.getElementById(prefix+'Color').value=appearance.color;
+    document.getElementById(prefix+'Depth').value=appearance.depth;
     document.getElementById(prefix+'Flow').value=appearance.speed;
     document.getElementById(prefix+'Waves').value=appearance.waves;
   }
@@ -519,6 +521,7 @@ function syncWaterControls(prefix,mat,settings){
 function readWaterControls(prefix,mat){
   return waterAppearance(mat,{
     color:document.getElementById(prefix+'Color').value,
+    depth:document.getElementById(prefix+'Depth').value,
     speed:Number(document.getElementById(prefix+'Flow').value),
     waves:Number(document.getElementById(prefix+'Waves').value)
   });
@@ -564,17 +567,32 @@ function waterPattern(mat,color){
   return pattern;
 }
 
+function waterDepthAt(floor,x,y){
+  if(onPlacedBridge(floor,x,y))return null;
+  if((floor.buildings||[]).some(b=>b.hasFloor&&buildingDistance(x,y,b)<=0))return null;
+  const surface=topMapSurfaceAt(floor,x,y);
+  const bounds=floor.terrainBounds||floor.bounds;
+  if(!surface&&(!bounds||!pointInArchitectArea(bounds,x,y)))return null;
+  const mat=surface?.mat||floor.baseTerrain;
+  if(mat==='mesaShallows')return 'shallow';
+  if(mat==='kenney_water'||mat==='swampWater')return 'deep';
+  return waterAppearance(mat,surface?surface.water:floor.water)?.depth||null;
+}
+
 function drawWaterSurface(mat,x,y,w,h,flow,settings){
   const appearance=waterAppearance(mat,settings);
+  ctx.save();
+  if(appearance.depth==='shallow')ctx.globalAlpha*=.52;
   ctx.fillStyle=waterPattern(mat,appearance.color);
   ctx.fillRect(x,y,w,h);
+  ctx.restore();
   drawTerrainMotion(mat,x,y,w,h,flow,appearance);
 }
 
 function waterSurfaceKey(surface){
   if((surface.points&&!surface.terrain)||!waterDefaults[surface.mat])return '';
-  const {color,speed,waves}=waterAppearance(surface.mat,surface.water);
-  return [surface.mat,color,speed,waves].join('|');
+  const {color,speed,waves,depth}=waterAppearance(surface.mat,surface.water);
+  return [surface.mat,color,speed,waves,depth].join('|');
 }
 
 function drawJoinedWater(surfaces){
@@ -718,7 +736,7 @@ function drawTerrainStroke(stroke) {
   ctx.fillStyle=water?waterPattern(stroke.mat,water.color):finishTerrainPaint(stroke.mat)||mesaTerrainPaint(stroke.mat)||getTerrainPattern(ctx,terrainFinishFallback(stroke.mat));
   for(const [diameter,alpha] of [[size*(1+stroke.softness),stroke.softness*.6],[size,1]]){
     if(!alpha)continue;
-    ctx.globalAlpha=alpha;
+    ctx.globalAlpha=alpha*(water?.depth==='shallow'?.52:1);
     trace(diameter);
     ctx.fill();
   }

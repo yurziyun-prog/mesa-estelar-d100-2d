@@ -513,6 +513,24 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
   const floor = sc.floors[floorIdx];
   if (!floor) return;
 
+  const submergedRocks=new Set(),rocksByWater=new Map();
+  if(!interior&&!isBelow){
+    for(const prop of floor.props){
+      if(!geologyPropRadius(prop.type)||prop.baseMetres>0)continue;
+      const depth=waterDepthAt(floor,prop.x,prop.y);
+      if(!depth)continue;
+      submergedRocks.add(prop);
+      if(depth!=='shallow')continue;
+      const water=topMapSurfaceAt(floor,prop.x,prop.y);
+      if(!rocksByWater.has(water))rocksByWater.set(water,[]);
+      rocksByWater.get(water).push(prop);
+    }
+  }
+  const drawRiverbed=surface=>{
+    const props=rocksByWater.get(surface);
+    if(props)props.forEach(drawProp);
+  };
+  drawRiverbed(undefined);
   // Área inicial compacta e expansível
   if (floor.terrainBounds && floor.baseTerrain) {
     const b = floor.terrainBounds;
@@ -552,10 +570,15 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     if(waterKey){
       let end=i+1;
       while(end<surfaces.length&&waterSurfaceKey(surfaces[end])===waterKey)end++;
-      drawJoinedWater(surfaces.slice(i,end));
+      const joined=surfaces.slice(i,end);
+      joined.forEach(drawRiverbed);
+      drawJoinedWater(joined);
       i=end-1;
-    }else if(surface.points)drawBrushStroke(surface);
-    else drawArea(surface);
+    }else{
+      drawRiverbed(surface);
+      if(surface.points)drawBrushStroke(surface);
+      else drawArea(surface);
+    }
   }
   for(const area of floor.areas)if(!isStackedArea(area))drawArea(area);
   for(const stroke of floor.brushStrokes||[])if(stroke.mesaScatter&&stroke.points?.length)drawMesaScatter(stroke);
@@ -754,6 +777,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     liftVisualOffset(liftViewer):0;
   for(const {prop} of remoteLifts(sc,floorIdx))drawProp({...prop,y:prop.y-liftOffset(prop)});
   [...floor.props].sort((a,b)=>(a.baseMetres||0)-(b.baseMetres||0)||reliefAt(floor,a.x,a.y)-reliefAt(floor,b.x,b.y)||(a.y-b.y)).forEach(p => {
+    if(submergedRocks.has(p))return;
     if(plantTypes.has(p.type))drawPlantBase(p);
     else{drawProp({...p,y:p.y-(p.baseMetres||0)*7-liftOffset(p)});drawFireEffect(p);}
   });
@@ -773,7 +797,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
   }
 
   state.entities.filter(e => e.sceneId === state.activeSceneId && e.floor === floorIdx).forEach(ent => {
-    drawCharacterToken(ent,isBelow,highGrassAt(floor,ent.x,ent.y));
+    drawCharacterToken(ent,isBelow,highGrassAt(floor,ent.x,ent.y),waterDepthAt(floor,ent.x,ent.y));
   });
   // 镂空楼梯对下方人物显示台阶遮挡；攀爬时人物绘制在台阶上方。
   floor.stairs.filter(s=>s.dir!=='down'&&stairVisualShape(s.shape)==='open' &&
@@ -812,7 +836,7 @@ function drawGrassOverToken(x,y,colors){
   }
 }
 
-function drawCharacterToken(ent, isBelow, grass=null) {
+function drawCharacterToken(ent, isBelow, grass=null, water=null) {
   const cx=ent.x,cy=ent.y,now=performance.now();
   if(ent.sleepPose&&TENT_TYPES.has(ent.sleepBed?.type))return;
   if(ent.sleepPose){
@@ -848,6 +872,9 @@ function drawCharacterToken(ent, isBelow, grass=null) {
     const t=Math.max(0,Math.min(1,1-(ent.fallUntil-now)/430));
     lift=-Math.sin(Math.PI*t)*11; // stumble and recover after dropping through an open shaft
   }
+  const immersed=water&&!ent.stairClimb&&lift<9;
+  const swimming=immersed&&water==='deep';
+  if(immersed)lift-=swimming?9:4;
   const moving=ent.walkingUntil>now||Boolean(ent.stairClimb);
   const stride=moving?Math.sin(now/90)*3:0;
   const hostile=ent.attitude==='Hostil';
@@ -858,10 +885,14 @@ function drawCharacterToken(ent, isBelow, grass=null) {
   ctx.fillStyle='rgba(0,0,0,.3)';
   ctx.beginPath();ctx.ellipse(cx+3,cy+9,15+lift*.15,8+lift*.1,0,0,Math.PI*2);ctx.fill();
   ctx.translate(cx,cy-lift);
-  if(state.timeOfDay==='night'){
+  if(!immersed&&state.timeOfDay==='night'){
     const light=ctx.createRadialGradient(0,0,3,0,0,70);
     light.addColorStop(0,'rgba(255,210,128,.16)');light.addColorStop(1,'rgba(255,210,128,0)');
     ctx.fillStyle=light;ctx.beginPath();ctx.arc(0,0,70,0,7);ctx.fill();
+  }
+  if(immersed){
+    ctx.save();
+    ctx.beginPath();ctx.rect(-40,-45,80,swimming?44:52);ctx.clip();
   }
   if(isMonster){
     const beast=ent.icon==='🐉'||ent.icon==='🐺';
@@ -887,6 +918,20 @@ function drawCharacterToken(ent, isBelow, grass=null) {
     if(ent.inventory?.some(x=>/Espada|Lança|Cajado|Arco/i.test(x))){
       ctx.strokeStyle='#bdc8d8';ctx.lineWidth=2.5;
       ctx.beginPath();ctx.moveTo(15,8+stride);ctx.lineTo(18,-14);ctx.stroke();
+    }
+  }
+  if(immersed){
+    ctx.restore();
+    const phase=terrainMotionPreference.matches?0:(now%900)/900;
+    ctx.strokeStyle='rgba(177,235,237,.6)';ctx.lineWidth=1.25;
+    for(let i=0;i<2;i++){
+      const wave=9+(moving?(phase+i*.44)%1*10:i*3);
+      ctx.beginPath();ctx.ellipse(0,swimming?1:7,wave,wave*.38,0,.1,Math.PI-.1);ctx.stroke();
+    }
+    if(swimming&&moving){
+      const side=Math.sin(now/130)>0?1:-1;
+      ctx.strokeStyle='#c2a98c';ctx.lineWidth=3;
+      ctx.beginPath();ctx.moveTo(side*7,0);ctx.quadraticCurveTo(side*18,-9,side*21,-2);ctx.stroke();
     }
   }
   if(ent.id===state.selectedEntityId){

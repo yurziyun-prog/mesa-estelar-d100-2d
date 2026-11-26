@@ -186,6 +186,17 @@ function drawSunShadows(floor){
 
 const renderedRoofCovers=[];
 let visibleChimneys=[];
+let chimneyScene=null;
+
+function chimneyBlocksMovement(scene,index,x,y,radius){
+ const level=floorLevel(scene,index);
+ const chimneys=scene===chimneyScene?visibleChimneys:findChimneys(scene);
+ return chimneys.some(({prop,source,top})=>{
+   if(level<=source||level>top.level)return false;
+   const half=(prop.type==='ironStove'?6:11)*(prop.scale||1);
+   return Math.hypot(Math.max(0,Math.abs(prop.x-x)-half),Math.max(0,Math.abs(prop.y-y)-half))<radius;
+ });
+}
 
 function fireplaceDesign(type){
  return ({hearth:['#737479','#4b4e53',34,20],brickHearth:['#9d5947','#683f37',34,21],
@@ -243,23 +254,47 @@ function lightWallsWithOpenings(floor){
    ...openings.filter(item=>!item.pass).map(item=>sightOpeningEdge(item.opening,item.width))];
 }
 
+function sceneryEmitter(prop){
+ const item=sceneryItems.get(prop.type);
+ if(item?.[4])return {prop,color:item[4],radius:item[5]};
+ if(fireplaceDesign(prop.type))return prop.fireLit===false?null:{prop,color:'#ffc992',radius:485,fire:true};
+ if(['campfire','braziers','torch','oilLamp','lamp'].includes(prop.type)){
+   return {prop,color:'#ffc189',radius:prop.type==='campfire'?188:116,fire:true};
+ }
+ const luminous={
+   alienPodTree:['#86ccff',78],alienShelfTree:['#8fead3',70],alienFanTree:['#bf8bea',67],
+   crystal:['#79eccc',43],crystalCluster:['#80f0da',67],amethyst:['#bb91fa',52],
+   citrine:['#f9c475',52],iceCrystal:['#8fd1fa',52]
+ }[prop.type];
+ return luminous?{prop,color:luminous[0],radius:luminous[1]*(plantTypes.has(prop.type)?treeSizeFactor(prop):1),strength:.39}:null;
+}
+
+function lightFromLowerStairs(floor){
+ const scene=getScene(),index=state.currentFloor;
+ return (floor.stairs||[]).filter(s=>s.dir==='down').flatMap(stair=>{
+   const target=stairLinkedIndex(scene,index,stair);
+   const lower=scene.floors[target];
+   if(!lower||floorLevel(scene,target)>=floorLevel(scene,index))return [];
+   const walls=lightWallsWithOpenings(lower);
+   for(const lamp of lower.props.map(sceneryEmitter).filter(Boolean)){
+     const dx=stair.x-lamp.prop.x,dy=stair.y-lamp.prop.y,dist=Math.hypot(dx,dy);
+     if(dist>=lamp.radius*.68)continue;
+     if(dist&&walls.some(w=>w.source!==lamp.prop&&rayWallDistance(lamp.prop.x,lamp.prop.y,dx/dist,dy/dist,w,dist)<dist-.01))continue;
+     return [{prop:stair,color:lamp.color,radius:62,strength:.32}];
+   }
+   return [];
+ });
+}
+
 function renderSceneryLights(floor,interior){
  if(!floor)return;
  const darkness=daylightLighting().dark;
- const emitters=floor.props.map(prop=>{
-   const item=sceneryItems.get(prop.type);
-   if(item?.[4])return {prop,color:item[4],radius:item[5]};
-   if(fireplaceDesign(prop.type))return prop.fireLit===false?null:{prop,color:'#ffae61',radius:155};
-   if(['campfire','braziers','torch','oilLamp','lamp'].includes(prop.type)){
-     return {prop,color:'#ffae61',radius:prop.type==='campfire'?119:83};
-   }
-   return null;
- }).filter(Boolean);
+ const emitters=[...floor.props.map(sceneryEmitter).filter(Boolean),...lightFromLowerStairs(floor)];
  if(!emitters.length)return;
  const walls=lightWallsWithOpenings(floor);
  ctx.save();ctx.translate(state.camera.x,state.camera.y);ctx.scale(state.camera.zoom,state.camera.zoom);
  ctx.globalCompositeOperation='screen';
- for(const {prop,color,radius} of emitters){
+ for(const {prop,color,radius,strength=1,fire} of emitters){
    const x=prop.x,y=prop.y,r=radius*(prop.scale||1),zoom=state.camera.zoom;
    if(x*zoom+state.camera.x<-r*zoom||y*zoom+state.camera.y<-r*zoom||
       x*zoom+state.camera.x>canvas.width+r*zoom||y*zoom+state.camera.y>canvas.height+r*zoom)continue;
@@ -288,11 +323,20 @@ function renderSceneryLights(floor,interior){
    }
    ctx.closePath();ctx.clip();
    const gradient=ctx.createRadialGradient(x,y,0,x,y,r);
-   gradient.addColorStop(0,color+'bc');gradient.addColorStop(.32,color+'69');gradient.addColorStop(1,color+'00');
+   gradient.addColorStop(0,color+'a8');
+   gradient.addColorStop(.28,color+(fire?'94':'52'));
+   gradient.addColorStop(.60,color+(fire?'58':'20'));
+   gradient.addColorStop(1,color+'00');
    ctx.fillStyle=gradient;
    const flicker=terrainMotionPreference.matches?1:.91+.09*Math.sin(performance.now()/140+x);
-   ctx.globalAlpha=Math.min(1,.48+darkness*.72)*flicker;
-   ctx.fillRect(x-r,y-r,r*2,r*2);ctx.restore();
+   ctx.globalAlpha=Math.min(1,.48+darkness*.72)*flicker*strength;
+   ctx.fillRect(x-r,y-r,r*2,r*2);
+   if(fire){
+     ctx.globalCompositeOperation='source-over';
+     ctx.globalAlpha=1;
+     drawFireEffect(prop,true);
+   }
+   ctx.restore();
  }
  ctx.restore();
 }

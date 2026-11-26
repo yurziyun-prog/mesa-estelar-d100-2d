@@ -320,6 +320,9 @@
           <div class="row"><select id="terrainPaintMaterial" class="ctrl" aria-label="Terreno" onchange="chooseTerrainMaterial(this.value)"></select></div>
     <div id="brushWaterSettings" class="hidden">
       <label><span>Cor da água</span> <input id="brushWaterColor" type="color" value="#267f88"></label>
+      <label><span>Profundidade da água</span> <select id="brushWaterDepth" class="ctrl">
+        <option value="shallow">Água rasa</option><option value="deep">Água profunda</option>
+      </select></label>
       <label id="brushWaterFlowRow"><span>Velocidade da corrente</span> <input id="brushWaterFlow" type="range" min="0" max="3" step=".1" value="1"></label>
       <label id="brushWaterWavesRow"><span>Intensidade das ondas</span> <input id="brushWaterWaves" type="range" min="0" max="3" step=".1" value="1"></label>
     </div>
@@ -560,35 +563,35 @@
   </aside>
 </div>
 
-<script src="js/d100.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
+<script src="js/d100.js?v=water-depth-swimming-light" defer></script>
 <script src="js/state.js?v=map-night-chimneys" defer></script>
 <script src="js/roof-system.js?v=map-night-chimneys" defer></script>
 <script src="js/stair-system.js?v=water-surfaces-grass-stairs" defer></script>
 <script src="js/editor.js?v=map-night-chimneys" defer></script>
 <script src="js/library.js?v=stair-tree-size-20261126" defer></script>
-<script src="js/gameplay.js?v=map-night-chimneys" defer></script>
+<script src="js/gameplay.js?v=water-depth-swimming-light" defer></script>
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/textures.js?v=map-night-chimneys" defer></script>
+<script src="js/textures.js?v=water-depth-swimming-light" defer></script>
 <script src="js/architect-selection.js?v=surface-stack" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=stair-tree-size-20261126" defer></script>
-<script src="js/i18n.js?v=map-night-chimneys" defer></script>
+<script src="js/i18n.js?v=water-depth-swimming-light" defer></script>
 <script src="js/cloud-bank.js?v=firebase-browser-key-20261125" defer></script>
-<script src="js/terrain-tools.js?v=joined-water-scatter" defer></script>
+<script src="js/terrain-tools.js?v=water-depth-swimming-light" defer></script>
 <script src="js/building.js?v=map-night-chimneys" defer></script>
 <script src="js/visual-catalog.js?v=map-night-chimneys" defer></script>
 <script src="js/mesa-imports.js?v=joined-water-scatter" defer></script>
-<script src="js/terrain-finishes.js?v=map-night-chimneys" defer></script>
+<script src="js/terrain-finishes.js?v=water-depth-swimming-light" defer></script>
 <script src="js/geology.js?v=vertical-20261125" defer></script>
 <script src="js/cave-brush.js?v=cave-joins-20261126" defer></script>
 <script src="js/caves.js?v=cave-joins-20261126" defer></script>
 <script src="js/plants.js?v=clear-canopies-daylight" defer></script>
-<script src="js/scenery.js?v=map-night-chimneys" defer></script>
+<script src="js/scenery.js?v=water-depth-swimming-light" defer></script>
 <script src="js/vertical-world.js?v=cave-joins-20261126" defer></script>
 <script src="js/material-damage.js?v=surface-stack" defer></script>
-<script src="js/main.js?v=map-night-chimneys" defer></script>
+<script src="js/main.js?v=water-depth-swimming-light" defer></script>
 <dialog id="lockDialog" class="lock-dialog">
   <form method="dialog" onsubmit="return false;">
     <h3 id="lockDialogTitle">Configurar tranca</h3>
@@ -659,6 +662,9 @@
     </select></label>
     <div id="baseWaterSettings" class="hidden">
       <label><span>Cor da água</span> <input id="baseWaterColor" type="color" value="#267f88"></label>
+      <label><span>Profundidade da água</span> <select id="baseWaterDepth" class="ctrl">
+        <option value="shallow">Água rasa</option><option value="deep">Água profunda</option>
+      </select></label>
       <label id="baseWaterFlowRow"><span>Velocidade da corrente</span> <input id="baseWaterFlow" type="range" min="0" max="3" step=".1" value="1"></label>
       <label id="baseWaterWavesRow"><span>Intensidade das ondas</span> <input id="baseWaterWaves" type="range" min="0" max="3" step=".1" value="1"></label>
     </div>

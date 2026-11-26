@@ -32,6 +32,12 @@ Define a aparência dos próximos elementos. Misture livremente no mesmo mapa. O
 Construção & Ajuste|建造与调整
 Expandir Mapa|扩大地图
 Cor da água|水面主色
+Profundidade da água|水深
+Água profunda|深水
+Natação|游泳
+Defina a perícia Natação na ficha para entrar em água profunda.|请先在人物卡上设置游泳技能，才能进入深水。
+Travessia a nado bem-sucedida.|游泳检定成功。
+Falha na travessia a nado.|游泳检定失败。
 Velocidade da corrente|水流速度
 Intensidade das ondas|波浪强度
 Lago|湖泊
