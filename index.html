@@ -32,7 +32,8 @@
       <option value="pt-BR">Português</option><option value="zh-CN">中文</option>
     </select>
     <button class="btn" onclick="openMesaCloud()">☁️ Nuvem</button>
-    <button class="btn" onclick="centerMap()" title="Centralizar o mapa na área de jogo">Centralizar mapa</button>
+    <button id="recenterButton" class="btn" onclick="recenterView()">Centralizar mapa</button>
+    <button id="mapPanButton" class="btn" type="button" aria-pressed="false" onclick="setMapPanTool(!mapPanTool)" title="Arraste para mover a câmera">Mover mapa</button>
     <button class="btn" onclick="exportJSON()">⬇️ JSON</button>
     <button class="btn" onclick="document.getElementById('importFile').click()">⬆️ Importar</button>
     <input type="file" id="importFile" accept=".json" class="hidden" onchange="importJSON(event)" />
@@ -554,9 +555,9 @@
 <script src="js/state.js?v=storey-roofs-20261126" defer></script>
 <script src="js/roof-system.js?v=natural-ground" defer></script>
 <script src="js/stair-system.js?v=stair-tree-size-20261126" defer></script>
-<script src="js/editor.js?v=surface-stack" defer></script>
+<script src="js/editor.js?v=map-camera-base" defer></script>
 <script src="js/library.js?v=stair-tree-size-20261126" defer></script>
-<script src="js/gameplay.js?v=bridge-camera-speed" defer></script>
+<script src="js/gameplay.js?v=map-camera-base" defer></script>
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
@@ -564,7 +565,7 @@
 <script src="js/architect-selection.js?v=surface-stack" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=stair-tree-size-20261126" defer></script>
-<script src="js/i18n.js?v=bridge-camera-speed" defer></script>
+<script src="js/i18n.js?v=map-camera-base" defer></script>
 <script src="js/cloud-bank.js?v=firebase-browser-key-20261125" defer></script>
 <script src="js/terrain-tools.js?v=natural-ground" defer></script>
 <script src="js/building.js?v=mesa-original-textures" defer></script>
@@ -578,7 +579,7 @@
 <script src="js/scenery.js?v=bridge-camera-speed" defer></script>
 <script src="js/vertical-world.js?v=cave-joins-20261126" defer></script>
 <script src="js/material-damage.js?v=surface-stack" defer></script>
-<script src="js/main.js?v=natural-ground" defer></script>
+<script src="js/main.js?v=map-camera-base" defer></script>
 <dialog id="lockDialog" class="lock-dialog">
   <form method="dialog" onsubmit="return false;">
     <h3 id="lockDialogTitle">Configurar tranca</h3>
@@ -638,6 +639,7 @@
 <dialog id="terrainDialog" class="lock-dialog">
   <form id="terrainForm" onsubmit="applyTerrainSettings(event)">
     <h3 id="terrainTitle">Terreno base</h3>
+    <p id="terrainDialogHint" class="library-hint"></p>
     <label>Terreno <select id="terrainKind" class="ctrl">
       <option value="grass">Grama</option><option value="sand">Deserto</option>
       <option value="cave">Terreno rochoso</option><option value="forest">Floresta</option>

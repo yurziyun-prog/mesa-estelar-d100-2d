@@ -13,6 +13,7 @@ function resizeCanvas() {
 const keys = {};
 let isDragging = false;
 let isPanning = false;
+let mapPanTool = false;
 let draggingEntity = null;
 let draggingProp = null;
 let cameraFollowsActor = false;
@@ -40,6 +41,21 @@ function centerMap() {
   const top = Math.min(...areas.map(area => area.y));
   const bottom = Math.max(...areas.map(area => area.y + area.h));
   centerCameraAt((left + right) / 2, (top + bottom) / 2);
+}
+
+function recenterView() {
+  const actor=state.mode==='player'?activeActor():null;
+  if(actor&&actor.sceneId===state.activeSceneId&&actor.floor===state.currentFloor){
+    cameraFollowsActor=true;
+    followCamera();
+  }else centerMap();
+}
+
+function setMapPanTool(enabled) {
+  mapPanTool=enabled;
+  const button=document.getElementById('mapPanButton');
+  button.classList.toggle('active',enabled);
+  button.setAttribute('aria-pressed',String(enabled));
 }
 
 function followCamera() {
@@ -94,6 +110,7 @@ function setupInputs() {
       }
       return;
     }
+    if(e.key.startsWith('Arrow'))e.preventDefault();
     keys[e.key.toLowerCase()] = true;
     if(e.key.toLowerCase()==='r'&&!e.repeat&&!rotateArchitectSelection())state.rotation=(state.rotation+1)%4;
     if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -123,6 +140,11 @@ function setupInputs() {
     const sy = e.clientY - rect.top;
     lastMouse = { x: sx, y: sy };
 
+    if(e.button===1||(e.button===0&&mapPanTool&&state.mode!=='player')){
+      e.preventDefault();
+      isPanning=true;
+      return;
+    }
     if (e.button === 2) {
       if(state.mode==='architect'&&openArchitectContextMenu(sx,sy,e.clientX,e.clientY)){
         isPanning=false;return;
@@ -253,9 +275,18 @@ function updateSimulation(elapsed) {
     }
   });
 
-  if (activeActor()) {
-    const ent = activeActor();
-    if (ent && ent.sceneId === state.activeSceneId) {
+  const ent = activeActor();
+  if(!ent&&state.mode!=='player'){
+    const dx=Number(Boolean(keys.d||keys.arrowright))-Number(Boolean(keys.a||keys.arrowleft));
+    const dy=Number(Boolean(keys.s||keys.arrowdown))-Number(Boolean(keys.w||keys.arrowup));
+    const length=Math.hypot(dx,dy);
+    if(length&&!isPanning){
+      state.camera.x-=dx/length*elapsed*420;
+      state.camera.y-=dy/length*elapsed*420;
+    }
+  }
+  if (ent) {
+    if (ent.sceneId === state.activeSceneId) {
       // 攀爬期间锁定水平输入，动画逐帧运行，完成时才进入相邻楼层。
       if(advanceStairClimb(ent))return;
       if(trackHoverLift(ent))return;

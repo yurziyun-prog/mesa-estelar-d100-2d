@@ -7,6 +7,11 @@ Jogador|玩家
 Andar:|楼层
 Térreo|一楼
 Centralizar mapa|地图居中
+Centralizar personagem|角色居中
+Mover mapa|移动地图
+Arraste para mover a câmera|拖动鼠标平移镜头
+Cria outro mapa vazio e mantém o mapa atual.|另建一张空地图，保留当前地图。
+Altera apenas o terreno base e suas dimensões. Construções, pinturas, objetos e personagens ficam onde estão.|仅调整基础地形及其尺寸。建筑、笔刷地形、物件和角色都留在原位。
 Centralizar o mapa na área de jogo|将地图移到游戏区中央
 Importar|导入
 Nuvem|云存档
