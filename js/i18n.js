@@ -39,6 +39,53 @@ Expandir Mapa|扩大地图
 Cor da água|水面主色
 Profundidade da água|水深
 Água profunda|深水
+Novo personagem|新建角色
+Editar personagem|编辑角色
+Salvar personagem|保存角色
+Personagem ativo|当前角色
+Nome|姓名
+Sexo|性别
+Espécie|种族
+Profissão|职业
+Personagem jogador|玩家角色
+Corpo|体型
+Esguio|瘦长
+Robusto|健壮
+Cabelo|发型
+Curto|短发
+Comprido|长发
+Raspado|剃发
+Cor do cabelo|发色
+Olhos|眼睛
+Pele|肤色
+Roupa|服装
+Perícias iniciais|初始技能
+Itens iniciais|初始物品
+Testes d100|D100 检定
+Código da sessão|会话代码
+Guardar|放入背包
+Cabeça|头部
+Tronco|躯干
+Pés|脚部
+Mão|手部
+Luz|灯具
+Tirar|卸下
+Equipar|装备
+Usar|使用
+Acender|点亮
+Apagar|熄灭
+Não há espaço livre próximo para colocar o personagem.|附近没有可放置角色的空地。
+Defina Base + Treino antes de rolar esta perícia.|请先设置技能的基础值和训练值。
+Teste sem efeito no mapa: aproxime-se da água profunda.|这次检定不影响地图。请靠近深水。
+Role Natação na perícia ou clique com o botão direito na água profunda próxima.|请点击游泳技能，或右键点击附近的深水进行检定。
+Clique para rolar d100. Arraste para mudar a ordem.|点击投 D100，拖动可以调整顺序。
+Mover perícia para cima|上移技能
+Perícias iniciais usam valores provisórios. O mestre pode ajustar Base e Treino.|初始技能值为暂定值，主持人可调整基础值和训练值。
+Testes locais. Informe o mesmo código da sessão e entre na nuvem para compartilhar.|当前仅在本地显示检定。登录云端并输入相同的会话代码即可共享。
+O mestre conectado com o mesmo código recebe os testes.|使用相同会话代码并已登录的主持人可收取检定结果。
+Sessão conectada.|会话已连接。
+Não foi possível receber os testes. Verifique se a conta tem acesso de mestre.|无法接收检定，请确认账号具有主持人权限。
+O teste ficou local. A nuvem não confirmou o envio.|检定结果已在本地显示，云端未确认发送。
 Natação|游泳
 Defina a perícia Natação na ficha para entrar em água profunda.|请先在人物卡上设置游泳技能，才能进入深水。
 Travessia a nado bem-sucedida.|游泳检定成功。

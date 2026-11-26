@@ -14,6 +14,7 @@ const keys = {};
 let isDragging = false;
 let isPanning = false;
 let mapPanTool = false;
+let swimRightClick = null;
 let draggingEntity = null;
 let draggingProp = null;
 let cameraFollowsActor = false;
@@ -192,6 +193,8 @@ function setupInputs() {
       if(state.mode==='architect'&&openArchitectContextMenu(sx,sy,e.clientX,e.clientY)){
         isPanning=false;return;
       }
+      const actor=activeActor();
+      swimRightClick=actor?{actor,sx,sy,moved:false}:null;
       isPanning=true;return;
     }
 
@@ -237,6 +240,10 @@ function setupInputs() {
     const sy = e.clientY - rect.top;
 
     if (isPanning) {
+      if(swimRightClick&&!swimRightClick.moved){
+        if(Math.hypot(sx-swimRightClick.sx,sy-swimRightClick.sy)<5)return;
+        swimRightClick.moved=true;
+      }
       cameraFollowsActor = false;
       state.camera.x += sx - lastMouse.x;
       state.camera.y += sy - lastMouse.y;
@@ -272,6 +279,11 @@ function setupInputs() {
   window.addEventListener('mouseup', e => {
     const rect = canvas.getBoundingClientRect();
     const { wx, wy } = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+    if(e.button===2&&swimRightClick){
+      const pending=swimRightClick;
+      swimRightClick=null;
+      if(!pending.moved&&pending.actor===activeActor())trySwimmingTest(pending.actor,{x:wx,y:wy});
+    }
     if (isDragging && state.mode === 'architect') {
       architectShiftHeld=e.shiftKey;
       architectCtrlHeld=e.ctrlKey||e.metaKey;

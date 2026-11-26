@@ -442,3 +442,22 @@ html[lang="zh-CN"] .section-title:has(> :nth-child(2)) {
 .gm-environment-grid .gm-time-toggle { display: flex; align-items: center; min-height: 34px; }
 #gmTools .section-title { display: block; }
 #gmTools .section-title > span { display: inline; }
+
+.character-dressing,.character-fields,.character-preview-row {
+  display:grid; gap:10px; grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.character-dressing { grid-template-columns:minmax(90px,1fr) minmax(0,1.3fr); align-items:center; }
+.character-dressing canvas,.character-preview-row canvas { max-width:100%;height:auto;background:#111827;border:1px solid var(--border);border-radius:7px; }
+.character-fields label,.character-rolls label {display:grid;gap:4px;min-width:0;font-size:12px;}
+.character-form {display:grid;gap:12px;}
+.character-preview-row {grid-template-columns:108px minmax(0,1fr) minmax(0,1fr);align-items:start;}
+.character-preview-row fieldset {min-width:0;margin:0;border:1px solid var(--border);padding:6px;}
+.character-preview-row label {display:flex;align-items:start;gap:5px;font-size:12px;overflow-wrap:anywhere;}
+.character-equipment-slot,.character-inventory-row,.character-skill-line {display:flex;align-items:center;gap:5px;min-width:0;}
+.character-equipment-slot,.character-inventory-row {margin:4px 0;font-size:12px;flex-wrap:wrap;}
+.character-equipment-slot span,.character-inventory-row span,.character-skill-line .d100-skill-row {flex:1 1 auto;min-width:0;overflow-wrap:anywhere;}
+.character-skill-line .d100-skill-row {width:auto;margin:0;}
+.character-skill-line {margin-bottom:5px;}
+.character-skill-line .btn,.character-inventory-row .btn,.character-equipment-slot .btn {padding:4px 7px;}
+#rollResults {max-height:130px;overflow:auto;}
+@media(max-width:560px){.character-preview-row{grid-template-columns:1fr 1fr;}.character-preview-row canvas{grid-column:1/-1;}}

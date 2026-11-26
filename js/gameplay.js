@@ -33,7 +33,7 @@ function gmConfirm(){
 function gmRelease(){
  gmControlledId=null;gmPreviewId=null;
  cameraFollowsActor=false;
- refreshGmFocus();logEvent('👑 Mestre: câmera livre.');
+ refreshGmFocus();updateUI();logEvent('👑 Mestre: câmera livre.');
 }
 function refreshGmFocus(){
  const controlled=getGmControlledEntity(),preview=state.entities.find(e=>e.id===gmPreviewId);
@@ -94,6 +94,8 @@ function setMode(mode) {
   document.getElementById('plantWind').value=String(state.windStrength??.35);
   updateDaylightControls();
   recenterView(false);
+  refreshRollSharing();
+  showRollResults();
 }
 
 function onPaintedGround(floor, x, y) {
@@ -153,29 +155,48 @@ function crossesWall(floor,x1,y1,x2,y2,extensionsOnly=false){
  }
  return false;
 }
-const swimAttempts=new WeakMap();
+const swimPermission=new WeakMap();
+const swimHintAt=new WeakMap();
+const SWIM_TARGET_RANGE=66;
 
-function canEnterDeepWater(ent,floor){
- const now=performance.now();
- const previous=swimAttempts.get(ent);
- if(previous&&previous.floor===floor&&previous.retryAt>now)return false;
- const trained=ent.skillsD100?.find(isSwimmingSkill);
- const target=trained?.total;
- const roll=Number.isFinite(target)?d100Roll():null;
- const passed=roll!==null&&roll<=target;
- if(!passed)swimAttempts.set(ent,{floor,retryAt:now+1400});
- const message=roll===null?'Defina a perícia Natação na ficha para entrar em água profunda.':
-   passed?'Travessia a nado bem-sucedida.':'Falha na travessia a nado.';
- logEvent(translateSiteText(message)+(roll===null?'':` (${roll}/${target})`));
- return passed;
+function validSwimTarget(ent,floor,x,y){
+ return Math.hypot(x-ent.x,y-ent.y)<=SWIM_TARGET_RANGE&&waterDepthAt(floor,x,y)==='deep'&&
+   !crossesWall(floor,ent.x,ent.y,x,y);
+}
+
+function trySwimmingTest(ent,point=null){
+ const floor=getScene().floors[ent.floor];
+ if(!floor||ent.sceneId!==state.activeSceneId)return false;
+ if(point&&!validSwimTarget(ent,floor,point.x,point.y))return false;
+ const points=point?[point]:[{x:ent.x,y:ent.y}];
+ if(!point)for(const distance of [12,28,44,64])for(let i=0;i<24;i++){
+   const a=i*Math.PI/12;points.push({x:ent.x+Math.cos(a)*distance,y:ent.y+Math.sin(a)*distance});
+ }
+ const target=points.find(p=>validSwimTarget(ent,floor,p.x,p.y));
+ if(!target)return false;
+ const skill=ent.skillsD100?.find(isSwimmingSkill);
+ const passed=rollD100Skill(ent,skill);
+ swimPermission.delete(ent);
+ if(passed===true)swimPermission.set(ent,{floor,x:target.x,y:target.y,until:performance.now()+10000});
+ if(passed!==null)skillMapNotice(passed?'Travessia a nado bem-sucedida.':'Falha na travessia a nado.');
+ return true;
 }
 
 function canWalkStep(ent,x,y){
-  const floor=getScene().floors[ent.floor];
-  if(Math.abs(reliefAt(floor,x,y)-reliefAt(floor,ent.x,ent.y))>.25)return false;
-  const depth=waterDepthAt(floor,x,y);
-  if(!canMoveTo(ent.floor,x,y,false,depth))return false;
-  return depth!=='deep'||waterDepthAt(floor,ent.x,ent.y)==='deep'||canEnterDeepWater(ent,floor);
+ const floor=getScene().floors[ent.floor];
+ if(Math.abs(reliefAt(floor,x,y)-reliefAt(floor,ent.x,ent.y))>.25)return false;
+ const depth=waterDepthAt(floor,x,y);
+ if(!canMoveTo(ent.floor,x,y,false,depth))return false;
+ if(depth!=='deep'||waterDepthAt(floor,ent.x,ent.y)==='deep')return true;
+ const grant=swimPermission.get(ent),now=performance.now();
+ if(grant?.floor===floor&&grant.until>now&&Math.hypot(grant.x-x,grant.y-y)<=SWIM_TARGET_RANGE){
+   swimPermission.delete(ent);return true;
+ }
+ if(now>=(swimHintAt.get(ent)||0)){
+   swimHintAt.set(ent,now+1800);
+   skillMapNotice('Role Natação na perícia ou clique com o botão direito na água profunda próxima.');
+ }
+ return false;
 }
 function canMoveTo(floorIdx, nx, ny, jumpLanding = false, waterAccess = null) {
   const floor = getScene().floors[floorIdx];
@@ -337,9 +358,13 @@ function getSelectedEntity() {
 
 function updateUI() {
   const ent = getSelectedEntity();
+  document.getElementById('characterLeftPanel').classList.toggle('hidden',state.mode==='architect');
+  document.getElementById('characterSkillsPanel').classList.toggle('hidden',state.mode==='gm'&&!getGmControlledEntity());
+  showRollResults();
   if (!ent) return;
+  document.getElementById('skillMapStatus').textContent='';
 
-  document.getElementById('charHeader').textContent = `${ent.name} • ${ent.role || ''}`;
+  document.getElementById('charHeader').textContent = [ent.name,ent.species,ent.sex,ent.role].filter(Boolean).join(' · ');
   document.getElementById('entityTypeBadge').textContent = ent.type === 'pc' ? 'PJ' : `NPC (${ent.attitude})`;
   document.getElementById('hpText').textContent = `${ent.hp} / ${ent.maxHp}`;
   document.getElementById('hpBar').style.width = `${Math.max(0, (ent.hp / ent.maxHp) * 100)}%`;
@@ -367,15 +392,7 @@ function updateUI() {
     if(label)label.textContent=ent.ai?.enabled?'Autonomia ativa · '+(ent.ai.state||'vigiar'):'Autonomia desligada';
   }
 
-  const inventory = document.getElementById('inventoryList');
-  inventory.replaceChildren(...ent.inventory.map(item => {
-    const row=document.createElement('div');
-    row.className='list-item';
-    row.dataset.userText='';
-    row.textContent='🎒 '+item;
-    return row;
-  }));
-  if(!ent.inventory.length)inventory.textContent='Mochila vazia';
+  renderCharacterEquipment(ent);
 
   const pcs = state.entities.filter(e => e.type === 'pc');
   document.getElementById('playerSwitchList').replaceChildren(...pcs.map(p => {

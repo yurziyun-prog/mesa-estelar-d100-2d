@@ -413,7 +413,10 @@ function drawNightLighting(floor,interior,darkness){
 
 function renderSceneryLights(floor,interior){
  if(!floor)return;
- const emitters=[...floor.props.map(sceneryEmitter).filter(Boolean),...lightFromLowerStairs(floor)];
+ const actorLights=state.entities.filter(ent=>ent.sceneId===state.activeSceneId&&ent.floor===state.currentFloor&&
+   ent.lanternLit&&ent.equipment?.light==='Lanterna de Óleo')
+   .map(prop=>({prop,radius:108,strength:.8}));
+ const emitters=[...floor.props.map(sceneryEmitter).filter(Boolean),...lightFromLowerStairs(floor),...actorLights];
  if(!emitters.length)return;
  const walls=lightWallsWithOpenings(floor);
  ctx.save();ctx.translate(state.camera.x,state.camera.y);ctx.scale(state.camera.zoom,state.camera.zoom);

@@ -18,6 +18,7 @@ function refreshMesaCloudAccount(user) {
   document.getElementById('cloudLoginForm').hidden = Boolean(user);
   document.getElementById('cloudAccountControls').hidden = !user;
   document.getElementById('cloudAccountEmail').textContent = user?.email || '';
+  if(typeof refreshRollSharing==='function'&&state)refreshRollSharing();
 }
 
 function connectMesaCloud() {

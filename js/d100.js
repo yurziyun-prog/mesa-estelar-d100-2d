@@ -99,35 +99,62 @@ function addD100Skill(){
  if(!name?.trim())return;
  beginEdit();ent.skillsD100.push({name:name.trim(),base:null,training:null,total:null,provisional:true});finishEdit();updateUI();
 }
+function rollD100Skill(ent,skill){
+ if(!Number.isFinite(skill?.total)){
+   skillMapNotice('Defina Base + Treino antes de rolar esta perícia.');
+   return null;
+ }
+ const roll=d100Roll();
+ publishSkillRoll(ent,skill,roll,skill.total);
+ return roll<=skill.total;
+}
 function testD100Skill(index){
  const ent=getSelectedEntity(),skill=ent?.skillsD100?.[index];if(!skill)return;
- if(!Number.isFinite(skill.total)){
-  logEvent('📚 '+skill.name+': falta importar Base + Treino do Mesa Estelar principal.');
-  return;
- }
- const roll=d100Roll(),success=roll<=skill.total;
- logEvent('🎲 '+ent.name+' • '+skill.name+': '+roll+' / '+skill.total+'% • '+(success?'SUCESSO':'FALHA'));
+ if(isSwimmingSkill(skill)){
+   const actor=activeActor();
+   if(actor===ent&&trySwimmingTest(actor))return;
+   const result=rollD100Skill(ent,skill);
+   if(result!==null)skillMapNotice('Teste sem efeito no mapa: aproxime-se da água profunda.');
+ }else rollD100Skill(ent,skill);
+}
+function moveSkill(ent,source,destination){
+ if(getSelectedEntity()!==ent||source===destination||!ent.skillsD100[source]||!ent.skillsD100[destination])return;
+ beginEdit();
+ const [skill]=ent.skillsD100.splice(source,1);
+ ent.skillsD100.splice(destination,0,skill);
+ finishEdit();displayD100Skills(ent);
 }
 function displayD100Skills(ent){
  const skills=ent.skillsD100||[];
  const root=document.getElementById('skillsList');if(!root)return;
  root.replaceChildren();
+ let dragSource=null;
  for(const [index,skill] of skills.entries()){
+  const line=document.createElement('div');line.className='character-skill-line';line.draggable=true;
   const row=document.createElement('button');row.type='button';row.className='list-item d100-skill-row';
-  const target=Number.isFinite(skill.total)?skill.total+'%':'A definir';
-  row.textContent='🎯 '+translateSiteText(skill.name)+' · Base '+(skill.base??'—')+' + Treino '+(skill.training??'—')+' = '+target;
-  row.title='Rolar d100 quando o valor total estiver definido';
-  row.onclick=()=>testD100Skill(index);root.append(row);
-  if(state.mode==='gm'){
-    const edit=document.createElement('button');edit.type='button';edit.className='btn d100-edit';
-    edit.textContent='Editar';edit.onclick=()=>editD100Skill(index);root.append(edit);
+  const target=Number.isFinite(skill.total)?skill.total+'%':translateSiteText('A definir');
+  row.textContent=translateSiteText(skill.name)+' · '+target;
+  row.title=translateSiteText('Clique para rolar d100. Arraste para mudar a ordem.');
+  row.onclick=()=>testD100Skill(index);line.append(row);
+  line.ondragstart=event=>{dragSource=index;event.dataTransfer.setData('text/plain',String(index));event.dataTransfer.effectAllowed='move';};
+  line.ondragend=()=>{dragSource=null;};
+  line.ondragover=event=>{if(dragSource!==null)event.preventDefault();};
+  line.ondrop=event=>{event.preventDefault();if(dragSource!==null)moveSkill(ent,dragSource,index);};
+  if(index>0){
+    const up=characterActionButton('↑',()=>moveSkill(ent,index,index-1));
+    up.setAttribute('aria-label',translateSiteText('Mover perícia para cima'));
+    line.append(up);
   }
+  if(state.mode==='gm'){
+    const edit=characterActionButton('Editar',()=>editD100Skill(index));line.append(edit);
+  }
+  root.append(line);
  }
  for(const power of ent.powers||[]){
   const row=document.createElement('div');row.className='list-item';row.textContent='✨ '+power;root.append(row);
  }
  const note=document.createElement('div');note.className='d100-note';
- note.textContent='Perícias: Base + Treino = Total (d100). Fórmulas do sistema principal ainda precisam ser sincronizadas.';
+ note.textContent=translateSiteText('Perícias iniciais usam valores provisórios. O mestre pode ajustar Base e Treino.');
  root.append(note);
  if(state.mode==='gm'){
   const add=document.createElement('button');add.type='button';add.className='btn';add.textContent='+ Perícia';add.onclick=addD100Skill;root.append(add);

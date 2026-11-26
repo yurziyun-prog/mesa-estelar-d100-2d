@@ -904,23 +904,7 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
     ctx.fillStyle=hostile?'#f45d54':'#fff5d8';
     for(const x of [-4,4]){ctx.beginPath();ctx.arc(x,-8,2,0,7);ctx.fill();}
     if(beast){ctx.strokeStyle=body;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(8,5);ctx.lineTo(19,13);ctx.stroke();}
-  }else{
-    ctx.fillStyle='#2b2c38';
-    ctx.fillRect(-10,6+stride,7,12);ctx.fillRect(3,6-stride,7,12);
-    ctx.fillStyle=body;ctx.strokeStyle='#263044';ctx.lineWidth=2;
-    ctx.beginPath();ctx.roundRect(-11,-8,22,21,5);ctx.fill();ctx.stroke();
-    ctx.fillStyle='#e6b48d';
-    ctx.beginPath();ctx.arc(0,-12,9,0,7);ctx.fill();
-    ctx.fillStyle=ent.role==='Arcanista'?'#534390':'#62442a';
-    ctx.beginPath();ctx.arc(0,-16,9,Math.PI,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#292229';ctx.fillRect(-4,-12,2,2);ctx.fillRect(3,-12,2,2);
-    ctx.strokeStyle='#c2a98c';ctx.lineWidth=5;
-    ctx.beginPath();ctx.moveTo(-10,-3);ctx.lineTo(-15,8-stride);ctx.moveTo(10,-3);ctx.lineTo(15,8+stride);ctx.stroke();
-    if(ent.inventory?.some(x=>/Espada|Lança|Cajado|Arco/i.test(x))){
-      ctx.strokeStyle='#bdc8d8';ctx.lineWidth=2.5;
-      ctx.beginPath();ctx.moveTo(15,8+stride);ctx.lineTo(18,-14);ctx.stroke();
-    }
-  }
+  }else drawCharacterAppearance(ctx,ent,stride);
   if(immersed){
     ctx.restore();
     const phase=terrainMotionPreference.matches?0:(now%900)/900;

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <title>Mesa RPG 2D — Arquiteto, Mestre & Jogador</title>
-  <link rel="stylesheet" href="css/style.css?v=map-night-chimneys" />
+  <link rel="stylesheet" href="css/style.css?v=character-playtest" />
 </head>
 <body>
 
@@ -225,6 +225,7 @@
     </div>
 
     <div id="gmTools" class="hidden">
+      <div class="card"><button class="btn" type="button" onclick="openCharacterEditor()">Novo personagem</button></div>
       <div class="card"><label><input type="checkbox" checked onchange="showGmBuildingRoofs=this.checked"> Mostrar tetos translúcidos</label></div><div class="card"><div class="section-title"><span>Estatísticas da sessão</span></div><div id="gmSessionStats" style="font-size:12px;line-height:1.8;color:var(--text-muted)"></div><div style="font-size:11px;color:var(--text-muted)">Tab: selecionar · Enter: controlar · Esc: liberar · Del: retirar do cenário</div>
        <button class="btn" style="margin-top:7px;width:100%" onclick="gmRemoveEntityFromScene()">📤 Remover selecionado do cenário</button></div>
       <div class="card" style="margin-bottom:10px;">
@@ -275,7 +276,8 @@
 
     <div id="playerTools" class="hidden">
       <div class="card" style="margin-bottom:10px;">
-        <div class="section-title">Personagem Ativo (Teste)</div>
+        <div class="section-title">Personagem ativo</div>
+        <button class="btn" type="button" onclick="openCharacterEditor()">Novo personagem</button>
         <div id="playerSwitchList"></div>
       </div>
 
@@ -299,6 +301,28 @@
         </div>
       </div>
     </div>
+    <section id="characterLeftPanel" class="hidden">
+      <div class="card character-rolls">
+        <div class="section-title">Testes d100</div>
+        <label><span>Código da sessão</span><input id="rollSessionCode" class="ctrl" maxlength="40" onchange="setRollSession(this.value)"></label>
+        <div id="rollShareStatus" class="library-hint"></div>
+        <div id="skillMapStatus" class="library-hint" role="status"></div>
+        <div id="rollResults" class="log-box" role="log" aria-live="polite"></div>
+      </div>
+      <div id="characterSkillsPanel">
+    <div class="card">
+      <div class="section-title">Atributos d100 (FOR · CON · TAM · DES · INT · POD · CAR)</div>
+      <div class="stat-grid" id="attrGrid"></div>
+      <button id="d100AttrEdit" class="btn hidden" style="margin-top:8px;width:100%" onclick="editD100Attributes()">Editar atributos d100</button>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Perícias d100 · Base + Treino = Total</div>
+      <div id="skillsList"></div>
+    </div>
+
+      </div>
+    </section>
   </aside>
 
   <!-- ÁREA CENTRAL SEM BOTÕES SOBREPOSTOS -->
@@ -539,17 +563,6 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="section-title">Atributos d100 (FOR · CON · TAM · DES · INT · POD · CAR)</div>
-      <div class="stat-grid" id="attrGrid"></div>
-      <button id="d100AttrEdit" class="btn hidden" style="margin-top:8px;width:100%" onclick="editD100Attributes()">Editar atributos d100</button>
-    </div>
-
-    <div class="card">
-      <div class="section-title">Perícias d100 · Base + Treino = Total</div>
-      <div id="skillsList"></div>
-    </div>
-
     <div id="skeletonAIControl" class="card hidden">
       <div class="section-title">💀 Esqueleto autônomo (preparação)</div>
       <p id="skeletonAIStatus" style="font-size:12px;color:var(--text-muted)">Vigiar</p>
@@ -558,29 +571,36 @@
     </div>
     <div class="card">
       <div class="section-title">Equipamento & Mochila</div>
+      <div class="character-dressing">
+        <canvas id="characterPortrait" width="132" height="126" aria-label="Aparência do personagem"></canvas>
+        <div id="equipmentSlots"></div>
+      </div>
+      <button class="btn" type="button" onclick="openCharacterEditor(getSelectedEntity())">Editar personagem</button>
       <div id="inventoryList"></div>
+      <div class="row"><select id="characterItemPicker" class="ctrl" aria-label="Item"></select>
+        <button class="btn" type="button" onclick="addCharacterItem()">Guardar</button></div>
     </div>
     <div id="rightPlayerControls" class="card hidden"><div class="section-title">Controles do personagem</div><div style="font-size:12px;line-height:1.7;color:var(--text-muted)">WASD / Setas: andar · Shift: correr · Espaço: pular · E: interagir · Tab: escolher · Enter: controlar · Esc: liberar</div></div>
     </div>
   </aside>
 </div>
 
-<script src="js/d100.js?v=water-depth-swimming-light" defer></script>
+<script src="js/d100.js?v=character-playtest" defer></script>
 <script src="js/state.js?v=night-details-catalog" defer></script>
 <script src="js/roof-system.js?v=night-details-catalog" defer></script>
 <script src="js/stair-system.js?v=water-surfaces-grass-stairs" defer></script>
 <script src="js/editor.js?v=map-night-chimneys" defer></script>
 <script src="js/library.js?v=night-details-catalog" defer></script>
-<script src="js/gameplay.js?v=night-details-catalog" defer></script>
+<script src="js/gameplay.js?v=character-playtest" defer></script>
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/textures.js?v=night-details-catalog" defer></script>
+<script src="js/textures.js?v=character-playtest" defer></script>
 <script src="js/architect-selection.js?v=surface-stack" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=stair-tree-size-20261126" defer></script>
-<script src="js/i18n.js?v=compressed-cloud-bank" defer></script>
-<script src="js/cloud-bank.js?v=compressed-cloud-bank" defer></script>
+<script src="js/i18n.js?v=character-playtest" defer></script>
+<script src="js/cloud-bank.js?v=character-playtest" defer></script>
 <script src="js/terrain-tools.js?v=water-depth-swimming-light" defer></script>
 <script src="js/building.js?v=night-details-catalog" defer></script>
 <script src="js/visual-catalog.js?v=night-details-catalog" defer></script>
@@ -590,10 +610,36 @@
 <script src="js/cave-brush.js?v=cave-joins-20261126" defer></script>
 <script src="js/caves.js?v=cave-joins-20261126" defer></script>
 <script src="js/plants.js?v=clear-canopies-daylight" defer></script>
-<script src="js/scenery.js?v=night-details-catalog" defer></script>
+<script src="js/scenery.js?v=character-playtest" defer></script>
 <script src="js/vertical-world.js?v=cave-joins-20261126" defer></script>
 <script src="js/material-damage.js?v=surface-stack" defer></script>
-<script src="js/main.js?v=night-details-catalog" defer></script>
+<script src="js/character-system.js?v=character-playtest" defer></script>
+<script src="js/main.js?v=character-playtest" defer></script>
+<dialog id="characterEditor" class="lock-dialog">
+  <form class="character-form" onsubmit="saveCharacterEditor(event)">
+    <h3 id="characterEditorTitle">Novo personagem</h3>
+    <div class="character-fields">
+      <label><span>Nome</span><input name="name" class="ctrl" maxlength="64" required></label>
+      <label><span>Sexo</span><input name="sex" class="ctrl" maxlength="40"></label>
+      <label><span>Espécie</span><input name="species" list="characterSpecies" class="ctrl" maxlength="40" placeholder="Humano"></label>
+      <label><span>Profissão</span><input name="profession" class="ctrl" maxlength="40"></label>
+      <label id="characterTypeRow"><span>Tipo</span><select name="type" class="ctrl"><option value="pc">Personagem jogador</option><option value="npc">NPC</option></select></label>
+      <label><span>Corpo</span><select name="body" class="ctrl"><option value="balanced">Médio</option><option value="slim">Esguio</option><option value="broad">Robusto</option></select></label>
+      <label><span>Cabelo</span><select name="hairStyle" class="ctrl"><option value="short">Curto</option><option value="long">Comprido</option><option value="shaved">Raspado</option></select></label>
+      <label><span>Cor do cabelo</span><input name="hair" type="color" value="#62442a"></label>
+      <label><span>Olhos</span><input name="eyes" type="color" value="#292229"></label>
+      <label><span>Pele</span><input name="skin" type="color" value="#e6b48d"></label>
+      <label><span>Roupa</span><input name="clothing" type="color" value="#688aab"></label>
+    </div>
+    <datalist id="characterSpecies"><option value="Humano"></option><option value="Nymari"></option><option value="Zutariano"></option></datalist>
+    <div class="character-preview-row"><canvas id="characterEditorPortrait" width="132" height="126" aria-label="Prévia do personagem"></canvas>
+      <fieldset><legend>Perícias iniciais</legend><div id="characterSkillOptions"></div></fieldset>
+      <fieldset id="characterKit"><legend>Itens iniciais</legend><div id="characterKitOptions"></div></fieldset>
+    </div>
+    <div id="characterEditorStatus" role="status" class="library-hint"></div>
+    <div class="row"><button type="button" class="btn" onclick="document.getElementById('characterEditor').close()">Cancelar</button><button class="btn btn-primary" type="submit">Salvar personagem</button></div>
+  </form>
+</dialog>
 <dialog id="lockDialog" class="lock-dialog">
   <form method="dialog" onsubmit="return false;">
     <h3 id="lockDialogTitle">Configurar tranca</h3>
