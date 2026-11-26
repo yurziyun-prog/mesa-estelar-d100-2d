@@ -107,6 +107,43 @@ function writeMesaBank(db, store, ref, expected, bank) {
   });
 }
 
+const MESA_CLOUD_BANK_LIMIT = 800000;
+const MESA_GZIP_PREFIX = 'gzip:';
+
+async function packMesaCloudSnapshot(snapshot) {
+  const bytes = new TextEncoder().encode(snapshot);
+  if (bytes.length <= MESA_CLOUD_BANK_LIMIT) return snapshot;
+  if (typeof CompressionStream !== 'function' || typeof DecompressionStream !== 'function') {
+    throw mesaBankError('Este navegador não consegue compactar o banco. Exporte uma cópia em JSON.');
+  }
+  const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'));
+  const compressed = new Uint8Array(await new Response(stream).arrayBuffer());
+  const encodedLength = MESA_GZIP_PREFIX.length + Math.ceil(compressed.length / 3) * 4;
+  if (encodedLength > MESA_CLOUD_BANK_LIMIT) {
+    throw mesaBankError('Mesmo compactado, o banco excede o limite da nuvem. Exporte uma cópia em JSON.');
+  }
+  let binary = '';
+  for (let i = 0; i < compressed.length; i += 8192) {
+    binary += String.fromCharCode(...compressed.subarray(i, i + 8192));
+  }
+  return MESA_GZIP_PREFIX + btoa(binary);
+}
+
+async function unpackMesaCloudSnapshot(value) {
+  if (typeof value !== 'string') throw mesaBankError('O banco na nuvem é inválido.');
+  if (!value.startsWith(MESA_GZIP_PREFIX)) return value;
+  if (typeof DecompressionStream !== 'function') {
+    throw mesaBankError('Este navegador não consegue abrir o banco compactado.');
+  }
+  try {
+    const bytes = Uint8Array.from(atob(value.slice(MESA_GZIP_PREFIX.length)), c => c.charCodeAt(0));
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return await new Response(stream).text();
+  } catch {
+    throw mesaBankError('O banco na nuvem é inválido.');
+  }
+}
+
 function runMesaCloudBank(action) {
   setMesaCloudStatus(action === 'save' ? 'Salvando no site…' : 'Buscando o banco salvo…');
   return mesaCloudAction(async ({auth, db, storeSdk:store}) => {
@@ -116,11 +153,9 @@ function runMesaCloudBank(action) {
     const revisionKey = 'mesa-firebase-bank-revision:' + user.uid;
     if (action === 'save') {
       const snapshot = snapshotState();
-      if (new TextEncoder().encode(snapshot).length > 800000) {
-        throw mesaBankError('O banco excede o limite de 800 KB.');
-      }
+      const cloudSnapshot = await packMesaCloudSnapshot(snapshot);
       const revision = crypto.randomUUID();
-      await writeMesaBank(db, store, ref, localStorage.getItem(revisionKey), {revision, snapshot});
+      await writeMesaBank(db, store, ref, localStorage.getItem(revisionKey), {revision, snapshot:cloudSnapshot});
       setMesaCloudStatus('Banco salvo na nuvem.');
       try {
         localStorage.setItem('rpg_vtt_aligned_v8', snapshot);
@@ -136,7 +171,8 @@ function runMesaCloudBank(action) {
     const profile = await store.getDocFromServer(ref);
     const bank = profile.data()?.mesaEstelar2dBank;
     if (!bank) throw mesaBankError('Ainda não há banco salvo para esta conta.');
-    const incoming = JSON.parse(bank.snapshot);
+    const snapshot = await unpackMesaCloudSnapshot(bank.snapshot);
+    const incoming = JSON.parse(snapshot);
     if (!incoming.scenes?.[incoming.activeSceneId] || !Array.isArray(incoming.entities) ||
         !Object.values(incoming.scenes).every(scene => Array.isArray(scene.floors) && scene.floors.length)) {
       throw mesaBankError('O banco na nuvem é inválido.');
@@ -149,7 +185,7 @@ function runMesaCloudBank(action) {
     const previous = snapshotState();
     beginEdit();
     try {
-      restoreState(bank.snapshot);
+      restoreState(snapshot);
       localStorage.setItem('rpg_vtt_aligned_v8', snapshotState());
       localStorage.setItem(revisionKey, bank.revision);
     } catch {

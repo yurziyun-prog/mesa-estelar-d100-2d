@@ -403,7 +403,9 @@ Abra sua conta no Mesa Estelar principal antes de salvar aqui.|请先在 Mesa Es
 Salvando no site…|正在保存到网站…
 Buscando o banco salvo…|正在读取已保存的场景库…
 Entre com sua conta do Mesa Estelar.|请登录你的 Mesa Estelar 账号。
-O banco excede o limite de 800 KB.|场景库存档超过 800 KB 上限。
+Este navegador não consegue compactar o banco. Exporte uma cópia em JSON.|此浏览器无法压缩存档，请导出一份 JSON 备份。
+Mesmo compactado, o banco excede o limite da nuvem. Exporte uma cópia em JSON.|压缩后的场景库仍超出云端上限，请导出一份 JSON 备份。
+Este navegador não consegue abrir o banco compactado.|此浏览器无法打开压缩存档。
 Ainda não há banco salvo para esta conta.|此账号还没有云端存档。
 Não foi possível abrir o banco na nuvem.|无法打开云端场景库。
 Cópia local salva. Entre para salvar no site.|已保存本地副本。登录后可以保存到网站。
