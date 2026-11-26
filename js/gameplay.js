@@ -92,7 +92,7 @@ function setMode(mode) {
   updateUI();
   refreshGmFocus();
   document.getElementById('plantWind').value=String(state.windStrength??.35);
-  recenterView();
+  recenterView(false);
 }
 
 function onPaintedGround(floor, x, y) {
@@ -372,6 +372,7 @@ function selectPlayerChar(id) {
     state.activeSceneId = ent.sceneId;
     state.currentFloor = ent.floor;
     cameraFollowsActor = true;
+    cameraCentersActor = false;
     updateFloorLabel();
     refreshSceneSelect();
   }

@@ -1,10 +1,12 @@
 function openTerrainDialog(creating) {
   const dialog=document.getElementById('terrainDialog');
-  const floor=getScene().floors[state.currentFloor];
+  const scene=getScene();
+  const floorIndex=Math.max(0,floorIndexForLevel(scene,0));
+  const floor=scene.floors[floorIndex];
   const bounds=creating?{w:540,h:400}:floor.terrainBounds||floor.bounds;
   dialog.dataset.creating=String(creating);
   dialog.dataset.scene=state.activeSceneId;
-  dialog.dataset.floor=String(state.currentFloor);
+  dialog.dataset.floor=String(floorIndex);
   document.getElementById('terrainDialogHint').textContent=creating
     ?'Cria outro mapa vazio e mantém o mapa atual.'
     :'Altera apenas o terreno base e suas dimensões. Construções, pinturas, objetos e personagens ficam onde estão.';
@@ -26,11 +28,11 @@ function applyTerrainSettings(event) {
     createNewSceneAsArchitect(terrain,width,length);
     centerMap();
   }else{
-    if(dialog.dataset.scene!==state.activeSceneId||Number(dialog.dataset.floor)!==state.currentFloor){
+    const floor=getScene().floors[Number(dialog.dataset.floor)];
+    if(dialog.dataset.scene!==state.activeSceneId||!floor){
       dialog.close();
       return;
     }
-    const floor=getScene().floors[state.currentFloor];
     const {x,y}=floor.terrainBounds||floor.bounds;
     beginEdit();
     floor.baseTerrain=terrain;

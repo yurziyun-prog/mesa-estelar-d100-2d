@@ -18,17 +18,14 @@ let draggingEntity = null;
 let draggingProp = null;
 let cameraFollowsActor = false;
 let cameraMapKey = null;
+let cameraCentersActor = false;
 
 function centerCameraAt(x, y) {
   state.camera.x = canvas.width / 2 - x * state.camera.zoom;
   state.camera.y = canvas.height / 2 - y * state.camera.zoom;
 }
 
-function centerMap(fit = false) {
-  const scene = getScene();
-  if (!scene) return;
-  cameraFollowsActor = false;
-  cameraMapKey = JSON.stringify([state.mode, state.activeSceneId, state.currentFloor]);
+function cameraMapBounds(scene) {
   const level = floorLevel(scene, state.currentFloor);
   const areas = scene.floors.filter(floor => floor.level <= level).flatMap(floor => [
     ...(floor.baseTerrain && floor.terrainBounds ? [floor.terrainBounds] : []),
@@ -41,6 +38,16 @@ function centerMap(fit = false) {
   const right = Math.max(...areas.map(area => area.x + area.w));
   const top = Math.min(...areas.map(area => area.y));
   const bottom = Math.max(...areas.map(area => area.y + area.h));
+  return {left,right,top,bottom};
+}
+
+function centerMap(fit = false) {
+  const scene=getScene();
+  if(!scene)return;
+  cameraFollowsActor=false;
+  cameraCentersActor=false;
+  cameraMapKey=JSON.stringify([state.mode,state.activeSceneId,state.currentFloor]);
+  const {left,right,top,bottom}=cameraMapBounds(scene);
   if(fit&&canvas.width>64&&canvas.height>64){
     const fitZoom=Math.min((canvas.width-48)/Math.max(1,right-left),
       (canvas.height-48)/Math.max(1,bottom-top));
@@ -49,10 +56,11 @@ function centerMap(fit = false) {
   centerCameraAt((left + right) / 2, (top + bottom) / 2);
 }
 
-function recenterView() {
+function recenterView(exact = true) {
   const actor=state.mode==='player'?activeActor():null;
   if(actor&&actor.sceneId===state.activeSceneId&&actor.floor===state.currentFloor){
     cameraFollowsActor=true;
+    cameraCentersActor=exact;
     followCamera();
   }else centerMap();
 }
@@ -64,12 +72,25 @@ function setMapPanTool(enabled) {
   button.setAttribute('aria-pressed',String(enabled));
 }
 
+function boundedCameraOffset(offset,start,end,viewport) {
+  const padding=24;
+  if(end-start<=viewport-padding*2)return (viewport-start-end)/2;
+  return Math.max(viewport-padding-end,Math.min(padding-start,offset));
+}
+
 function followCamera() {
   const key = JSON.stringify([state.mode, state.activeSceneId, state.currentFloor]);
   if (cameraFollowsActor) {
     const actor = activeActor();
     if (actor?.sceneId === state.activeSceneId && actor.floor === state.currentFloor) {
       centerCameraAt(actor.x, actor.y);
+      if(state.mode==='player'&&!cameraCentersActor){
+        const {left,right,top,bottom}=cameraMapBounds(getScene());
+        const zoom=state.camera.zoom;
+        // Keep a small map centered. Pan a large map only within its edges.
+        state.camera.x=boundedCameraOffset(state.camera.x,left*zoom,right*zoom,canvas.width);
+        state.camera.y=boundedCameraOffset(state.camera.y,top*zoom,bottom*zoom,canvas.height);
+      }
       cameraMapKey = key;
       return;
     }
@@ -257,13 +278,13 @@ function setupInputs() {
 // LOOP E RENDERIZAÇÃO
 let animTick = 0;
 let lastFrameTime = null;
-const WALK_SPEED = 64;
+const WALK_SPEED = 3 * MAP_UNITS_PER_METER;
 const HIGH_GRASS_SPEED_FACTOR = .6;
 const SPRINT_SPEED = 224;
 const MAX_MOVEMENT_STEP = 4;
 
 function gameLoop(now) {
-  const elapsed = lastFrameTime===null ? 1/60 : Math.min(.05,(now-lastFrameTime)/1000);
+  const elapsed = lastFrameTime===null ? 1/60 : Math.min(.15,(now-lastFrameTime)/1000);
   lastFrameTime = now;
   animTick += 0.03;
   updateSimulation(elapsed);
