@@ -428,3 +428,17 @@ html[lang="zh-CN"] .section-title:has(> :nth-child(2)) {
 #caveOptions .ctrl, #gmTools .ctrl { min-width: 0; max-width: 100%; }
 #caveOptions label > span { display: block; }
 #gmPullEntitiesList { max-height: 145px; overflow-y: auto; }
+
+.map-edit-actions > button { flex: 1 1 auto; }
+.gm-environment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 8px;
+}
+.gm-environment-grid label { display: grid; gap: 4px; min-width: 0; font-size: 12px; }
+.gm-environment-grid .ctrl { width: 100%; }
+.gm-environment-grid .gm-time-toggle { display: flex; align-items: center; min-height: 34px; }
+#gmTools .section-title { display: block; }
+#gmTools .section-title > span { display: inline; }

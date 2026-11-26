@@ -542,6 +542,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     const shape=isRoofMaterial(a.mat)?effectiveRoofBounds(sc,floor,a):a;
     drawTexturedArea(shape.x,shape.y,shape.w,shape.h,a.mat,a.color,a.tile,a.roofPitch,a.roofHeight,a.flowAngle,a.water);
     const onBridge=actor?.sceneId===state.activeSceneId&&actor.floor===floorIdx&&pointInArchitectArea(a,actor.x,actor.y);
+    if(!isBelow&&isRoofMaterial(a.mat))markVisibleRoofCover(shape,a);
     if(a.mat==='bridgeCovered'&&!onBridge)drawRoofSurface(a.x,a.y,a.w,a.h,'roof_tile','gable');
     ctx.restore();
   };
@@ -765,6 +766,11 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     }
   }
 
+
+  const level=floorLevel(sc,floorIdx);
+  for(const chimney of visibleChimneys){
+    if(chimney.source<level&&level<chimney.top.level)drawChimneySection(chimney.prop,false);
+  }
 
   state.entities.filter(e => e.sceneId === state.activeSceneId && e.floor === floorIdx).forEach(ent => {
     drawCharacterToken(ent,isBelow,highGrassAt(floor,ent.x,ent.y));
@@ -1096,8 +1102,8 @@ function drawProp(p) {
     ctx.beginPath();ctx.arc(-5,-2,5,0,Math.PI*2);ctx.moveTo(0,0);ctx.lineTo(15,11);ctx.moveTo(9,6);ctx.lineTo(7,11);ctx.moveTo(13,9);ctx.lineTo(11,14);ctx.stroke();
     ctx.restore();return;
   }
-  if(isRetroFuture(p)) {drawFutureProp(p); return;}
-  if(isArabia(p) || ['palm','desertTree','tent','oilLamp','cushions'].includes(p.type)){drawArabiaProp(p);return;}
+  if(!fireplaceDesign(p.type)&&isRetroFuture(p)) {drawFutureProp(p); return;}
+  if((!fireplaceDesign(p.type)&&isArabia(p)) || ['palm','desertTree','tent','oilLamp','cushions'].includes(p.type)){drawArabiaProp(p);return;}
   if(p.rot&&p.type!=='log'){
     ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/2);ctx.translate(-p.x,-p.y);
     drawProp({...p,rot:0});ctx.restore();return;
@@ -1205,16 +1211,20 @@ function drawProp(p) {
     ctx.fillStyle = '#c94a4a'; ctx.fillRect(cx - 20, cy - 10, 8, 14);
     ctx.fillStyle = '#4a89c9'; ctx.fillRect(cx - 8, cy - 10, 8, 14);
     ctx.fillStyle = '#e3b23c'; ctx.fillRect(cx + 6, cy - 10, 8, 14);
-  } else if (p.type === 'hearth') {
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fillRect(cx - 32, cy - 18, 68, 40);
-    ctx.fillStyle = '#384152';
-    ctx.fillRect(cx - 34, cy - 20, 68, 40);
-    ctx.strokeStyle = '#181d26'; ctx.lineWidth = 2.5; ctx.strokeRect(cx - 34, cy - 20, 68, 40);
-    ctx.fillStyle = '#f97316';
-    ctx.beginPath(); ctx.arc(cx, cy + 4, 16, Math.PI, 0); ctx.fill();
-    ctx.fillStyle = '#facc15';
-    ctx.beginPath(); ctx.arc(cx, cy + 4, 9, Math.PI, 0); ctx.fill();
+  } else if (fireplaceDesign(p.type)) {
+    const [masonry,dark,w,h]=fireplaceDesign(p.type);
+    ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(cx-w+3,cy-h+4,w*2,h*2);
+    ctx.fillStyle=masonry;ctx.fillRect(cx-w,cy-h,w*2,h*2);
+    ctx.strokeStyle=dark;ctx.lineWidth=2.5;ctx.strokeRect(cx-w,cy-h,w*2,h*2);
+    if(p.type==='brickHearth'){
+      for(const row of [-12,0,12])for(let px=-w+5;px<w-4;px+=12){
+        ctx.beginPath();ctx.moveTo(cx+px,cy+row);ctx.lineTo(cx+px+9,cy+row);ctx.stroke();
+      }
+    }
+    ctx.fillStyle='#20191a';ctx.beginPath();ctx.arc(cx,cy+7,16,Math.PI,0);ctx.fill();
+    if(p.fireLit!==false){
+      ctx.fillStyle='#f97316';ctx.beginPath();ctx.arc(cx,cy+5,10,Math.PI,0);ctx.fill();
+    }
   }
 }
 

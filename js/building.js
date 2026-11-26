@@ -172,6 +172,7 @@ function drawBuildingRoofs(floor,index,onTop=false) {
     ctx.lineWidth=5;
     ctx.strokeStyle='#1e2430';
     ctx.stroke();
+    markVisibleRoofCover(b);
     ctx.restore();
   }
 }

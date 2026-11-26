@@ -233,9 +233,9 @@ function onSceneSelectChange(id) {
   }
 }
 
-function createNewSceneAsArchitect(terrain='grass', width=540, length=400, water=null) {
+function createNewSceneAsArchitect(terrain='grass', width=540, length=400, water=null, requestedName=null) {
   const input = document.getElementById('newSceneName');
-  const name = input.value.trim() || `Cenário ${Object.keys(state.scenes).length + 1}`;
+  const name = (requestedName ?? input.value.trim()) || `Cenário ${Object.keys(state.scenes).length + 1}`;
   beginEdit();
   const id = 'scene_' + Date.now();
   const f0 = createEmptyFloor(terrain);

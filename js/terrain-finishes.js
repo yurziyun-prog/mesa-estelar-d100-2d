@@ -146,7 +146,8 @@ const furnitureFinishes=[
 const furnitureFinishById=new Map(furnitureFinishes.map(item=>[item[0],item]));
 
 function drawFireEffect(prop){
- const hearing=prop.type==='hearth';
+ const hearing=Boolean(fireplaceDesign(prop.type));
+ if(hearing&&prop.fireLit===false)return;
  if(!hearing&&!['braziers','campfire'].includes(prop.type))return;
  const t=terrainMotionPreference.matches?0:performance.now()/1000;
  ctx.save();ctx.translate(prop.x,prop.y);ctx.rotate((prop.rot||0)*Math.PI/2);

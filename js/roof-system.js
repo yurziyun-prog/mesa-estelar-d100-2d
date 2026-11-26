@@ -472,6 +472,7 @@ function drawExternalBuildingTop(){
   clipCoverForExteriorSight(area,outsideViews);
   drawRoofSurface(area.x,area.y,area.w,area.h,area.mat,area.roofPitch,area.roofHeight);
   drawRoofOpenings(floor,area);
+  markVisibleRoofCover(area,stored);
   ctx.restore();
  }
  ctx.restore();

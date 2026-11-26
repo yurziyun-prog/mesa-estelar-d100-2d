@@ -356,6 +356,8 @@ function render() {
   // Renderizar conforme a altura física, não conforme o índice no array.
   // Isso preserva os níveis antigos e permite subterrâneos anexados ao fim da lista.
   ensureStructureStoreys(sc);
+  renderedRoofCovers.length=0;
+  visibleChimneys=findChimneys(sc);
   const currentLevel=floorLevel(sc,state.currentFloor);
   const interior=viewerCave(sc.floors[state.currentFloor],state.currentFloor);
   const visible=sc.floors.map((floor,i)=>({i,level:floor.level}))

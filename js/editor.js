@@ -9,8 +9,9 @@ function openTerrainDialog(creating) {
   dialog.dataset.floor=String(floorIndex);
   document.getElementById('terrainDialogHint').textContent=creating
     ?'Cria outro mapa vazio e mantém o mapa atual.'
-    :'Altera apenas o terreno base e suas dimensões. Construções, pinturas, objetos e personagens ficam onde estão.';
-  document.getElementById('terrainTitle').textContent=creating?'Configurar novo cenário':'Editar terreno base';
+    :'Edite o nome, o solo base ou as dimensões. O conteúdo do mapa fica no lugar.';
+  document.getElementById('terrainTitle').textContent=creating?'Configurar novo cenário':'Editar mapa';
+  document.getElementById('terrainMapName').value=creating?document.getElementById('newSceneName').value.trim():scene.name;
   const material=creating?'grass':floor.baseTerrain||'';
   document.getElementById('terrainKind').value=material;
   syncWaterControls('baseWater',material,creating?null:floor.water??null);
@@ -26,9 +27,10 @@ function applyTerrainSettings(event) {
   const width=Number(document.getElementById('terrainWidth').value)*MAP_UNITS_PER_METER;
   const length=Number(document.getElementById('terrainLength').value)*MAP_UNITS_PER_METER;
   if(state.mode!=='architect'||![width,length].every(n=>n>=32&&n<=8192))return;
+  const name=document.getElementById('terrainMapName').value.trim();
   const water=waterDefaults[terrain]?readWaterControls('baseWater',terrain):null;
   if(dialog.dataset.creating==='true'){
-    createNewSceneAsArchitect(terrain,width,length,water);
+    createNewSceneAsArchitect(terrain,width,length,water,name);
     centerMap();
   }else{
     const floor=getScene().floors[Number(dialog.dataset.floor)];
@@ -38,6 +40,7 @@ function applyTerrainSettings(event) {
     }
     const {x,y}=floor.terrainBounds||floor.bounds;
     beginEdit();
+    if(name)getScene().name=name;
     floor.baseTerrain=terrain;
     floor.water=water;
     floor.terrainBounds={x,y,w:width,h:length};
@@ -46,6 +49,8 @@ function applyTerrainSettings(event) {
       expandFloorToInclude(floor,x+width,y+length,0);
     }
     finishEdit();
+    refreshSceneSelect();
+    refreshGmFocus();
   }
   dialog.close();
 }

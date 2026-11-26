@@ -35,6 +35,12 @@ Cor da água|水面主色
 Velocidade da corrente|水流速度
 Intensidade das ondas|波浪强度
 Lago|湖泊
+Editar mapa|修改地图
+Nome do mapa|地图名称
+Período do dia|时段
+Edite o nome, o solo base ou as dimensões. O conteúdo do mapa fica no lugar.|可修改地图名称、基础地面和尺寸，地图内容留在原位。
+Lareira de tijolos|砖砌壁炉
+Fogão a lenha|铸铁柴炉
 Editar chão do mapa|修改地图地面
 Editar terreno base|修改当前地图地面
 Terreno base|基础地形

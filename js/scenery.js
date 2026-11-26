@@ -131,7 +131,7 @@ function daylightLighting(minute=daylightMinute()){
  const twilight=Math.max(0,1-Math.abs(elevation)*5);
  return {
    shadow:day>0?{x:-Math.cos(angle)*(1.8-1.15*day),y:.28+.53*(1-day),alpha:.18+.14*day}:null,
-   dark:.61*Math.max(0,Math.min(1,(.15-elevation)/.48)),
+   dark:.86*Math.max(0,Math.min(1,(.15-elevation)/.82)),
    warm:twilight*.14,
    evening:minute>=720
  };
@@ -184,20 +184,79 @@ function drawSunShadows(floor){
  for(const prop of floor.props)if(plantTypes.has(prop.type))drawPlantSunShadow(prop,sun);
 }
 
+const renderedRoofCovers=[];
+let visibleChimneys=[];
+
+function fireplaceDesign(type){
+ return ({hearth:['#737479','#4b4e53',34,20],brickHearth:['#9d5947','#683f37',34,21],
+   ironStove:['#454951','#252932',21,19]})[type];
+}
+
+function findChimneys(scene){
+ const roofs=scene.floors.flatMap((floor,index)=>[
+   ...(floor.areas||[]).filter(a=>isRoofMaterial(a.mat)),
+   ...(floor.buildings||[]).filter(b=>b.hasRoof&&b.roofType!=='upperFloorBase')
+ ].map(roof=>({roof,level:floorLevel(scene,index)})));
+ return scene.floors.flatMap((floor,index)=>(floor.props||[]).filter(p=>fireplaceDesign(p.type)).flatMap(prop=>{
+   const source=floorLevel(scene,index);
+   const top=roofs.filter(r=>r.level>=source&&pointInArchitectArea(r.roof,prop.x,prop.y))
+     .sort((a,b)=>b.level-a.level)[0];
+   return top?[{prop,source,top}]:[];
+ }));
+}
+
+function drawChimneySection(prop,cap){
+ const [masonry,dark]=fireplaceDesign(prop.type);
+ const size=prop.type==='ironStove'?12:22;
+ ctx.save();ctx.translate(prop.x,prop.y);ctx.scale(prop.scale||1,prop.scale||1);
+ ctx.fillStyle='rgba(5,9,15,.35)';ctx.fillRect(-size/2+3,-size/2+5,size+2,size+2);
+ ctx.fillStyle=masonry;ctx.strokeStyle=dark;ctx.lineWidth=2;
+ ctx.fillRect(-size/2,-size/2,size,size);ctx.strokeRect(-size/2,-size/2,size,size);
+ ctx.fillStyle=dark;
+ if(cap)ctx.fillRect(-size*.29,-size*.27,size*.58,size*.54);
+ else ctx.fillRect(-size*.37,0,size*.74,2);
+ if(cap&&prop.fireLit!==false){
+   const now=terrainMotionPreference.matches?1.4:performance.now()/1000;
+   for(let i=0;i<5;i++){
+     const t=(now*.49+i/5)%1,r=3+t*9;
+     ctx.fillStyle=`rgba(199,207,215,${.36*(1-t)})`;
+     ctx.beginPath();ctx.ellipse(t*18+Math.sin(t*11+i)*3,-t*31,r,r*.76,0,0,Math.PI*2);
+     ctx.fill();
+   }
+ }
+ ctx.restore();
+}
+
+function markVisibleRoofCover(bounds,roof=bounds){
+ renderedRoofCovers.push(bounds);
+ for(const chimney of visibleChimneys){
+   if(chimney.top.roof===roof)drawChimneySection(chimney.prop,true);
+ }
+}
+
+function lightWallsWithOpenings(floor){
+ const walls=lightOccluders(floor);
+ const windows=(floor.windows||[]).map(opening=>({opening,width:opening.width||40,pass:!opening.curtain?.closed}));
+ const doors=(floor.doors||[]).map(opening=>({opening,width:opening.width||68,pass:opening.open}));
+ const openings=[...windows,...doors];
+ return [...walls.filter(wall=>wall.source),...sightWallsWithOpenings(walls.filter(wall=>!wall.source),openings),
+   ...openings.filter(item=>!item.pass).map(item=>sightOpeningEdge(item.opening,item.width))];
+}
+
 function renderSceneryLights(floor,interior){
  if(!floor)return;
  const darkness=daylightLighting().dark;
  const emitters=floor.props.map(prop=>{
    const item=sceneryItems.get(prop.type);
    if(item?.[4])return {prop,color:item[4],radius:item[5]};
-   if(['campfire','hearth','braziers','torch','oilLamp','lamp'].includes(prop.type)){
+   if(fireplaceDesign(prop.type))return prop.fireLit===false?null:{prop,color:'#ffae61',radius:155};
+   if(['campfire','braziers','torch','oilLamp','lamp'].includes(prop.type)){
      return {prop,color:'#ffae61',radius:prop.type==='campfire'?119:83};
    }
    return null;
  }).filter(Boolean);
  if(!emitters.length)return;
- const actor=activeActor();
- const walls=lightOccluders(floor);
+ const walls=lightWallsWithOpenings(floor);
  ctx.save();ctx.translate(state.camera.x,state.camera.y);ctx.scale(state.camera.zoom,state.camera.zoom);
  ctx.globalCompositeOperation='screen';
  for(const {prop,color,radius} of emitters){
@@ -207,11 +266,18 @@ function renderSceneryLights(floor,interior){
    if(interior&&!connectedCaves(floor,interior).some(c=>insideCave(c,x,y)))continue;
    const cave=(floor.caves||[]).find(c=>insideCave(c,x,y));
    if(state.mode==='player'&&cave&&(!interior||!connectedCaves(floor,interior).includes(cave)))continue;
-   if(state.mode==='player'&&(floor.buildings||[]).some(b=>b.hasRoof&&buildingDistance(x,y,b)<0&&
-      (!actor||actor.floor!==state.currentFloor||buildingDistance(actor.x,actor.y,b)>=0)))continue;
    const nearby=walls.filter(wall=>wall.source!==prop&&distToSegment(x,y,wall.x1,wall.y1,wall.x2,wall.y2)<r);
    ctx.save();
    if(interior)clipCaveInterior(floor,interior);
+   for(const roof of renderedRoofCovers){
+     if(roof.x>=x+r||roof.y>=y+r||roof.x+roof.w<=x-r||roof.y+roof.h<=y-r)continue;
+     ctx.beginPath();
+     ctx.rect(Math.min(x-r,roof.x),Math.min(y-r,roof.y),
+       Math.max(x+r,roof.x+roof.w)-Math.min(x-r,roof.x),
+       Math.max(y+r,roof.y+roof.h)-Math.min(y-r,roof.y));
+     ctx.rect(roof.x,roof.y,roof.w,roof.h);
+     ctx.clip('evenodd');
+   }
    ctx.beginPath();
    for(let i=0;i<96;i++){
      const angle=i*Math.PI/48,dx=Math.cos(angle),dy=Math.sin(angle);
@@ -225,7 +291,7 @@ function renderSceneryLights(floor,interior){
    gradient.addColorStop(0,color+'bc');gradient.addColorStop(.32,color+'69');gradient.addColorStop(1,color+'00');
    ctx.fillStyle=gradient;
    const flicker=terrainMotionPreference.matches?1:.91+.09*Math.sin(performance.now()/140+x);
-   ctx.globalAlpha=(.48+darkness*.72)*flicker;
+   ctx.globalAlpha=Math.min(1,.48+darkness*.72)*flicker;
    ctx.fillRect(x-r,y-r,r*2,r*2);ctx.restore();
  }
  ctx.restore();
