@@ -54,7 +54,7 @@ function setMode(mode) {
   state.mode=mode;
   setMapPanTool(false);
   document.getElementById('mapPanButton').classList.toggle('hidden',mode==='player');
-  document.getElementById('recenterButton').textContent=mode==='player'?'Centralizar personagem':'Centralizar mapa';
+  document.getElementById('recenterButton').classList.toggle('hidden',mode!=='player');
   if(worldAction)chooseWorldAction(worldAction);
   if(mode==='architect'||mode==='gm'){
     state.activeSceneId=state.modeScenes[mode]||state.activeSceneId;

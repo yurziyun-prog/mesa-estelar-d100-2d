@@ -31,6 +31,7 @@ Arábia|阿拉伯风格
 Define a aparência dos próximos elementos. Misture livremente no mesmo mapa. O terreno não muda.|设置接下来放置的物件风格。同一地图可以混搭，地形保持原样。
 Construção & Ajuste|建造与调整
 Expandir Mapa|扩大地图
+Editar terreno base|修改当前地图地面
 Terreno base|基础地形
 Terreno|地形
 Ponte coberta|廊桥

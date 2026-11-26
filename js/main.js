@@ -24,7 +24,7 @@ function centerCameraAt(x, y) {
   state.camera.y = canvas.height / 2 - y * state.camera.zoom;
 }
 
-function centerMap() {
+function centerMap(fit = false) {
   const scene = getScene();
   if (!scene) return;
   cameraFollowsActor = false;
@@ -33,6 +33,7 @@ function centerMap() {
   const areas = scene.floors.filter(floor => floor.level <= level).flatMap(floor => [
     ...(floor.baseTerrain && floor.terrainBounds ? [floor.terrainBounds] : []),
     ...floor.areas,
+    ...(floor.buildings||[]),
     ...(floor.caves||[]).map(caveBounds)
   ]);
   if (!areas.length) areas.push(scene.floors[state.currentFloor].bounds);
@@ -40,6 +41,11 @@ function centerMap() {
   const right = Math.max(...areas.map(area => area.x + area.w));
   const top = Math.min(...areas.map(area => area.y));
   const bottom = Math.max(...areas.map(area => area.y + area.h));
+  if(fit&&canvas.width>64&&canvas.height>64){
+    const fitZoom=Math.min((canvas.width-48)/Math.max(1,right-left),
+      (canvas.height-48)/Math.max(1,bottom-top));
+    state.camera.zoom=Math.min(2.2,fitZoom);
+  }
   centerCameraAt((left + right) / 2, (top + bottom) / 2);
 }
 
@@ -240,7 +246,7 @@ function setupInputs() {
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
     const factor = e.deltaY < 0 ? 1.1 : 0.9;
-    const prior=state.camera.zoom, next=Math.max(.45,Math.min(2.2,prior*factor));
+    const prior=state.camera.zoom, next=Math.max(Math.min(.45,prior),Math.min(2.2,prior*factor));
     const rect=canvas.getBoundingClientRect(),sx=e.clientX-rect.left,sy=e.clientY-rect.top;
     const wx=(sx-state.camera.x)/prior,wy=(sy-state.camera.y)/prior;
     state.camera.zoom=next;

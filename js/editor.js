@@ -8,7 +8,7 @@ function openTerrainDialog(creating) {
   document.getElementById('terrainDialogHint').textContent=creating
     ?'Cria outro mapa vazio e mantém o mapa atual.'
     :'Altera apenas o terreno base e suas dimensões. Construções, pinturas, objetos e personagens ficam onde estão.';
-  document.getElementById('terrainTitle').textContent=creating?'Configurar novo cenário':'Terreno base';
+  document.getElementById('terrainTitle').textContent=creating?'Configurar novo cenário':'Editar terreno base';
   document.getElementById('terrainKind').value=creating?'grass':floor.baseTerrain||'';
   document.getElementById('terrainWidth').value=bounds.w/MAP_UNITS_PER_METER;
   document.getElementById('terrainLength').value=bounds.h/MAP_UNITS_PER_METER;
