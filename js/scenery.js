@@ -212,38 +212,80 @@ function sightOpeningEdge(opening,width){
  return {x1:x-dx,y1:y-dy,x2:x+dx,y2:y+dy};
 }
 
+function sightWallsWithOpenings(walls,openings){
+ return walls.flatMap(wall=>{
+   const dx=wall.x2-wall.x1,dy=wall.y2-wall.y1,length=Math.hypot(dx,dy);
+   if(!length)return [];
+   let spans=[[0,length]];
+   for(const {opening,width} of openings){
+     if(opening.orient==='v'?Math.abs(dx)>1:Math.abs(dy)>1)continue;
+     const ox=opening.x-wall.x1,oy=opening.y-wall.y1;
+     if(Math.abs(ox*dy-oy*dx)/length>1)continue;
+     const center=(ox*dx+oy*dy)/length,start=center-width/2,end=center+width/2;
+     spans=spans.flatMap(([a,b])=>end<=a||start>=b?[[a,b]]:
+       [[a,Math.min(b,start)],[Math.max(a,end),b]].filter(([l,r])=>r-l>.001));
+   }
+   return spans.map(([a,b])=>({x1:wall.x1+dx*a/length,y1:wall.y1+dy*a/length,
+     x2:wall.x1+dx*b/length,y2:wall.y1+dy*b/length}));
+ });
+}
+
+function slabSightLimit(slabs,x,y,dx,dy){
+ const spans=[];
+ for(const slab of slabs){
+   let start=0,end=Infinity;
+   for(const [origin,direction,min,max] of [[x,dx,slab.x,slab.x+slab.w],[y,dy,slab.y,slab.y+slab.h]]){
+     if(Math.abs(direction)<1e-9){
+       if(origin<min||origin>max)end=-1;
+       continue;
+     }
+     const a=(min-origin)/direction,b=(max-origin)/direction;
+     start=Math.max(start,Math.min(a,b));end=Math.min(end,Math.max(a,b));
+   }
+   if(end>=start)spans.push([start,end]);
+ }
+ let limit=0;
+ for(const [start,end] of spans.sort((a,b)=>a[0]-b[0])){
+   if(start>limit+.01)break;
+   limit=Math.max(limit,end);
+ }
+ return limit;
+}
+
 function indoorSightPolygon(floor,actor){
- const fromRoom=(floor.buildings||[]).some(room=>buildingDistance(actor.x,actor.y,room)<0);
- const onSlab=floor.areas.some(area=>isStructuralSlab(area)&&pointInArchitectArea(area,actor.x,actor.y));
- if(!fromRoom&&!onSlab)return null;
+ const rooms=floor.buildings||[];
+ const slabs=floor.areas.filter(isStructuralSlab).concat(rooms);
+ const {x,y}=actor;
+ if(!slabs.some(area=>pointInArchitectArea(area,x,y)))return null;
  const openings=[
-   ...(floor.doors||[]).map(door=>({opening:door,edge:sightOpeningEdge(door,door.width||68),pass:door.open})),
-   ...(floor.windows||[]).map(window=>({opening:window,edge:sightOpeningEdge(window,window.width||40),pass:true}))
- ];
- const boundaries=lightOccluders(floor).filter(wall=>!wall.source);
- const walls=[...boundaries,...openings.map(item=>item.edge)];
+   ...(floor.doors||[]).map(door=>({opening:door,width:door.width||68,pass:door.open})),
+   ...(floor.windows||[]).map(window=>({opening:window,width:window.width||40,pass:true}))
+ ].map(item=>({...item,edge:sightOpeningEdge(item.opening,item.width)}));
+ const solid=sightWallsWithOpenings(lightOccluders(floor).filter(wall=>!wall.source),openings);
+ const walls=[...solid,...openings.map(item=>item.edge)];
  const range=3000;
  const closest=(x,y,dx,dy,items,radius)=>items.reduce((distance,wall)=>rayWallDistance(x,y,dx,dy,wall,distance),radius);
- const {x,y}=actor;
- if(!fromRoom&&[0,Math.PI/2,Math.PI,3*Math.PI/2].some(a=>
-   closest(x,y,Math.cos(a),Math.sin(a),walls,range)===range))return null;
- const angles=Array.from({length:144},(_,i)=>i*Math.PI/72);
+ const angles=Array.from({length:180},(_,i)=>i*Math.PI/90);
  for(const edge of walls){
    for(const [px,py] of [[edge.x1,edge.y1],[edge.x2,edge.y2]]){
      const a=Math.atan2(py-y,px-x);
-     for(const off of [-.0002,0,.0002])angles.push((a+off+Math.PI*2)%(Math.PI*2));
+     for(const off of [-.0002,.0002])angles.push((a+off+Math.PI*2)%(Math.PI*2));
    }
  }
  return angles.sort((a,b)=>a-b).map(a=>{
    const dx=Math.cos(a),dy=Math.sin(a);
+   const limit=slabSightLimit(slabs,x,y,dx,dy);
    const first=closest(x,y,dx,dy,walls,range);
-   let distance=first;
+   let distance=Math.min(first,limit+8);
    for(const {opening,edge,pass} of openings){
-     if(!pass||Math.hypot(opening.x-x,opening.y-y)>94||first===range)continue;
+     const proximity=Math.hypot(opening.x-x,opening.y-y);
+     if(!pass||proximity>=128||first===range||first>limit+8)continue;
      const through=rayWallDistance(x,y,dx,dy,edge,range);
-     if(Math.abs(through-first)>.01)continue;
-     const offset=through+1;
-     distance=offset+closest(x+dx*offset,y+dy*offset,dx,dy,walls,125);
+     if(through!==first||closest(x,y,dx,dy,solid,range)<=through)continue;
+     const offset=through+.005;
+     const outside=limit<=offset+8;
+     const reach=outside?320*Math.min(1,(128-proximity)/36):Math.max(0,limit-offset+8);
+     distance=offset+closest(x+dx*offset,y+dy*offset,dx,dy,walls,reach);
      break;
    }
    return {x:x+dx*distance,y:y+dy*distance};
