@@ -22,7 +22,7 @@ const pavingRects=[
  [22,240,85,89],[133,240,85,89],[245,240,84,89]
 ];
 const finishImages=new Map(),finishTiles=new Map(),finishPatterns=new Map();
-const bridgeFinishes={bridgeMetal:'#8796a8',bridgeMarble:'#d9d8d4',bridgeStone:'#76796f'};
+const bridgeFinishes={bridge:'#765237',bridgeCovered:'#493321',bridgeMetal:'#8796a8',bridgeMarble:'#d9d8d4',bridgeStone:'#76796f'};
 
 function finishImage(file){
  if(!finishImages.has(file)){
@@ -99,7 +99,7 @@ function finishTerrainPaint(id){
 }
 
 function isBridgeMaterial(mat){
- return mat==='bridge'||Object.hasOwn(bridgeFinishes,mat);
+ return Object.hasOwn(bridgeFinishes,mat);
 }
 
 function drawBridgeFinish(mat,x,y,w,h){
@@ -107,7 +107,8 @@ function drawBridgeFinish(mat,x,y,w,h){
  ctx.save();ctx.translate(x+w/2,y+h/2);
  if(vertical)ctx.rotate(Math.PI/2);
  const length=vertical?h:w,width=vertical?w:h;
- const tile=mat==='bridgeMetal'?'scifiMetal':mat==='bridgeMarble'?'mesaMarbleGrid':'mesaStoneGrid';
+ const tile=mat==='bridge'||mat==='bridgeCovered'?'wood':
+   mat==='bridgeMetal'?'scifiMetal':mat==='bridgeMarble'?'mesaMarbleGrid':'mesaStoneGrid';
  ctx.fillStyle=finishTerrainPaint(tile)||getTerrainPattern(ctx,tile);
  ctx.fillRect(-length/2,-width/2,length,width);
  for(const side of [-1,1]){

@@ -28,6 +28,7 @@ Construção & Ajuste|建造与调整
 Expandir Mapa|扩大地图
 Terreno base|基础地形
 Terreno|地形
+Ponte coberta|廊桥
 Trazer superfície para frente|表面移到最上层
 Enviar superfície para trás|表面移到最下层
 Largura (m)|宽度（米）

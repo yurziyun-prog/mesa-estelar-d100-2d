@@ -90,6 +90,10 @@ function setMode(mode) {
   refreshGmFocus();
   document.getElementById('plantWind').value=String(state.windStrength??.35);
   centerMap();
+  if(mode==='player'){
+    cameraFollowsActor=true;
+    followCamera();
+  }
 }
 
 function onPaintedGround(floor, x, y) {

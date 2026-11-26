@@ -151,24 +151,8 @@ function drawTexturedArea(x, y, w, h, mat, customColor = null, tileConfig = null
     ctx.strokeStyle = '#c99b32';
     ctx.lineWidth = 3;
     ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
-  } else if(Object.hasOwn(bridgeFinishes,mat)){
+  } else if(isBridgeMaterial(mat)){
     drawBridgeFinish(mat,x,y,w,h);
-  } else if (mat === 'bridge') {
-    if(h>w){
-      ctx.translate(x+w/2,y+h/2);ctx.rotate(Math.PI/2);
-      [w,h]=[h,w];x=-w/2;y=-h/2;
-    }
-    ctx.fillStyle = '#824d24';
-    ctx.fillRect(x, y, w, h);
-    for (let bx = x + 6; bx < x + w - 4; bx += 14) {
-      ctx.fillStyle = '#9c6030';
-      ctx.fillRect(bx, y + 6, 10, h - 12);
-      ctx.strokeStyle = '#3d210b';
-      ctx.strokeRect(bx, y + 6, 10, h - 12);
-    }
-    ctx.fillStyle = '#4f2c10';
-    ctx.fillRect(x, y, w, 6);
-    ctx.fillRect(x, y + h - 6, w, 6);
   } else if (mat === 'marble') {
     ctx.fillStyle = '#c6cdd8';
     ctx.fillRect(x, y, w, h);
@@ -557,6 +541,8 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     if(a.fromBuildingId){traceBuilding(a);ctx.clip();}
     const shape=isRoofMaterial(a.mat)?effectiveRoofBounds(sc,floor,a):a;
     drawTexturedArea(shape.x,shape.y,shape.w,shape.h,a.mat,a.color,a.tile,a.roofPitch,a.roofHeight,a.flowAngle);
+    const onBridge=actor?.sceneId===state.activeSceneId&&actor.floor===floorIdx&&pointInArchitectArea(a,actor.x,actor.y);
+    if(a.mat==='bridgeCovered'&&!onBridge)drawRoofSurface(a.x,a.y,a.w,a.h,'roof_tile','gable');
     ctx.restore();
   };
   for(const surface of orderedSurfaces(floor)){

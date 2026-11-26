@@ -228,17 +228,23 @@ function setupInputs() {
 
 // LOOP E RENDERIZAÇÃO
 let animTick = 0;
+let lastFrameTime = null;
+const WALK_SPEED = 128;
+const SPRINT_SPEED = 224;
+const MAX_MOVEMENT_STEP = 4;
 
-function gameLoop() {
+function gameLoop(now) {
+  const elapsed = lastFrameTime===null ? 1/60 : Math.min(.05,(now-lastFrameTime)/1000);
+  lastFrameTime = now;
   animTick += 0.03;
-  updateSimulation();
+  updateSimulation(elapsed);
   updateSkeletonAutonomy();
   followCamera();
   render();
   requestAnimationFrame(gameLoop);
 }
 
-function updateSimulation() {
+function updateSimulation(elapsed) {
   state.entities.forEach(ent => {
     if (ent.speechTimer > 0) {
       ent.speechTimer--;
@@ -262,15 +268,16 @@ function updateSimulation() {
         if(ent.sleepPose){awakenEntity(ent);return;}
         const len = Math.hypot(dx, dy);
         ent.facingX=dx/len; ent.facingY=dy/len;
-        const speed = keys['shift'] ? 6.2 : 3.1;
-        const vx = (dx / len) * speed;
-        const vy = (dy / len) * speed;
-        if(!tryWalkingStair(ent,dx/len,dy/len)){
-          const newX=ent.x+vx,newY=ent.y+vy;
-          if(!tryFallThroughStairOpening(ent,newX,newY,dx/len,dy/len)){
-            if (canWalkStep(ent, ent.x + vx, ent.y)) ent.x += vx;
-            if (canWalkStep(ent, ent.x, ent.y + vy)) ent.y += vy;
-          }
+        if(state.mode==='player'&&!isPanning)cameraFollowsActor=true;
+        const distance = (keys['shift'] ? SPRINT_SPEED : WALK_SPEED) * elapsed;
+        const steps = Math.max(1, Math.ceil(distance / MAX_MOVEMENT_STEP));
+        const vx = ent.facingX * distance / steps;
+        const vy = ent.facingY * distance / steps;
+        for(let step=0;step<steps;step++){
+          if(tryWalkingStair(ent,ent.facingX,ent.facingY))break;
+          if(tryFallThroughStairOpening(ent,ent.x+vx,ent.y+vy,ent.facingX,ent.facingY))break;
+          if(vx&&canWalkStep(ent,ent.x+vx,ent.y))ent.x+=vx;
+          if(vy&&canWalkStep(ent,ent.x,ent.y+vy))ent.y+=vy;
         }
         ent.walkingUntil=performance.now()+130;
       }

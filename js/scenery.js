@@ -254,10 +254,23 @@ function slabSightLimit(slabs,x,y,dx,dy){
 
 function indoorSightPolygon(floor,actor){
  const rooms=floor.buildings||[];
- const slabs=floor.areas.filter(isStructuralSlab).concat(rooms);
  const {x,y}=actor;
+ const surface=topMapSurfaceAt(floor,x,y);
+ const covered=surface?.mat==='bridgeCovered'&&!surface.points?surface:null;
+ const slabs=floor.areas.filter(isStructuralSlab).concat(rooms);
+ const bridgeEnds=[];
+ if(covered){
+   slabs.push(covered);
+   const {x:left,y:top,w,h}=covered;
+   if(w>=h){
+     bridgeEnds.push({x:left,y:top+h/2,orient:'v',width:h},{x:left+w,y:top+h/2,orient:'v',width:h});
+   }else{
+     bridgeEnds.push({x:left+w/2,y:top,orient:'h',width:w},{x:left+w/2,y:top+h,orient:'h',width:w});
+   }
+ }
  if(!slabs.some(area=>pointInArchitectArea(area,x,y)))return null;
  const openings=[
+   ...bridgeEnds.map(opening=>({opening,width:opening.width,pass:true})),
    ...(floor.doors||[]).map(door=>({opening:door,width:door.width||68,pass:door.open})),
    ...(floor.windows||[]).map(window=>({opening:window,width:window.width||40,pass:!window.curtain?.closed}))
  ].map(item=>({...item,edge:sightOpeningEdge(item.opening,item.width)}));
