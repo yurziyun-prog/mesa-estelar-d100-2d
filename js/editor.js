@@ -306,6 +306,7 @@ function applyArchitectAction(wx, wy, isDrag = false) {
     if (!isDrag) {
       floor.props.push({ ...newGeologyVariant(floor,state.propType), x: wx, y: wy, type: state.propType, rot: state.rotation, color:state.propColor, style: state.propType.startsWith('kenney_')?'downloads':state.buildStyle,...(isPortableLadder({type:state.propType})?{ladderState:state.propType==='foldingLadder'?'folded':'lying',material:'wood'}:{}) });
       const placed=floor.props.at(-1);
+      if(isSizedTree(placed.type))placed.treeSize=state.newTreeSize||'medium';
       if(architectShiftHeld&&geologyPropRadius(placed.type)){
         const base=floor.props.slice(0,-1).filter(p=>geologyPropRadius(p.type)&&Math.hypot(p.x-wx,p.y-wy)<20)
           .sort((a,b)=>rockTop(b)-rockTop(a))[0];

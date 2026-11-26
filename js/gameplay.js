@@ -176,7 +176,7 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false) {
   if (floor.chests.some(c => Math.hypot(c.x - nx, c.y - ny) < r + 14)) return false;
 
   if(floor.props.some(p=>(catalogPropIsSolid(p.type)||mesaFurnitureById.has(p.type)||furnitureFinishById.has(p.type))&&Math.hypot(p.x-nx,p.y-ny)<r+19*(p.scale||1)))return false;
-  if(floor.props.some(p=>plantTrunkRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+plantTrunkRadius(p.type)*(p.scale||1)))return false;
+  if(floor.props.some(p=>plantTrunkRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+plantTrunkRadius(p.type)*(p.scale||1)*treeSizeFactor(p)))return false;
   if(floor.props.some(p=>geologyPropRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+geologyPropRadius(p.type)*(p.scale||1)))return false;
   if(floor.props.some(p=>fixtureRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+fixtureRadius(p.type)*(p.scale||1)))return false;
   if(floor.props.some(p=>scenerySolidRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+scenerySolidRadius(p.type)*(p.scale||1)))return false;
@@ -582,7 +582,7 @@ function attemptJump(ent, dx, dy) {
       const tall=floor.props.some(p=>{
         const radius=plantTrunkRadius(p.type)||geologyPropRadius(p.type)||fixtureRadius(p.type);
         return radius&&(plantTrunkRadius(p.type)||rockTop(p)>JUMP_CLEARANCE)
-          &&Math.hypot(px-p.x,py-p.y)<radius*(p.scale||1)+10;
+          &&Math.hypot(px-p.x,py-p.y)<radius*(p.scale||1)*treeSizeFactor(p)+10;
       });
       if(high||tall){blockedTrajectory=true;break;}
     }

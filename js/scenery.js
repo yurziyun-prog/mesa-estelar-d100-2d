@@ -133,7 +133,7 @@ function lightOccluders(floor){
  for(const prop of floor.props){
    const r=scenerySolidRadius(prop.type)||plantTrunkRadius(prop.type);
    if(!r)continue;
-   const s=r*(prop.scale||1),x=prop.x,y=prop.y;
+   const s=r*(prop.scale||1)*treeSizeFactor(prop),x=prop.x,y=prop.y;
    const corners=[[x-s,y-s],[x+s,y-s],[x+s,y+s],[x-s,y+s]];
    for(let i=0;i<4;i++){
      const [x1,y1]=corners[i],[x2,y2]=corners[(i+1)%4];

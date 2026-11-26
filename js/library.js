@@ -262,6 +262,9 @@ function selectedConstructionKind(){
 }
 function refreshArchitectProperties(){
  const item=selectedArchitectItem()||selectedWallsForMaterial()[0],kind=selectedConstructionKind();
+ const treeSettings=document.getElementById('treeSizeSettings');
+ treeSettings.classList.toggle('hidden',state.tool!=='prop'||!isSizedTree(state.propType));
+ document.getElementById('newTreeSize').value=state.newTreeSize||'medium';
  const roofActive=state.tool==='roof'||Boolean(item&&isRoofMaterial(item.mat));
  const roofControls=document.getElementById('roofOptions');
  if(roofControls)roofControls.classList.toggle('hidden',!roofActive);

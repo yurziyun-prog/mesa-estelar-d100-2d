@@ -422,6 +422,10 @@ Solo Corrompido|腐化地表
 Escolha um trecho reto e livre da parede.|请选择一段空闲的直墙。
 Caverna|洞穴
 Solo interno|洞内地形
+Tamanho da árvore|树木尺寸
+Pequena|小树
+Média|中树
+Grande|大树
 Cortina de janela|窗帘
 Clique em uma janela para instalar a cortina. Shift+clique para remover.|点击窗户安装窗帘，按住 Shift 点击可拆除。
 Cortina aberta.|窗帘已打开。

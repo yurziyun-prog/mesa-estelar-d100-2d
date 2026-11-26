@@ -434,6 +434,11 @@
             <input type="checkbox" id="wallColorEnabled" onchange="toggleWallColorEditor(this.checked)"/> Cor personalizada (exceção)
           </label>
         </div>
+        <label id="treeSizeSettings" class="library-hint hidden">Tamanho da árvore
+          <select class="ctrl" id="newTreeSize" onchange="state.newTreeSize=this.value">
+            <option value="small">Pequena</option><option value="medium" selected>Média</option><option value="large">Grande</option>
+          </select>
+        </label>
         <div id="objectColorSettings" class="hidden">
           <div class="section-title">Cor do objeto</div>
           <div class="row" style="align-items:center;gap:8px">
@@ -548,18 +553,18 @@
 <script src="js/d100.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/state.js?v=storey-roofs-20261126" defer></script>
 <script src="js/roof-system.js?v=two-way-opening-sight-20261126" defer></script>
-<script src="js/stair-system.js?v=cave-joins-20261126" defer></script>
-<script src="js/editor.js?v=window-curtains-20261126" defer></script>
-<script src="js/library.js?v=window-curtains-20261126" defer></script>
-<script src="js/gameplay.js?v=window-curtains-20261126" defer></script>
+<script src="js/stair-system.js?v=stair-tree-size-20261126" defer></script>
+<script src="js/editor.js?v=stair-tree-size-20261126" defer></script>
+<script src="js/library.js?v=stair-tree-size-20261126" defer></script>
+<script src="js/gameplay.js?v=stair-tree-size-20261126" defer></script>
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/textures.js?v=window-curtains-20261126" defer></script>
 <script src="js/architect-selection.js?v=cave-joins-20261126" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/object-properties.js?v=wall-material-sight-20261126" defer></script>
-<script src="js/i18n.js?v=window-curtains-20261126" defer></script>
+<script src="js/object-properties.js?v=stair-tree-size-20261126" defer></script>
+<script src="js/i18n.js?v=stair-tree-size-20261126" defer></script>
 <script src="js/cloud-bank.js?v=firebase-browser-key-20261125" defer></script>
 <script src="js/terrain-tools.js?v=scenery-20261125" defer></script>
 <script src="js/building.js?v=two-way-opening-sight-20261126" defer></script>
@@ -569,8 +574,8 @@
 <script src="js/geology.js?v=vertical-20261125" defer></script>
 <script src="js/cave-brush.js?v=cave-joins-20261126" defer></script>
 <script src="js/caves.js?v=cave-joins-20261126" defer></script>
-<script src="js/plants.js?v=window-curtains-20261126" defer></script>
-<script src="js/scenery.js?v=window-curtains-20261126" defer></script>
+<script src="js/plants.js?v=stair-tree-size-20261126" defer></script>
+<script src="js/scenery.js?v=stair-tree-size-20261126" defer></script>
 <script src="js/vertical-world.js?v=cave-joins-20261126" defer></script>
 <script src="js/material-damage.js?v=material-20261125" defer></script>
 <script src="js/main.js?v=two-way-opening-sight-20261126" defer></script>
@@ -605,6 +610,9 @@
    <label>Estilo visual <select id="objectDialogStyle" class="ctrl"><option value="normal">Normal</option><option value="arabia">Arábia</option><option value="futurist">Retro-futurista</option></select></label>
    <label>Material <select id="objectDialogMaterial" class="ctrl"><option value="wood">Madeira</option><option value="stone">Pedra</option><option value="brick">Tijolo</option><option value="castle">Pedra de castelo</option><option value="masonry">Alvenaria</option><option value="metal">Metal</option><option value="rust">Metal enferrujado</option><option value="sandstone">Arenito</option></select></label>
    <label id="objectDialogColorRow"><input id="objectDialogUseColor" type="checkbox"/> Usar cor personalizada <input id="objectDialogColor" type="color" value="#a35d64"/></label>
+   <label id="objectDialogTreeSizeRow" style="display:none">Tamanho da árvore
+     <select id="objectDialogTreeSize" class="ctrl"><option value="small">Pequena</option><option value="medium">Média</option><option value="large">Grande</option></select>
+   </label>
    <label id="objectDialogScaleRow" style="display:none">Escala do objeto (%) <input type="number" class="ctrl" id="objectDialogScale" min="20" max="400" step="1"/></label>
    <label id="objectDialogSignRow" style="display:none">Texto da placa <input class="ctrl" id="objectDialogSign" maxlength="32"/></label>
    <label id="objectDialogStopsRow" style="display:none">Paradas (níveis; térreo = 0) <input class="ctrl" id="objectDialogStops" placeholder="-1, 0, 1"/></label>

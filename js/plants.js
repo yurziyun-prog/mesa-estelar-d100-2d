@@ -22,6 +22,9 @@ const overheadCanopyArt=new Image();
 overheadCanopyArt.src='assets/nature/overhead-canopies.webp';
 const plantTallKinds=new Set(['oak','pine','palm','winter','dead','pods','fan','discs']);
 
+const TREE_SIZE_FACTORS={small:1,medium:1.55,large:2.15};
+function isSizedTree(type){return plantTallKinds.has(plantTypes.get(type)?.[3]);}
+function treeSizeFactor(plant){return isSizedTree(plant.type)?(TREE_SIZE_FACTORS[plant.treeSize]||1):1;}
 function plantTrunkRadius(type){
  const plant=plantTypes.get(type);
  return plantTallKinds.has(plant?.[3])?Math.max(7,Math.round(plant[2]*.17)):0;
@@ -120,7 +123,8 @@ function makePlantCanopy(type){
 function beginPlantTransform(p){
  ctx.save();
  ctx.translate(p.x,p.y);ctx.rotate((p.rot||0)*Math.PI/2+(p.freeAngle||0));
- ctx.scale(p.scale||1,p.scale||1);
+ const scale=(p.scale||1)*treeSizeFactor(p);
+ ctx.scale(scale,scale);
 }
 
 function drawPlantBase(p){
@@ -146,7 +150,7 @@ function drawPlantBase(p){
 function drawPlantCanopy(p,actor=null){
  const [, ,radius,kind]=plantTypes.get(p.type);
  if(kind==='dead'||kind==='winter')return;
- const actorUnderCanopy=plantTallKinds.has(kind)&&actor&&Math.hypot(actor.x-p.x,actor.y-p.y)<radius*.79*(p.scale||1);
+ const actorUnderCanopy=plantTallKinds.has(kind)&&actor&&Math.hypot(actor.x-p.x,actor.y-p.y)<radius*.79*(p.scale||1)*treeSizeFactor(p);
  const sprite=illustratedCanopies.get(p.type);
  const hasArt=sprite!==undefined&&overheadCanopyArt.complete&&overheadCanopyArt.naturalWidth>0;
  const art=hasArt?overheadCanopyArt:makePlantCanopy(p.type);

@@ -63,7 +63,7 @@ function applyFallDamage(ent,levels,reason='queda'){
  // Higher falls climb non-linearly. CON offers a modest reduction.
  const constitution=Number(ent.attrs?.CON||ent.attributes?.CON||10);
  const reduction=Math.max(0,Math.floor((constitution-10)/4));
- const raw=Math.round(2+3*dropped+3*Math.max(0,dropped-1)**2);
+ const raw=reason==='踩空楼梯'?Math.min(4,2*dropped):Math.round(2+3*dropped+3*Math.max(0,dropped-1)**2);
  const damage=Math.max(1,raw-reduction);
  if(Number.isFinite(ent.hp)){
   ent.hp=Math.max(0,ent.hp-damage);
@@ -314,7 +314,7 @@ function stairEntryAllowed(stair,ent,dx,dy){
  }
  if(Math.abs(localX)>27)return false;
  // 低层往上：从画面下方走向上方；高层往下反之。
- if(stair.dir==='down')return localY>=-65&&localY<=-22&&movement.y>.55;
+ if(stair.dir==='down')return localY>=-65&&localY<=12&&movement.y>.45&&movement.y>=Math.abs(movement.x)*.65;
  return localY>=22&&localY<=65&&movement.y<-.55;
 }
 function beginStairClimb(ent,stair,dx,dy){
@@ -389,7 +389,7 @@ function tryFallThroughStairOpening(ent,nx,ny,dx,dy){
  const scene=getScene(),floor=scene.floors[ent.floor];if(!floor)return false;
  if(crossesWall(floor,ent.x,ent.y,nx,ny,true))return false;
  for(const stair of floor.stairs||[]){
-  if(stair.dir!=='down')continue;
+  if(stair.dir!=='down'||stairVisualShape(stair.shape)==='caveRamp')continue;
   if(!hasBuiltFloorAt(floor,stair.x,stair.y))continue;
   const local=stairLocal(stair,nx-stair.x,ny-stair.y);
   const move=stairLocal(stair,dx,dy);
@@ -398,7 +398,11 @@ function tryFallThroughStairOpening(ent,nx,ny,dx,dy){
   if(!inside)continue;
   // Heading normally from the upper landing towards the stairs is managed
   // by tryWalkingStair before this function. Off-axis moves miss the steps.
-  if(move.y>.55 && Math.abs(move.x)<.35 && local.y< -22)continue;
+  if(stairEntryAllowed(stair,ent,dx,dy)||(move.y>.45&&Math.abs(local.x)<=20&&local.y<=14))continue;
+  const previous=stairLocal(stair,ent.x-stair.x,ent.y-stair.y);
+  const alreadyInside=stairVisualShape(stair.shape)==='spiral'?Math.hypot(previous.x,previous.y)<29:
+    Math.abs(previous.x)<25&&Math.abs(previous.y)<42;
+  if(alreadyInside)continue;
   const target=stairLinkedIndex(scene,ent.floor,stair);
   if(target<0)continue;
   const lower=scene.floors[target];
@@ -419,7 +423,7 @@ function tryFallThroughStairOpening(ent,nx,ny,dx,dy){
   ent.stairCooldown=performance.now()+900;
   ent.stairTransitionAt=performance.now();
   ent.fallUntil=performance.now()+430;
-  applyFallDamage(ent,Math.abs(floorLevel(scene,sourceFloor)-floorLevel(scene,target))||1);
+  applyFallDamage(ent,Math.abs(floorLevel(scene,sourceFloor)-floorLevel(scene,target))||1,'踩空楼梯');
   state.currentFloor=target;updateFloorLabel();
   if(typeof refreshGmFocus==='function')refreshGmFocus();
   logEvent('↘️ '+ent.name+' 从楼板开口跌落到了 '+floorName(floorLevel(scene,target))+'。');

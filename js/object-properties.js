@@ -20,6 +20,8 @@ function editArchitectObject(ref=null){
  put('objectDialogHardness',durability.hardness);put('objectDialogPv',durability.maxPv);
  put('objectDialogStyle',obj.style||'normal');
  el('objectDialogScaleRow').style.display=kind==='props'?'flex':'none';
+ el('objectDialogTreeSizeRow').style.display=kind==='props'&&isSizedTree(obj.type)?'flex':'none';
+ put('objectDialogTreeSize',obj.treeSize||'small');
  el('objectDialogSignRow').style.display=kind==='props'&&isWritableSign(obj.type)?'flex':'none';
  el('objectDialogStopsRow').style.display=obj.type==='hoverLift'?'flex':'none';
  el('objectDialogStockRow').style.display=obj.type==='vendingFridge'?'flex':'none';
@@ -116,6 +118,7 @@ function saveArchitectObjectProperties(){
  obj.style=get('objectDialogStyle');
  if(target.kind==='props'){
    obj.scale=scale/100;
+   if(isSizedTree(obj.type))obj.treeSize=get('objectDialogTreeSize');
    if(isWritableSign(obj.type))obj.signText=get('objectDialogSign').trim().slice(0,32);
    if(obj.type==='hoverLift')obj.stops=[...new Set(stops.map(Number))];
    if(obj.type==='vendingFridge')obj.stock=stock.map(row=>({name:row[1].trim(),price:Number(row[2])}));
