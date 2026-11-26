@@ -220,7 +220,7 @@ function sightWallsWithOpenings(walls,openings){
    for(const {opening,width} of openings){
      if(opening.orient==='v'?Math.abs(dx)>1:Math.abs(dy)>1)continue;
      const ox=opening.x-wall.x1,oy=opening.y-wall.y1;
-     if(Math.abs(ox*dy-oy*dx)/length>1)continue;
+     if(Math.abs(ox*dy-oy*dx)/length>(wall.width||16)/2+6)continue;
      const center=(ox*dx+oy*dy)/length,start=center-width/2,end=center+width/2;
      spans=spans.flatMap(([a,b])=>end<=a||start>=b?[[a,b]]:
        [[a,Math.min(b,start)],[Math.max(a,end),b]].filter(([l,r])=>r-l>.001));
@@ -263,6 +263,8 @@ function indoorSightPolygon(floor,actor){
  ].map(item=>({...item,edge:sightOpeningEdge(item.opening,item.width)}));
  const solid=sightWallsWithOpenings(lightOccluders(floor).filter(wall=>!wall.source),openings);
  const walls=[...solid,...openings.map(item=>item.edge)];
+ const rim=12;
+ const wallRim=slabs.map(a=>({x:a.x-rim,y:a.y-rim,w:a.w+2*rim,h:a.h+2*rim}));
  const range=3000;
  const closest=(x,y,dx,dy,items,radius)=>items.reduce((distance,wall)=>rayWallDistance(x,y,dx,dy,wall,distance),radius);
  const angles=Array.from({length:180},(_,i)=>i*Math.PI/90);
@@ -276,14 +278,15 @@ function indoorSightPolygon(floor,actor){
    const dx=Math.cos(a),dy=Math.sin(a);
    const limit=slabSightLimit(slabs,x,y,dx,dy);
    const first=closest(x,y,dx,dy,walls,range);
-   let distance=Math.min(first,limit+8);
+   const visibleRim=slabSightLimit(wallRim,x,y,dx,dy);
+   let distance=first>=limit-.01?visibleRim:Math.min(first+rim,visibleRim);
    for(const {opening,edge,pass} of openings){
      const proximity=Math.hypot(opening.x-x,opening.y-y);
-     if(!pass||proximity>=128||first===range||first>limit+8)continue;
+     if(!pass||proximity>=128||first===range||first>visibleRim+.01)continue;
      const through=rayWallDistance(x,y,dx,dy,edge,range);
-     if(through!==first||closest(x,y,dx,dy,solid,range)<=through)continue;
+     if(Math.abs(through-first)>.001||closest(x,y,dx,dy,solid,range)<through-.001)continue;
      const offset=through+.005;
-     const outside=limit<=offset+8;
+     const outside=visibleRim<=offset+(opening.orient==='v'?rim/Math.max(.1,Math.abs(dx)):rim/Math.max(.1,Math.abs(dy)))+.01||limit<=offset+rim;
      const reach=outside?320*Math.min(1,(128-proximity)/36):Math.max(0,limit-offset+8);
      distance=offset+closest(x+dx*offset,y+dy*offset,dx,dy,walls,reach);
      break;
