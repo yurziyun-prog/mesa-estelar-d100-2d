@@ -121,6 +121,7 @@ function saveArchitectObjectProperties(){
    if(obj.type==='vendingFridge')obj.stock=stock.map(row=>({name:row[1].trim(),price:Number(row[2])}));
    if(geologyPropRadius(obj.type))obj.metres=Math.max(.1,Math.min(2.9,Number(get('objectDialogHeight'))||1));
  }
+ if(target.kind==='walls')delete obj.wallFinish;
  obj.material=target.kind==='walls'?(CONSTRUCTION_WALL_MATERIALS[get('objectDialogMaterial')]||'wallMasonry'):get('objectDialogMaterial');
  if(document.getElementById('objectDialogUseColor').checked)obj.color=get('objectDialogColor');
  else delete obj.color;

@@ -204,3 +204,64 @@ function initSceneryCatalog(){
    if(architectCategory==='props')renderArchitectLibrary();
  },{once:true});
 }
+
+// Indoor sight rays stop at walls or continue a short distance beyond a nearby opening.
+function sightOpeningEdge(opening,width){
+ const dx=opening.orient==='v'?0:width/2,dy=opening.orient==='v'?width/2:0;
+ const {x,y}=opening;
+ return {x1:x-dx,y1:y-dy,x2:x+dx,y2:y+dy};
+}
+
+function indoorSightPolygon(floor,actor){
+ const fromRoom=(floor.buildings||[]).some(room=>buildingDistance(actor.x,actor.y,room)<0);
+ const onSlab=floor.areas.some(area=>isStructuralSlab(area)&&pointInArchitectArea(area,actor.x,actor.y));
+ if(!fromRoom&&!onSlab)return null;
+ const openings=[
+   ...(floor.doors||[]).map(door=>({opening:door,edge:sightOpeningEdge(door,door.width||68),pass:door.open})),
+   ...(floor.windows||[]).map(window=>({opening:window,edge:sightOpeningEdge(window,window.width||40),pass:true}))
+ ];
+ const boundaries=lightOccluders(floor).filter(wall=>!wall.source);
+ const walls=[...boundaries,...openings.map(item=>item.edge)];
+ const range=3000;
+ const closest=(x,y,dx,dy,items,radius)=>items.reduce((distance,wall)=>rayWallDistance(x,y,dx,dy,wall,distance),radius);
+ const {x,y}=actor;
+ if(!fromRoom&&[0,Math.PI/2,Math.PI,3*Math.PI/2].some(a=>
+   closest(x,y,Math.cos(a),Math.sin(a),walls,range)===range))return null;
+ const angles=Array.from({length:144},(_,i)=>i*Math.PI/72);
+ for(const edge of walls){
+   for(const [px,py] of [[edge.x1,edge.y1],[edge.x2,edge.y2]]){
+     const a=Math.atan2(py-y,px-x);
+     for(const off of [-.0002,0,.0002])angles.push((a+off+Math.PI*2)%(Math.PI*2));
+   }
+ }
+ return angles.sort((a,b)=>a-b).map(a=>{
+   const dx=Math.cos(a),dy=Math.sin(a);
+   const first=closest(x,y,dx,dy,walls,range);
+   let distance=first;
+   for(const {opening,edge,pass} of openings){
+     if(!pass||Math.hypot(opening.x-x,opening.y-y)>94||first===range)continue;
+     const through=rayWallDistance(x,y,dx,dy,edge,range);
+     if(Math.abs(through-first)>.01)continue;
+     const offset=through+1;
+     distance=offset+closest(x+dx*offset,y+dy*offset,dx,dy,walls,125);
+     break;
+   }
+   return {x:x+dx*distance,y:y+dy*distance};
+ });
+}
+
+function drawIndoorSightMask(floor,interior){
+ if(state.mode!=='player'||interior)return;
+ const actor=activeActor();
+ if(!actor||actor.floor!==state.currentFloor||actor.sceneId!==state.activeSceneId)return;
+ const points=indoorSightPolygon(floor,actor);
+ if(!points)return;
+ const {x,y,zoom}=state.camera;
+ ctx.save();
+ ctx.beginPath();ctx.rect(0,0,canvas.width,canvas.height);
+ ctx.moveTo(x+points[0].x*zoom,y+points[0].y*zoom);
+ for(const point of points.slice(1))ctx.lineTo(x+point.x*zoom,y+point.y*zoom);
+ ctx.closePath();
+ ctx.fillStyle='#0b111b';ctx.fill('evenodd');
+ ctx.restore();
+}

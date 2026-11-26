@@ -145,6 +145,7 @@ const catalogFloors=[
 ];
 const catalogInteriorFloors=new Set(catalogFloors.slice(6).map(([id])=>id));
 const catalogWalls=[
+ ['wallCeramic','Parede de Azulejo Cerâmico','陶瓷砖墙','#c0ccd2',null],
  ['stoneMasonry','Alvenaria de Pedra','石砌墙','#666a72','dungeonBrick'],
  ['caveRock','Parede de Caverna','洞穴岩壁','#555c68','caveStone'],
  ['woodTimber','Parede de Vigas','木梁墙','#875932','tavernWood'],
@@ -169,7 +170,7 @@ const catalogNature=[
 function catalogWallStyle(id){return catalogWalls.find(wall=>wall[0]===id);}
 function catalogWallPaint(wall){
  const style=catalogWallStyle(wall.wallFinish||wall.material||wall.wallMaterial);
- return style?getTerrainPattern(ctx,style[4]):null;
+ return style?(style[4]?getTerrainPattern(ctx,style[4]):style[3]):null;
 }
 function catalogPropIsSolid(type){
  return ['roundTable','longTable','tavernBar','armchair','statue','sofaBooth','modernTable','planter',

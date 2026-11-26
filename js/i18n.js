@@ -422,6 +422,7 @@ Solo Corrompido|腐化地表
 Escolha um trecho reto e livre da parede.|请选择一段空闲的直墙。
 Caverna|洞穴
 Solo interno|洞内地形
+Material aplicado às paredes selecionadas.|已更改所选墙体的材质。
 Forma da parede|墙体形状
 Parede reta|直墙
 Parede curva|弧形墙

@@ -373,6 +373,7 @@ function drawMapOverlays(sc,interior){
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
   renderSceneryLights(sc.floors[state.currentFloor],interior);
+  drawIndoorSightMask(sc.floors[state.currentFloor],interior);
   drawArchitectSelectionHUD();
   drawArchitectMapGuides();
   const actor=activeActor();

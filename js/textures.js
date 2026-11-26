@@ -641,7 +641,14 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     const dx=w.x2-w.x1,dy=w.y2-w.y1,length=Math.hypot(dx,dy);
     if(!length)return;
     ctx.save();ctx.translate(w.x1,w.y1);ctx.rotate(Math.atan2(dy,dx));
-    if(material==='scifiBulkhead'){
+    if(material==='wallCeramic'){
+      ctx.strokeStyle='#748b98';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(length,0);
+      for(let t=0;t<length;t+=17){ctx.moveTo(t,-width/2);ctx.lineTo(t,width/2);}
+      ctx.stroke();
+      ctx.strokeStyle='#dce8ee';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(1,-width*.36);ctx.lineTo(length-1,-width*.36);ctx.stroke();
+    }else if(material==='scifiBulkhead'){
       ctx.fillStyle=w.neonColor||'#38bdf8';
       ctx.fillRect(2,-1,Math.max(0,length-4),2);
     }else if(material==='wallCastle'||material==='wallMasonry'||material==='wallBrick'||material==='wallSandstone'){

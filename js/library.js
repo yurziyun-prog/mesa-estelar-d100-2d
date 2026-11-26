@@ -98,7 +98,32 @@ function renderArchitectLibrary(){
   grid.append(button);
  }
 }
+function selectedWallsForMaterial(){
+ if(state.tool!=='move')return [];
+ const floor=getScene().floors[state.currentFloor];
+ const refs=architectSelections.length?architectSelections:[selectedMapObject];
+ return refs.filter(ref=>ref?.kind==='walls').map(ref=>floor.walls[ref.index]).filter(Boolean);
+}
+
+function applySelectedWallMaterial(material){
+ const walls=selectedWallsForMaterial();
+ if(!walls.length)return false;
+ beginEdit();
+ for(const wall of walls){
+   wall.material=material;
+   delete wall.wallFinish;
+ }
+ finishEdit();
+ refreshArchitectProperties();
+ return true;
+}
+
 function selectArchitectLibraryItem(id,label,kind){
+ const wallMaterial=kind==='wallFinish'?id:kind==='mat'&&id==='checker'?'wallCeramic':null;
+ if(wallMaterial&&applySelectedWallMaterial(wallMaterial)){
+   document.getElementById('architectLibrarySelected').textContent=translateSiteText('Material aplicado às paredes selecionadas.');
+   return;
+ }
  architectCharacterTemplate=null;
  selectedMapObject=null;
  if(kind==='terrain'){
@@ -209,12 +234,14 @@ function syncArchitectColorUI(){
 function setWallThickness(n){
  if(!Number.isFinite(n))return;
  n=Math.max(8,Math.min(40,Math.round(n/2)*2));
- const item=selectedArchitectItem();
- beginEdit();if(item&&'x1' in item)item.width=n;else state.wallWidth=n;
+ const walls=selectedWallsForMaterial();
+ beginEdit();
+ if(walls.length)for(const wall of walls)wall.width=n;
+ else state.wallWidth=n;
  finishEdit();syncWallThicknessUI();
 }
 function syncWallThicknessUI(){
- const item=selectedArchitectItem();
+ const item=selectedWallsForMaterial()[0]||selectedArchitectItem();
  const value=item&&'x1' in item?(item.width||16):(state.wallWidth||16);
  const slider=document.getElementById('wallThickness'),label=document.getElementById('wallThicknessLabel');
  if(slider)slider.value=value;if(label)label.textContent=value;
@@ -224,7 +251,7 @@ function onArchitectSelectionChange(){refreshArchitectProperties();}
 const CONSTRUCTION_WALL_MATERIALS={wood:'wallWood',stone:'wallCastle',brick:'wallBrick',castle:'wallCastle',masonry:'wallMasonry',metal:'wallMetal',rust:'wallRust',sandstone:'wallSandstone'};
 function selectedConstructionKind(){
  const kind=selectedMapObject?.kind;
- if(kind==='walls')return 'wall';
+ if(kind==='walls'||selectedWallsForMaterial().length)return 'wall';
  if(kind==='stairs')return 'stairs';
  if(['doors','chests','windows'].includes(kind))return kind;
  if(state.tool==='curvedWall')return 'wall';
@@ -232,7 +259,7 @@ function selectedConstructionKind(){
  return null;
 }
 function refreshArchitectProperties(){
- const item=selectedArchitectItem(),kind=selectedConstructionKind();
+ const item=selectedArchitectItem()||selectedWallsForMaterial()[0],kind=selectedConstructionKind();
  const roofActive=state.tool==='roof'||Boolean(item&&isRoofMaterial(item.mat));
  const roofControls=document.getElementById('roofOptions');
  if(roofControls)roofControls.classList.toggle('hidden',!roofActive);
@@ -246,7 +273,7 @@ function refreshArchitectProperties(){
  const furniture=Boolean(item?.type)||item?.mat==='carpet'||(!item&&(['furniture','props'].includes(architectCategory)||(architectCategory==='furniture'&&state.material==='carpet')));
  const showColors=kind==='wall'?Boolean(state.wallCustomColor||item?.color):!kind&&furniture;
  document.getElementById('objectColorSettings')?.classList.toggle('hidden',!showColors);
- const tileSelected=(selectedMapObject?.kind==='areas'&&item?.mat==='checker')||(['terrain','architecture'].includes(architectCategory)&&state.material==='checker'&&!item);
+ const tileSelected=kind!=='wall'&&((selectedMapObject?.kind==='areas'&&item?.mat==='checker')||(['terrain','architecture'].includes(architectCategory)&&state.material==='checker'&&!item));
  document.getElementById('tileOptions')?.classList.toggle('hidden',!tileSelected);
  if(tileSelected)syncTileOptions();
  document.getElementById('constructionOptions')?.classList.toggle('hidden',!kind);
@@ -268,6 +295,7 @@ function refreshArchitectProperties(){
 }
 function changeConstructionMaterial(material){
  if(!CONSTRUCTION_WALL_MATERIALS[material])return;
+ if(applySelectedWallMaterial(CONSTRUCTION_WALL_MATERIALS[material]))return;
  const kind=selectedConstructionKind(),item=selectedArchitectItem();
  beginEdit();
  if(kind==='wall'){if(item)item.material=CONSTRUCTION_WALL_MATERIALS[material];else{state.wallVariant=CONSTRUCTION_WALL_MATERIALS[material];if(state.tool!=='curvedWall')selectTool(state.wallVariant==='caveRock'?'caveWall':'wall');}}
