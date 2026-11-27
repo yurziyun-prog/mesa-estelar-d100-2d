@@ -1,4 +1,13 @@
 const SITE_ZH = new Map(`
+Mercado online|网上超市
+créditos|游戏币
+Saldo|余额
+Buscar itens|搜索物品
+Nome ou categoria|名称或类别
+Comprar|购买
+Adicionado à mochila|已放入背包
+Compra não concluída|购买未完成
+Nenhum item encontrado.|没有找到物品。
 A definir|待设定
 Arcanismo|奥术知识
 Investigação|调查

@@ -135,13 +135,23 @@ function drawAvatarHead(g,a,form,cap,sex){
    avatarShape(g,a.skin,[[-9,-17],[-5,-21],[5,-21],[9,-17],[7,-10],[7,snout],[-7,snout],[-7,-10]]);
    g.fillStyle='rgba(24,30,32,.57)';
    g.fillRect(-5,snout-2,10,1);g.fillRect(-4,snout-6,1.5,1.5);g.fillRect(2.5,snout-6,1.5,1.5);
- }else if(form==='robot'||form==='insect'){
-   avatarShape(g,form==='robot'?'#8397a8':a.skin,[[-9,-20],[9,-20],[11,-13],[8,-5],[-8,-5],[-11,-13]]);
-   g.fillStyle='#263447';g.fillRect(-8,-16,16,5);
-   if(form==='insect'){
-     g.strokeStyle=a.skin;g.lineWidth=1.5;g.beginPath();
-     g.moveTo(-7,-19);g.lineTo(-11,-25);g.moveTo(7,-19);g.lineTo(11,-25);g.stroke();
+ }else if(form==='insect'){
+   for(const side of [-1,1]){
+     g.strokeStyle='#202935';g.lineWidth=2.6;g.beginPath();
+     g.moveTo(side*3,-20);g.quadraticCurveTo(side*7,-30,side*14,-28);g.stroke();
+     g.strokeStyle=a.skin;g.lineWidth=1.15;g.stroke();
    }
+   avatarShape(g,a.skin,[[-9,-17],[-5,-22],[5,-22],[9,-17],[7,-10],[3,-7],[-3,-7],[-7,-10]]);
+   for(const side of [-1,1]){
+     g.fillStyle='#121825';g.beginPath();g.ellipse(side*5.7,-16,3.65,4.35,side*.38,0,Math.PI*2);g.fill();
+     g.fillStyle=a.eyes;g.beginPath();g.ellipse(side*6.7,-17.5,1.5,2.1,side*.38,0,Math.PI*2);g.fill();
+     g.fillStyle='#ffffffa0';g.fillRect(side*6.7-.35,-18.4,.7,1.2);
+     avatarShape(g,a.skin,[[side*6,-12],[side*7,-8],[side*2,-4],[side*3,-9]]);
+   }
+   if(cap)avatarShape(g,'#67513e',[[-8,-20],[-4,-23],[5,-23],[9,-20]]);
+ }else if(form==='robot'){
+   avatarShape(g,'#8397a8',[[-9,-20],[9,-20],[11,-13],[8,-5],[-8,-5],[-11,-13]]);
+   g.fillStyle='#263447';g.fillRect(-8,-16,16,5);
  }else{
    if(form==='nymari'||form==='aeral'){
      avatarShape(g,a.skin,[[-8,-15],[-14,-20],[-10,-10],[-7,-9]]);
@@ -198,6 +208,44 @@ function drawAvatarHead(g,a,form,cap,sex){
  }
 }
 
+function drawInsectBody(g,a,ent,half,hips,cloth,stride){
+ const equipped=ent.equipment||{};
+ const limb=(points,width)=>{
+   g.lineCap='round';g.lineJoin='round';g.beginPath();g.moveTo(...points[0]);
+   for(const point of points.slice(1))g.lineTo(...point);
+   g.strokeStyle='#202935';g.lineWidth=width+1.8;g.stroke();
+   g.strokeStyle=a.skin;g.lineWidth=width;g.stroke();
+ };
+ // Abdômen em placas, visível atrás do tronco.
+ avatarShape(g,a.skin,[[2,2],[11,5],[17,13],[18,19],[13,19],[6,14],[1,7]]);
+ g.strokeStyle='#202935';g.lineWidth=.9;
+ for(const [x,y] of [[8,11],[11,14],[14,17]]){
+   g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x+3,y-1,x+4,y-3);g.stroke();
+ }
+ for(const side of [-1,1]){
+   const lift=side*stride;
+   limb([[side*hips*.44,7],[side*(hips*.65+1),13],[side*hips*.6,17+lift]],3.8);
+   if(equipped.feet)avatarShape(g,'#664937',[[side*(hips*.6-2),15+lift],[side*(hips*.6+2),15+lift],[side*(hips*.6+3),19+lift],[side*(hips*.6-1),19+lift]]);
+   else for(const toe of [-1,1])limb([[side*hips*.6,17+lift],[side*hips*.6+toe*2.8,19+lift]],1.3);
+   for(const [root,elbow,tip] of [[-6,-4,-9],[0,6,11]]){
+     const x=side*(half+4),y=tip+lift;
+     limb([[side*(half-2),root],[side*(half+3),elbow],[x,y]],3.5);
+     avatarShape(g,a.skin,[[side*(half+1),elbow-2],[side*(half+5),elbow-1],[x,y],[side*(half+2),elbow+2]]);
+     limb([[x,y],[x+side*2.5,y-1],[x+side*2,y-3]],1.2);
+     limb([[x,y],[x+side*2.5,y+1]],1.2);
+   }
+ }
+ avatarShape(g,cloth,[[-half+1,-7],[-5,-11],[5,-11],[half-1,-7],[hips-2,1],[hips-1,8],[0,12],[-hips+1,8],[-hips+2,1]]);
+ for(const [y,w] of [[-5,half-2],[-1,hips-1],[3,hips-2],[7,hips-2]]){
+   g.strokeStyle='#202935b0';g.lineWidth=1.05;g.beginPath();
+   g.moveTo(-w,y);g.quadraticCurveTo(0,y+4,w,y);g.stroke();
+ }
+ if(equipped.body)for(const side of [-1,1]){
+   avatarShape(g,cloth,[[side*5,-10],[side*(half+1),-10],[side*(half+2),-6],[side*6,-5]]);
+ }
+ if(equipped.waist){g.fillStyle='#ced5df';g.fillRect(-2,6,4,3);}
+}
+
 function drawCharacterAppearance(g,ent,stride=0){
  const a=characterAppearance(ent);
  const {form,sex,height,shoulders:half,hips,waist,arms}=characterAnatomy(ent,a);
@@ -206,6 +254,8 @@ function drawCharacterAppearance(g,ent,stride=0){
  const outfit=equipped.body?(characterItems[equipped.body]?.armor?'uniform':'travel'):professionOutfit(ent.role);
  g.save();
  g.translate(0,18*(1-height));g.scale(1,height);
+ if(form==='insect')drawInsectBody(g,a,ent,half,hips,cloth,stride);
+ else{
  if(form==='dragon'||form==='crocodile'||form==='reptilian'){
    g.strokeStyle='#23313a';g.lineWidth=6;g.lineCap='round';g.beginPath();
    g.moveTo(7,10);g.quadraticCurveTo(19,23,23,14);g.stroke();
@@ -260,10 +310,11 @@ function drawCharacterAppearance(g,ent,stride=0){
  g.strokeStyle='rgba(18,23,32,.60)';g.lineWidth=2.3;
  g.beginPath();g.moveTo(-hips+1,7);g.quadraticCurveTo(0,9,hips-1,7);g.stroke();
  g.fillStyle=equipped.waist?'#ced5df':'#bd9e6e';g.fillRect(-1.8,6.6,equipped.waist?5:3.6,3);
+ }
  const helmet=characterItems[equipped.head];
  const headAppearance=helmet?.armor&&a.helmet==='none'?{...a,helmet:'visor',helmetColor:helmet.color}:a;
  drawAvatarHead(g,headAppearance,form,equipped.head,sex);
- if(equipped.hand)drawCharacterHeldItem(g,equipped.hand,half+4,8+stride);
+ if(equipped.hand)drawCharacterHeldItem(g,equipped.hand,half+4,(form==='insect'?11:8)+stride);
  if(equipped.light){
    g.fillStyle=ent.lanternLit?'#ffdf9b':'#655846';g.fillRect(-half-10,8-stride,6,8);
  }
@@ -313,12 +364,6 @@ function drawCharacterPortrait(id,ent){
  drawCharacterAppearance(g,ent);g.restore();
 }
 
-function labeledChoice(name,value,label,checked=false){
- const row=document.createElement('label'),input=document.createElement('input'),text=document.createElement('span');
- input.type='checkbox';input.name=name;input.value=value;input.checked=checked;
- text.textContent=translateSiteText(label);row.append(input,text);return row;
-}
-
 function characterInputAppearance(form){
  const output={};
  for(const key of Object.keys(avatarDefaults))output[key]=form.elements[key].value;
@@ -350,9 +395,6 @@ function openCharacterEditor(ent=null){
  for(const [key,value] of Object.entries(data))form.elements[key].value=value;
  document.getElementById('characterEditorTitle').textContent=translateSiteText(ent?'Editar personagem':'Novo personagem');
  document.getElementById('characterTypeRow').hidden=Boolean(ent)||state.mode!=='gm';
- document.getElementById('characterKit').hidden=Boolean(ent);
- document.getElementById('characterKitOptions').replaceChildren(...Object.keys(legacyCharacterItems)
-   .filter(name=>name!=='Pistola').map(name=>labeledChoice('item',name,name)));
  const preview=()=>drawCharacterPortrait('characterEditorPortrait',{
    appearance:characterInputAppearance(form),species:form.elements.species.value,sex:form.elements.sex.value,role:form.elements.profession.value,equipment:ent?.equipment
  });
@@ -408,7 +450,7 @@ function saveCharacterEditor(event){
  const appearance=characterInputAppearance(form);
  beginEdit();
  const ent=old||instantiateTemplate({name,type:state.mode==='gm'&&data.get('type')==='npc'?'npc':'pc',
-   role:'',color:appearance.clothing,icon:'◆',hp:12,inventory:data.getAll('item')},...point);
+   role:'',color:appearance.clothing,icon:'◆',hp:12},...point);
  Object.assign(ent,{name,sex:String(data.get('sex')).trim(),species:String(data.get('species')).trim()||'Humano',
    role:String(data.get('profession')).trim(),appearance});
  normalizeD100Character(ent);
@@ -529,6 +571,8 @@ function inventoryIcon(name){
 
 let selectedInventoryItem=null;
 function renderCharacterEquipment(ent){
+ document.getElementById('characterMarketAccess').classList.toggle('hidden',ent.type!=='pc'||state.mode==='architect');
+ document.getElementById('characterCredits').textContent=creditLabel(ent.credits);
  drawCharacterPortrait('characterPortrait',ent);
  const slots=document.getElementById('equipmentSlots'),inventory=document.getElementById('inventoryList');
  const details=document.getElementById('inventoryDetails');
@@ -618,6 +662,75 @@ function renderCharacterEquipment(ent){
    picker.replaceChildren(...names.map(name=>new Option(characterItemName(name),name)));
    picker.dataset.language=siteLanguage;
  }
+}
+
+const marketItems=mesaItemCatalog.filter(item=>item.disponivelCampanha==='true'&&
+ item.preco&&Number.isFinite(Number(item.preco))&&Number(item.preco)>=0);
+let marketActor=null;
+function creditLabel(amount){
+ return Number(amount||0).toLocaleString(siteLanguage)+' '+translateSiteText('créditos');
+}
+function canShop(actor){
+ return actor?.type==='pc'&&getSelectedEntity()===actor&&
+   (state.mode==='gm'||(state.mode==='player'&&actor===activeActor()));
+}
+function openCharacterMarket(){
+ const actor=getSelectedEntity();
+ if(!canShop(actor))return;
+ marketActor=actor;
+ document.getElementById('marketSearch').value='';
+ document.getElementById('marketStatus').textContent='';
+ renderCharacterMarket();
+ document.getElementById('characterMarket').showModal();
+}
+function buyCharacterMarketItem(id){
+ const actor=marketActor,item=marketItems.find(entry=>entry.id===id);
+ if(!canShop(actor)||!item||actor.credits<Number(item.preco))return false;
+ beginEdit();
+ const previousBalance=actor.credits;
+ actor.credits-=Number(item.preco);
+ actor.inventory.push(item.nome);
+ if(!saveBank()){
+   actor.inventory.pop();
+   actor.credits=previousBalance;
+   finishEdit();
+   return false;
+ }
+ finishEdit();
+ updateUI();
+ return true;
+}
+function renderCharacterMarket(){
+ if(!canShop(marketActor))return;
+ const actor=marketActor;
+ const search=document.getElementById('marketSearch').value.trim().toLocaleLowerCase(siteLanguage);
+ document.getElementById('marketBalance').textContent=translateSiteText('Saldo')+' · '+creditLabel(actor.credits);
+ const root=document.getElementById('marketItems');
+ const matching=marketItems.filter(item=>
+   [item.nome,characterItemName(item.nome),item.categoria,translateSiteText(item.categoria)]
+     .some(value=>value.toLocaleLowerCase(siteLanguage).includes(search))
+ ).sort((a,b)=>characterItemName(a.nome).localeCompare(characterItemName(b.nome),siteLanguage));
+ root.replaceChildren(...matching.map(item=>{
+   const row=document.createElement('details');row.className='market-item';
+   const summary=document.createElement('summary'),name=characterItemName(item.nome);
+   summary.textContent=name+' · '+creditLabel(item.preco);
+   const description=document.createElement('p');
+   description.textContent=characterItemDetails(item.nome);
+   const buy=characterActionButton('Comprar',()=>{
+     const purchased=buyCharacterMarketItem(item.id);
+     document.getElementById('marketStatus').textContent=purchased?
+       translateSiteText('Adicionado à mochila')+' · '+name:translateSiteText('Compra não concluída');
+     if(purchased){
+       document.getElementById('marketBalance').textContent=translateSiteText('Saldo')+' · '+creditLabel(actor.credits);
+       for(const button of root.querySelectorAll('button[data-price]'))button.disabled=Number(button.dataset.price)>actor.credits;
+     }
+   });
+   buy.dataset.price=item.preco;
+   buy.disabled=Number(item.preco)>actor.credits;
+   row.append(summary,description,buy);
+   return row;
+ }));
+ if(!matching.length)root.textContent=translateSiteText('Nenhum item encontrado.');
 }
 
 const localRolls=[];

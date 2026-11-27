@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <title>Mesa RPG 2D — Arquiteto, Mestre & Jogador</title>
-  <link rel="stylesheet" href="css/style.css?v=mesa-inventory-grid" />
+  <link rel="stylesheet" href="css/style.css?v=insect-market" />
 </head>
 <body>
 
@@ -576,6 +576,10 @@
         <div id="equipmentSlots"></div>
       </div>
       <button class="btn" type="button" onclick="openCharacterEditor(getSelectedEntity())">Editar personagem</button>
+      <div id="characterMarketAccess" class="row">
+        <span id="characterCredits"></span>
+        <button type="button" class="btn" onclick="openCharacterMarket()">Mercado online</button>
+      </div>
       <div id="inventoryList" aria-label="Mochila"></div>
       <div id="inventoryDetails" aria-live="polite"></div>
       <div class="row"><select id="characterItemPicker" class="ctrl" aria-label="Item"></select>
@@ -586,7 +590,7 @@
   </aside>
 </div>
 
-<script src="js/d100.js?v=mesa-inventory-grid" defer></script>
+<script src="js/d100.js?v=insect-market" defer></script>
 <script src="js/state.js?v=night-details-catalog" defer></script>
 <script src="js/roof-system.js?v=night-details-catalog" defer></script>
 <script src="js/stair-system.js?v=water-surfaces-grass-stairs" defer></script>
@@ -600,7 +604,7 @@
 <script src="js/architect-selection.js?v=surface-stack" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=stair-tree-size-20261126" defer></script>
-<script src="js/i18n.js?v=mesa-inventory-grid" defer></script>
+<script src="js/i18n.js?v=insect-market" defer></script>
 <script src="js/cloud-bank.js?v=character-playtest" defer></script>
 <script src="js/terrain-tools.js?v=water-depth-swimming-light" defer></script>
 <script src="js/building.js?v=night-details-catalog" defer></script>
@@ -616,7 +620,7 @@
 <script src="js/material-damage.js?v=surface-stack" defer></script>
 <script src="js/character-catalog.js?v=career-attributes-skills" defer></script>
 <script src="js/item-catalog.js?v=mesa-inventory-grid" defer></script>
-<script src="js/character-system.js?v=mesa-inventory-grid" defer></script>
+<script src="js/character-system.js?v=insect-market" defer></script>
 <script src="js/main.js?v=character-save-foot-ring" defer></script>
 <dialog id="characterD100Sheet" class="lock-dialog">
  <form class="character-form" onsubmit="saveD100Sheet(event)">
@@ -633,6 +637,18 @@
    <button type="submit" class="btn btn-primary">Salvar ficha</button></div>
  </form>
 </dialog>
+<dialog id="characterMarket" class="lock-dialog">
+  <div class="row market-header">
+    <h3>Mercado online</h3>
+    <form method="dialog"><button class="btn">Fechar</button></form>
+  </div>
+  <p id="marketBalance"></p>
+  <label for="marketSearch">Buscar itens</label>
+  <input id="marketSearch" type="search" class="ctrl" placeholder="Nome ou categoria" oninput="renderCharacterMarket()">
+  <p id="marketStatus" role="status"></p>
+  <div id="marketItems"></div>
+</dialog>
+
 <dialog id="characterEditor" class="lock-dialog">
   <form class="character-form" onsubmit="saveCharacterEditor(event)">
     <h3 id="characterEditorTitle">Novo personagem</h3>
@@ -654,7 +670,6 @@
       <label><span>Roupa</span><input name="clothing" type="color" value="#688aab"></label>
     </div>
     <div class="character-preview-row appearance-preview-row"><canvas id="characterEditorPortrait" width="132" height="126" aria-label="Prévia do personagem"></canvas>
-      <fieldset id="characterKit"><legend>Itens iniciais</legend><div id="characterKitOptions"></div></fieldset>
     </div>
     <div id="characterEditorStatus" role="status" class="library-hint"></div>
     <div class="row"><button type="button" class="btn" onclick="document.getElementById('characterEditor').close()">Cancelar</button><button class="btn btn-primary" type="submit">Salvar personagem</button></div>

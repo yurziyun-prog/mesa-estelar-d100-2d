@@ -537,3 +537,13 @@ html .character-section-title, html[lang="zh-CN"] .character-section-title {
 }
 #inventoryDetails:not(:empty) { margin-top:8px;display:grid;gap:5px;justify-items:start; }
 #inventoryDetails small { white-space:pre-line;overflow-wrap:anywhere;color:var(--text-muted); }
+
+#characterMarketAccess { justify-content:space-between;align-items:center;margin-top:7px; }
+#characterCredits,#marketBalance { color:var(--gold);font-weight:600; }
+#characterMarket { max-width:min(560px,92vw);max-height:86vh; }
+.market-header { justify-content:space-between;align-items:center; }
+#marketSearch { width:100%;margin:5px 0; }
+.market-item { border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:5px;background:#111827; }
+.market-item summary { cursor:pointer; }
+.market-item p { white-space:pre-line;margin:8px 0; }
+.market-item button:disabled { opacity:.5;cursor:default; }

@@ -2,6 +2,7 @@
 // Fórmulas-base e combate são controlados pelo sistema principal e não foram duplicados aqui.
 const D100_ATTRIBUTES=['FOR','CON','TAM','DES','INT','POD','CAR'];
 const D100_MIGRATION_VERSION=1;
+const STARTING_CREDITS=1000;
 function normalizeD100Character(ent){
  if(!ent)return ent;
  const old=ent.attrs||{};
@@ -21,6 +22,7 @@ function normalizeD100Character(ent){
  }
  ent.powers=Array.isArray(ent.powers)?ent.powers:[];
  ent.inventory=Array.isArray(ent.inventory)?ent.inventory:[];
+ if(!Number.isFinite(ent.credits)||ent.credits<0)ent.credits=ent.type==='pc'?STARTING_CREDITS:0;
  ent.hp=Number.isFinite(Number(ent.hp))?Number(ent.hp):12;
  ent.maxHp=Number.isFinite(Number(ent.maxHp))&&Number(ent.maxHp)>0?Number(ent.maxHp):ent.hp;
  ent.hunger=Number.isFinite(Number(ent.hunger))?Number(ent.hunger):100;
