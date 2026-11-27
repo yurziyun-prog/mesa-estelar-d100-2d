@@ -907,7 +907,7 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
     ctx.save();
     ctx.beginPath();ctx.rect(-40,-45,80,swimming?44:52);ctx.clip();
   }
-  if(isMonster){
+  if(isMonster&&!ent.creature){
     const beast=ent.icon==='🐉'||ent.icon==='🐺';
     ctx.fillStyle=body;ctx.strokeStyle='#233029';ctx.lineWidth=2;
     ctx.beginPath();ctx.ellipse(0,3,beast?16:12,beast?11:13,0,0,7);ctx.fill();ctx.stroke();

@@ -395,7 +395,7 @@ function importJSON(e) {
   reader.onload = ev => {
     try {
       const data = JSON.parse(ev.target.result);
-      if(data?.formato==='mesa-estelar-fichas'){importMesaPlayerSheets(data);return;}
+      if(data?.formato==='mesa-estelar-fichas'){importMesaSheets(data);return;}
       if(!data?.scenes||!Array.isArray(data.entities))throw new Error('Banco inválido.');
       beginEdit();
       state = data;

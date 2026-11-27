@@ -1,7 +1,11 @@
 const SITE_ZH = new Map(`
-Nenhuma ficha de jogador nova para importar.|没有新的玩家角色卡可导入。
+Nenhuma ficha nova para importar.|没有新的角色卡可导入。
+Personagens jogadores|玩家角色
+NPCs com ficha avançada|有完整角色卡的 NPC
+NPCs do banco|资料库 NPC
+Monstros|怪物
 Importar para a reserva do Mestre?|导入到主持人的候补名单？
-Fichas importadas para a reserva do Mestre.|玩家角色卡已导入主持人的候补名单。
+Fichas importadas para a reserva do Mestre.|角色卡已导入主持人的候补名单。
 Mercado online|网上超市
 créditos|游戏币
 Saldo|余额

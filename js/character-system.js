@@ -247,6 +247,7 @@ function drawInsectBody(g,a,ent,half,hips,cloth,stride){
 }
 
 function drawCharacterAppearance(g,ent,stride=0){
+ if(ent.creature){drawMesaCreature(g,ent.creature,stride);return;}
  const a=characterAppearance(ent);
  const {form,sex,height,shoulders:half,hips,waist,arms}=characterAnatomy(ent,a);
  const equipped=ent.equipment||{};
