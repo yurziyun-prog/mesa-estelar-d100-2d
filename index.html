@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <title>Mesa RPG 2D — Arquiteto, Mestre & Jogador</title>
-  <link rel="stylesheet" href="css/style.css?v=character-species" />
+  <link rel="stylesheet" href="css/style.css?v=species-anatomy" />
 </head>
 <body>
 
@@ -595,11 +595,11 @@
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/textures.js?v=character-species" defer></script>
+<script src="js/textures.js?v=species-anatomy" defer></script>
 <script src="js/architect-selection.js?v=surface-stack" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=stair-tree-size-20261126" defer></script>
-<script src="js/i18n.js?v=character-species" defer></script>
+<script src="js/i18n.js?v=species-anatomy" defer></script>
 <script src="js/cloud-bank.js?v=character-playtest" defer></script>
 <script src="js/terrain-tools.js?v=water-depth-swimming-light" defer></script>
 <script src="js/building.js?v=night-details-catalog" defer></script>
@@ -613,8 +613,8 @@
 <script src="js/scenery.js?v=character-playtest" defer></script>
 <script src="js/vertical-world.js?v=cave-joins-20261126" defer></script>
 <script src="js/material-damage.js?v=surface-stack" defer></script>
-<script src="js/character-catalog.js?v=character-species" defer></script>
-<script src="js/character-system.js?v=character-species" defer></script>
+<script src="js/character-catalog.js?v=species-anatomy" defer></script>
+<script src="js/character-system.js?v=species-anatomy" defer></script>
 <script src="js/main.js?v=character-playtest" defer></script>
 <dialog id="characterEditor" class="lock-dialog">
   <form class="character-form" onsubmit="saveCharacterEditor(event)">
@@ -626,10 +626,6 @@
       <label><span>Profissão</span><select name="profession" class="ctrl"></select></label>
       <label id="characterTypeRow"><span>Tipo</span><select name="type" class="ctrl"><option value="pc">Personagem jogador</option><option value="npc">NPC</option></select></label>
       <label><span>Corpo</span><select name="body" class="ctrl"><option value="balanced">Médio</option><option value="slim">Esguio</option><option value="broad">Robusto</option></select></label>
-      <label><span>Forma visual</span><select name="form" class="ctrl">
-        <option value="species">Da espécie</option><option value="human">Humana</option>
-        <option value="dragon">Dracônica</option><option value="crocodile">Crocodiliana</option>
-      </select></label>
       <label><span>Capacete visual permanente</span><select name="helmet" class="ctrl">
         <option value="none">Sem capacete</option><option value="closed">Capacete fechado</option><option value="visor">Capacete com visor</option>
       </select></label>

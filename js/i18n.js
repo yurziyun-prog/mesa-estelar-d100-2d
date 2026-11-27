@@ -50,11 +50,8 @@ Masculino|男
 Outro|其他
 Selecione|请选择
 Sem profissão|未选职业
-Forma visual|角色外形
-Da espécie|按种族
-Humana|人形
-Dracônica|龙形
-Crocodiliana|鳄鱼形
+Dracônico|龙形族
+Crocodiliano|鳄鱼族
 Capacete visual permanente|常戴头盔
 Sem capacete|无头盔
 Capacete fechado|全封闭头盔
@@ -66,6 +63,7 @@ Personagem jogador|玩家角色
 Corpo|体型
 Esguio|瘦长
 Robusto|健壮
+Médio|中等
 Cabelo|发型
 Curto|短发
 Comprido|长发

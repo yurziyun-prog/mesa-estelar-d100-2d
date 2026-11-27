@@ -11,20 +11,39 @@ const characterItems={
  'Ração':{use:'food'},'Poção':{use:'heal'}
 };
 const characterSlots={head:'Cabeça',body:'Tronco',feet:'Pés',hand:'Mão',light:'Luz'};
-const avatarDefaults={body:'balanced',form:'species',helmet:'none',helmetColor:'#4f6075',hairStyle:'short',hair:'#62442a',eyes:'#292229',skin:'#e6b48d',clothing:'#688aab'};
+const avatarDefaults={body:'balanced',helmet:'none',helmetColor:'#4f6075',hairStyle:'short',hair:'#62442a',eyes:'#292229',skin:'#e6b48d',clothing:'#688aab'};
 let editedCharacterId=null;
 let characterEditorMap=null;
 
-function characterAppearance(ent){
- return {...avatarDefaults,clothing:ent.color||avatarDefaults.clothing,...ent.appearance};
+function characterIdentity(ent){
+ const saved=ent.species||'Humano';
+ const key=saved.trim().toLowerCase();
+ const legacyForm=ent.appearance?.form;
+ const species=legacyForm==='dragon'?'Dracônico':legacyForm==='crocodile'?'Crocodiliano':
+   key==='humana'?'Humano':key==='grey'?'Grey Alto':saved;
+ const sex=ent.sex||(key==='humana'?'Feminino':'');
+ return {species,sex};
 }
 
-function characterVisualForm(ent,a){
- if(a.form!=='species')return a.form;
- const species=String(ent.species||'Humano').toLowerCase();
- if(/drac|drag/.test(species))return 'dragon';
- if(/croc|jacar/.test(species))return 'crocodile';
- return characterSpecies.find(([name])=>name.toLowerCase()===species)?.[2]||'human';
+function characterAppearance(ent){
+ const {form:legacyForm,...appearance}=ent.appearance||{};
+ return {...avatarDefaults,clothing:ent.color||avatarDefaults.clothing,...appearance};
+}
+
+function characterVisualForm(species){
+ return characterSpecies.find(([name])=>name===species)?.[2]||'human';
+}
+
+function characterAnatomy(ent,a){
+ const {species,sex}=characterIdentity(ent);
+ const form=characterVisualForm(species);
+ const height=species==='Grey Alto'?1.23:species==='Grey Pequeno'?.78:
+   form==='zutariano'?.86:form==='dragon'?1.13:1;
+ const build=a.body==='slim'?-2:a.body==='broad'?2.5:0;
+ const shoulders=11+build+(sex==='Feminino'?-1:sex==='Masculino'?1:0);
+ const hips=8.6+build+(sex==='Feminino'?1.8:sex==='Masculino'?-0.5:0);
+ const waist=7.7+build+(sex==='Feminino'?-.55:0);
+ return {form,sex,height,shoulders,hips,waist,arms:form==='insect'?4:2};
 }
 
 function avatarShape(g,color,points){
@@ -34,7 +53,7 @@ function avatarShape(g,color,points){
  g.closePath();g.fill();g.stroke();
 }
 
-function drawAvatarHead(g,a,form,cap){
+function drawAvatarHead(g,a,form,cap,sex){
  if(a.helmet!=='none'){
    avatarShape(g,a.helmetColor,[[-10,-19],[-5,-24],[5,-24],[10,-19],[11,-9],[7,-3],[-7,-3],[-11,-9]]);
    g.fillStyle='#121b27';g.fillRect(-8,-16,16,5);
@@ -43,8 +62,8 @@ function drawAvatarHead(g,a,form,cap){
    if(a.helmet==='closed')g.fillRect(-1,-10,2,5);
    return;
  }
- if(['dragon','crocodile','thalassian'].includes(form)){
-   const snout=form==='crocodile'?1:-4;
+ if(['dragon','crocodile','reptilian','thalassian'].includes(form)){
+   const snout=form==='crocodile'?1:form==='reptilian'?-2:-4;
    if(form==='dragon'){
      avatarShape(g,'#dac3a1',[[-8,-17],[-13,-28],[-4,-23],[-3,-17]]);
      avatarShape(g,'#dac3a1',[[8,-17],[13,-28],[4,-23],[3,-17]]);
@@ -70,7 +89,7 @@ function drawAvatarHead(g,a,form,cap){
    }
    const large=form==='grey'||form==='arisian';
    g.fillStyle=a.skin;g.strokeStyle='#28323b';g.lineWidth=1;
-   g.beginPath();g.ellipse(0,-13,large?11:9,large?11:9,0,0,Math.PI*2);g.fill();g.stroke();
+   g.beginPath();g.ellipse(0,-13,large?11:sex==='Feminino'?8.2:9.1,large?11:sex==='Feminino'?9.3:9,0,0,Math.PI*2);g.fill();g.stroke();
    if(!large&&(a.hairStyle!=='shaved'||cap)){
      g.fillStyle=cap?'#ad9261':a.hair;g.beginPath();g.arc(0,-16,9,Math.PI,Math.PI*2);g.fill();
    }
@@ -85,12 +104,13 @@ function drawAvatarHead(g,a,form,cap){
 }
 
 function drawCharacterAppearance(g,ent,stride=0){
- const a=characterAppearance(ent),form=characterVisualForm(ent,a);
- const half=(a.body==='slim'?9:a.body==='broad'?14:11)+(form==='zutariano'?2:0);
+ const a=characterAppearance(ent);
+ const {form,sex,height,shoulders:half,hips,waist,arms}=characterAnatomy(ent,a);
  const equipped=ent.equipment||{};
  const cloth=characterItems[equipped.body]?.color||a.clothing;
  g.save();
- if(form==='dragon'||form==='crocodile'){
+ g.translate(0,18*(1-height));g.scale(1,height);
+ if(form==='dragon'||form==='crocodile'||form==='reptilian'){
    g.strokeStyle='#23313a';g.lineWidth=6;g.lineCap='round';g.beginPath();
    g.moveTo(7,10);g.quadraticCurveTo(19,23,23,14);g.stroke();
    g.strokeStyle=a.skin;g.lineWidth=3.6;g.stroke();
@@ -98,25 +118,43 @@ function drawCharacterAppearance(g,ent,stride=0){
      avatarShape(g,cloth,[[side*4,-4],[side*19,-12],[side*22,0],[side*13,-3],[side*10,8]]);
    }
  }
- g.fillStyle=equipped.feet?'#533c2b':'#2b2c38';
- g.fillRect(-10,6+stride,7,12);g.fillRect(3,6-stride,7,12);
- g.fillStyle=characterItems[equipped.body]?.color||a.clothing;
- g.strokeStyle='#263044';g.lineWidth=2;
- g.beginPath();g.roundRect(-half,-8,half*2,21,5);g.fill();g.stroke();
- g.fillStyle='rgba(239,224,213,.23)';g.fillRect(-half+2,-5,half*2-4,2);
- g.fillStyle='rgba(18,22,29,.58)';g.fillRect(-half+1,7,half*2-2,3);
- g.fillStyle='#c6aa79';g.fillRect(-2,6.7,4,3.6);
+ const leg='#353e4e',boots=equipped.feet?'#664937':'#242a36';
+ g.lineCap='round';
+ for(const side of [-1,1]){
+   const lift=side*stride;
+   g.strokeStyle=leg;g.lineWidth=5.7;g.beginPath();
+   g.moveTo(side*hips*.48,8);g.quadraticCurveTo(side*hips*.53,12,side*hips*.60,16+lift);g.stroke();
+   g.strokeStyle=boots;g.lineWidth=5.1;g.beginPath();
+   g.moveTo(side*hips*.60,15+lift);g.lineTo(side*hips*.65,18+lift);g.stroke();
+ }
  if(a.hairStyle==='long'&&a.helmet==='none'&&['human','nymari','aeral','zutariano'].includes(form)){
-   g.fillStyle=a.hair;g.beginPath();g.roundRect(-10,-21,20,23,6);g.fill();
+   g.fillStyle=a.hair;g.beginPath();g.ellipse(0,-12,10,13,0,0,Math.PI*2);g.fill();
  }
- g.strokeStyle=cloth;g.lineWidth=6;g.lineCap='round';
- g.beginPath();g.moveTo(-half+1,-3);g.lineTo(-half-4,5-stride);
- g.moveTo(half-1,-3);g.lineTo(half+4,5+stride);g.stroke();
- g.fillStyle=a.skin;
- for(const [x,y] of [[-half-4,8-stride],[half+4,8+stride]]){
-   g.beginPath();g.arc(x,y,2.8,0,Math.PI*2);g.fill();
+ for(let pair=0;pair<arms/2;pair++){
+   for(const side of [-1,1]){
+     const bend=pair?7:4,root=pair?0:-6;
+     const handX=side*(half+bend),handY=(pair?13:7)+side*stride;
+     g.strokeStyle=pair?a.skin:cloth;g.lineWidth=pair?3.8:5.1;
+     g.beginPath();g.moveTo(side*(half-1),root);
+     g.quadraticCurveTo(side*(half+bend+1),root+5,handX,handY);g.stroke();
+     g.fillStyle=a.skin;g.beginPath();g.ellipse(handX,handY,2.5,3,0,0,Math.PI*2);g.fill();
+   }
  }
- drawAvatarHead(g,a,form,equipped.head);
+ g.fillStyle=cloth;g.strokeStyle='#202935';g.lineWidth=1.3;
+ g.beginPath();g.moveTo(-half,-6);
+ g.quadraticCurveTo(-half,-11,-4,-10);
+ g.quadraticCurveTo(0,-7,4,-10);
+ g.quadraticCurveTo(half,-11,half,-6);
+ g.bezierCurveTo(half,-2,waist,1,hips,8);
+ g.quadraticCurveTo(hips*.7,13,0,12);
+ g.quadraticCurveTo(-hips*.7,13,-hips,8);
+ g.bezierCurveTo(-waist,1,-half,-2,-half,-6);g.closePath();g.fill();g.stroke();
+ g.strokeStyle='rgba(232,217,204,.35)';g.lineWidth=1;
+ g.beginPath();g.moveTo(-4,-7);g.quadraticCurveTo(0,-3,4,-7);g.stroke();
+ g.strokeStyle='rgba(18,23,32,.60)';g.lineWidth=2.3;
+ g.beginPath();g.moveTo(-hips+1,7);g.quadraticCurveTo(0,9,hips-1,7);g.stroke();
+ g.fillStyle='#bd9e6e';g.fillRect(-1.8,6.6,3.6,3);
+ drawAvatarHead(g,a,form,equipped.head,sex);
  if(equipped.hand||(!ent.equipment&&ent.inventory?.some(item=>/Espada|Lança|Cajado|Arco/i.test(item)))){
    g.strokeStyle='#bfcbd5';g.lineWidth=2.5;
    g.beginPath();g.moveTo(half+4,8+stride);g.lineTo(half+7,-14);g.stroke();
@@ -166,8 +204,9 @@ function openCharacterEditor(ent=null){
  editedCharacterId=ent?.id||null;
  characterEditorMap={scene:state.activeSceneId,floor:state.currentFloor,mode:state.mode};
  form.reset();
- setCharacterChoices(form.elements.sex,[['Feminino'],['Masculino'],['Outro']],ent?.sex||'','Selecione');
- setCharacterChoices(form.elements.species,characterSpecies,ent?.species||'Humano');
+ const identity=characterIdentity(ent||{});
+ setCharacterChoices(form.elements.sex,[['Feminino'],['Masculino'],['Outro']],identity.sex,'Selecione');
+ setCharacterChoices(form.elements.species,characterSpecies,identity.species);
  setCharacterChoices(form.elements.profession,characterProfessions,ent?.role||'','Sem profissão');
  const data={name:ent?.name||'',
    type:ent?.type||'pc',...characterAppearance(ent||{})};
@@ -182,14 +221,14 @@ function openCharacterEditor(ent=null){
  document.getElementById('characterKitOptions').replaceChildren(...Object.keys(characterItems)
    .filter(name=>name!=='Pistola').map(name=>labeledChoice('item',name,name)));
  const preview=()=>drawCharacterPortrait('characterEditorPortrait',{
-   appearance:characterInputAppearance(form),species:form.elements.species.value,equipment:ent?.equipment
+   appearance:characterInputAppearance(form),species:form.elements.species.value,sex:form.elements.sex.value,equipment:ent?.equipment
  });
  const palette={dragon:'#9c604b',crocodile:'#6c8b57',robot:'#8593a6',grey:'#929ba3',
    thalassian:'#5b8b94',insect:'#937754',arisian:'#ae8293'};
- let previousForm=characterVisualForm({species:form.elements.species.value},characterInputAppearance(form));
+ let previousForm=characterVisualForm(form.elements.species.value);
  form.oninput=event=>{
-   if(['species','form'].includes(event.target.name)){
-     const next=characterVisualForm({species:form.elements.species.value},characterInputAppearance(form));
+   if(event.target.name==='species'){
+     const next=characterVisualForm(form.elements.species.value);
      if(form.elements.skin.value===(palette[previousForm]||avatarDefaults.skin)){
        form.elements.skin.value=palette[next]||avatarDefaults.skin;
      }

@@ -1,9 +1,10 @@
 // Espécies dos catálogos de NPCs e comerciantes e nomes do banco de carreiras do Mesa Estelar.
 const characterSpecies=[
- ['Humano','人类','human'],['Humana','人类（女性）','human'],['Humanoide','类人种','human'],
- ['Reptiliano','爬行族','crocodile'],['Insetoide','昆虫族','insect'],['Nymari','尼玛里族','nymari'],
+ ['Humano','人类','human'],['Humanoide','类人种','human'],
+ ['Dracônico','龙形族','dragon'],['Crocodiliano','鳄鱼族','crocodile'],
+ ['Reptiliano','爬行族','reptilian'],['Insetoide','昆虫族','insect'],['Nymari','尼玛里族','nymari'],
  ['Zutariano','祖塔尔族','zutariano'],['Arisian','阿里西安族','arisian'],
- ['Grey Alto','高个灰人','grey'],['Grey Pequeno','矮个灰人','grey'],['Grey','灰人','grey'],
+ ['Grey Alto','高个灰人','grey'],['Grey Pequeno','矮个灰人','grey'],
  ['Talássio','塔拉西奥族','thalassian'],['Aeral','艾拉尔族','aeral'],['Blyntzyn','布林岑族','insect'],
  ['Humanoide parasitado','寄生类人种','insect'],['Robô','机器人','robot'],
  ['Robô pilotado','驾驶型机器人','robot'],['Robô imperial','帝国机器人','robot']
