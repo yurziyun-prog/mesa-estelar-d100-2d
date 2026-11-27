@@ -151,13 +151,13 @@ function displayD100Skills(ent){
   root.append(line);
  }
  for(const power of ent.powers||[]){
-  const row=document.createElement('div');row.className='list-item';row.textContent='✨ '+power;root.append(row);
+  const row=document.createElement('div');row.className='list-item';row.textContent='✨ '+translateSiteText(power);root.append(row);
  }
  const note=document.createElement('div');note.className='d100-note';
  note.textContent=translateSiteText('A ficha d100 calcula a base pelas fórmulas do Mesa Estelar.');
  root.append(note);
  if(state.mode==='gm'){
-  const add=document.createElement('button');add.type='button';add.className='btn';add.textContent='+ Perícia';add.onclick=addD100Skill;root.append(add);
+  const add=document.createElement('button');add.type='button';add.className='btn';add.textContent=translateSiteText('+ Perícia');add.onclick=addD100Skill;root.append(add);
  }
 }
 // Esqueleto autônomo de demonstração: perceber, aproximar-se e parar. Não causa dano.

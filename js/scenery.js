@@ -414,7 +414,7 @@ function drawNightLighting(floor,interior,darkness){
 function renderSceneryLights(floor,interior){
  if(!floor)return;
  const actorLights=state.entities.filter(ent=>ent.sceneId===state.activeSceneId&&ent.floor===state.currentFloor&&
-   ent.lanternLit&&ent.equipment?.light==='Lanterna de Óleo')
+   ent.lanternLit&&characterItems[ent.equipment?.light]?.use==='light')
    .map(prop=>({prop,radius:108,strength:.8}));
  const emitters=[...floor.props.map(sceneryEmitter).filter(Boolean),...lightFromLowerStairs(floor),...actorLights];
  if(!emitters.length)return;

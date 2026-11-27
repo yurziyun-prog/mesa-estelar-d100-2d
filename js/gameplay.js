@@ -364,7 +364,7 @@ function updateUI() {
   if (!ent) return;
   document.getElementById('skillMapStatus').textContent='';
 
-  document.getElementById('charHeader').textContent = [ent.name,ent.species,ent.sex,ent.role].filter(Boolean).join(' · ');
+  document.getElementById('charHeader').textContent = [ent.name,...[ent.species,ent.sex,ent.role].filter(Boolean).map(translateSiteText)].filter(Boolean).join(' · ');
   document.getElementById('entityTypeBadge').textContent = ent.type === 'pc' ? 'PJ' : `NPC (${ent.attitude})`;
   document.getElementById('hpText').textContent = `${ent.hp} / ${ent.maxHp}`;
   document.getElementById('hpBar').style.width = `${Math.max(0, (ent.hp / ent.maxHp) * 100)}%`;

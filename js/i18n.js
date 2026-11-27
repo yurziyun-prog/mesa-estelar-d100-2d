@@ -1,4 +1,49 @@
 const SITE_ZH = new Map(`
+A definir|待设定
+Arcanismo|奥术知识
+Investigação|调查
+Raio Arcano|奥术射线
+Detectar Magia|侦测魔法
+Passo Sombrio|暗影步
+Olhar Aguçado|敏锐目光
+Cajado Arcano|奥术法杖
+Grimório|魔法书
+Poção|药剂
+Ração|口粮
+Rações|口粮
+Lanterna de Óleo|油灯
+Espada Curta|短剑
+Gorro de viagem|旅行帽
+Casaco de viagem|旅行外套
+Colete de couro|皮革背心
+Botas|靴子
+Cajado|法杖
+Escudo|盾牌
+Mochila|背包
+Espaço vazio|空格
+Cintura|腰部
+Categoria|类别
+Peso|重量
+Preço|价格
+PA|护甲值
+PV|耐久值
+Penetração|穿透
+Usos|使用次数
+Acesso|获取权限
+Munição compatível|兼容弹药
+Armaduras|护甲
+Alimentos e Bebidas|食品和饮料
+Itens Médicos|医疗用品
+Científico|科研用品
+Ferramentas|工具
+Mineração|采矿用品
+Comunicações|通信设备
+Comunicação|通信设备
+Exploração|探索用品
+Energia|能源
+Militar|军用
+Restrito|受限
+Comum|常见
 Mesa RPG 2D — Arquiteto, Mestre & Jogador|2D 跑团桌 · 建筑师、主持人和玩家
 MESA RPG 2D|2D 跑团桌
 Arquiteto|建筑师
@@ -677,16 +722,17 @@ function translateSiteNode(node) {
   node.childNodes.forEach(translateSiteNode);
 }
 
-function setSiteLanguage(language) {
+function setSiteLanguage(language,refresh=true) {
   siteLanguage=language==='zh-CN'?'zh-CN':'pt-BR';
   localStorage.setItem('mesa-site-language',siteLanguage);
   document.documentElement.lang=siteLanguage;
   document.getElementById('siteLanguage').value=siteLanguage;
   translateSiteNode(document.head);
   translateSiteNode(document.body);
+  if(refresh&&typeof updateUI==='function')updateUI();
 }
 
-setSiteLanguage(siteLanguage);
+setSiteLanguage(siteLanguage,false);
 new MutationObserver(records=>{
   for(const record of records){
     if(record.type==='characterData')translateSiteNode(record.target);

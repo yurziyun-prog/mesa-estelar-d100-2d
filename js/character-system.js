@@ -1,4 +1,4 @@
-const characterItems={
+const legacyCharacterItems={
  'Espada Curta':{slot:'hand'},'Lança':{slot:'hand'},'Cajado Arcano':{slot:'hand'},'Pistola':{slot:'hand'},
  'Espada':{slot:'hand'},'Cajado':{slot:'hand'},'Arco':{slot:'hand'},'Escudo':{slot:'hand'},
  'Gorro de viagem':{slot:'head'},'Casaco de viagem':{slot:'body',color:'#577282'},
@@ -6,7 +6,23 @@ const characterItems={
  'Lanterna de Óleo':{slot:'light',use:'light'},
  'Ração':{use:'food'},'Poção':{use:'heal'}
 };
-const characterSlots={head:'Cabeça',body:'Tronco',feet:'Pés',hand:'Mão',light:'Luz'};
+const characterSlots={head:'Cabeça',body:'Tronco',feet:'Pés',hand:'Mão',light:'Luz',waist:'Cintura'};
+const characterItems=Object.assign(Object.create(null),legacyCharacterItems);
+for(const data of mesaItemCatalog){
+ const {id,categoria}=data;
+ const slot=categoria==='Armas'?'hand':id==='lanterna'?'light':
+   /capacete|chapeu/.test(id)?'head':id==='botas_couro'?'feet':id==='cinto_utilitario'?'waist':
+   ['Armaduras','Roupas'].includes(categoria)?'body':null;
+ const color={armadura_leve:'#70849a',armadura_militar:'#54664d',biomesh:'#496a70',
+   biomesh_leve:'#626d8a',capa_viajante:'#465e45',roupa_viajante:'#936c49',coleto_balistico:'#454b52'}[id]
+   ||(categoria==='Armaduras'?'#70849a':'#8b6853');
+ characterItems[data.nome]={data,slot,color,armor:categoria==='Armaduras',
+   use:id==='lanterna'?'light':/^racao/.test(id)?'food':null};
+}
+function characterItemName(name){
+ return siteLanguage==='zh-CN'&&characterItems[name]?.data?.nome_zh||translateSiteText(name);
+}
+
 const avatarDefaults={body:'balanced',helmet:'none',helmetColor:'#4f6075',hairStyle:'short',hair:'#62442a',eyes:'#292229',skin:'#e6b48d',clothing:'#688aab'};
 let editedCharacterId=null;
 let characterEditorMap=null;
@@ -187,7 +203,7 @@ function drawCharacterAppearance(g,ent,stride=0){
  const {form,sex,height,shoulders:half,hips,waist,arms}=characterAnatomy(ent,a);
  const equipped=ent.equipment||{};
  const cloth=characterItems[equipped.body]?.color||a.clothing;
- const outfit=professionOutfit(ent.role);
+ const outfit=equipped.body?(characterItems[equipped.body]?.armor?'uniform':'travel'):professionOutfit(ent.role);
  g.save();
  g.translate(0,18*(1-height));g.scale(1,height);
  if(form==='dragon'||form==='crocodile'||form==='reptilian'){
@@ -243,14 +259,45 @@ function drawCharacterAppearance(g,ent,stride=0){
  g.beginPath();g.moveTo(-4,-7);g.quadraticCurveTo(0,-3,4,-7);g.stroke();
  g.strokeStyle='rgba(18,23,32,.60)';g.lineWidth=2.3;
  g.beginPath();g.moveTo(-hips+1,7);g.quadraticCurveTo(0,9,hips-1,7);g.stroke();
- g.fillStyle='#bd9e6e';g.fillRect(-1.8,6.6,3.6,3);
- drawAvatarHead(g,a,form,equipped.head,sex);
- if(equipped.hand||(!ent.equipment&&ent.inventory?.some(item=>/Espada|Lança|Cajado|Arco/i.test(item)))){
-   g.strokeStyle='#bfcbd5';g.lineWidth=2.5;
-   g.beginPath();g.moveTo(half+4,8+stride);g.lineTo(half+7,-14);g.stroke();
- }
+ g.fillStyle=equipped.waist?'#ced5df':'#bd9e6e';g.fillRect(-1.8,6.6,equipped.waist?5:3.6,3);
+ const helmet=characterItems[equipped.head];
+ const headAppearance=helmet?.armor&&a.helmet==='none'?{...a,helmet:'visor',helmetColor:helmet.color}:a;
+ drawAvatarHead(g,headAppearance,form,equipped.head,sex);
+ if(equipped.hand)drawCharacterHeldItem(g,equipped.hand,half+4,8+stride);
  if(equipped.light){
    g.fillStyle=ent.lanternLit?'#ffdf9b':'#655846';g.fillRect(-half-10,8-stride,6,8);
+ }
+ g.restore();
+}
+
+function characterHandStyle(name){
+ const data=characterItems[name]?.data;
+ const key=(data?.id||name).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ if(/escudo/.test(key))return 'shield';
+ if(/arco/.test(key))return 'bow';
+ if(/lanca|cajado/.test(key)&&data?.plataforma!=='distancia')return 'staff';
+ if(/pistola|rifle|carabina|revolver|blaster|escopeta|fuzil|gauss|canhao/.test(key)||data?.municoesCompativeis)return 'gun';
+ return 'blade';
+}
+function drawCharacterHeldItem(g,name,x,y){
+ g.save();
+ g.translate(x,y);
+ g.rotate(.13);
+ const style=characterHandStyle(name);
+ if(style==='shield'){
+   avatarShape(g,'#748b9c',[[-7,-8],[7,-8],[6,1],[0,7],[-6,1]]);
+ }else if(style==='gun'){
+   avatarShape(g,'#435366',[[-3,3],[-3,-5],[-1,-5],[-1,-15],[3,-15],[3,0],[1,0],[1,3]]);
+ }else if(style==='bow'){
+   g.strokeStyle='#bfa278';g.lineWidth=2;
+   g.beginPath();g.moveTo(-2,-15);g.quadraticCurveTo(12,-3,-2,9);g.closePath();g.stroke();
+ }else if(style==='staff'){
+   g.strokeStyle='#aa784f';g.lineWidth=2.5;
+   g.beginPath();g.moveTo(0,10);g.lineTo(0,-20);g.stroke();
+   g.fillStyle='#b6d6bc';g.fillRect(-2,-21,4,4);
+ }else{
+   avatarShape(g,'#c3d2dc',[[-2,-4],[-2,-15],[0,-19],[2,-15],[2,-4]]);
+   g.fillStyle='#b29456';g.fillRect(-4,-4,8,2);
  }
  g.restore();
 }
@@ -304,7 +351,7 @@ function openCharacterEditor(ent=null){
  document.getElementById('characterEditorTitle').textContent=translateSiteText(ent?'Editar personagem':'Novo personagem');
  document.getElementById('characterTypeRow').hidden=Boolean(ent)||state.mode!=='gm';
  document.getElementById('characterKit').hidden=Boolean(ent);
- document.getElementById('characterKitOptions').replaceChildren(...Object.keys(characterItems)
+ document.getElementById('characterKitOptions').replaceChildren(...Object.keys(legacyCharacterItems)
    .filter(name=>name!=='Pistola').map(name=>labeledChoice('item',name,name)));
  const preview=()=>drawCharacterPortrait('characterEditorPortrait',{
    appearance:characterInputAppearance(form),species:form.elements.species.value,sex:form.elements.sex.value,role:form.elements.profession.value,equipment:ent?.equipment
@@ -385,6 +432,7 @@ function characterItemAction(ent,name,action){
  if(!item)return;
  if(action==='equip'&&item.slot){
    beginEdit();
+   if(item.slot==='light'&&ent.equipment?.light!==name)ent.lanternLit=false;
    (ent.equipment||={})[item.slot]=name;
  }else if(action==='remove'&&item.slot&&ent.equipment?.[item.slot]===name){
    beginEdit();
@@ -398,10 +446,12 @@ function characterItemAction(ent,name,action){
    else{
      if(item.use==='food')ent.hunger=Math.min(100,ent.hunger+25);
      if(item.use==='heal')ent.hp=Math.min(ent.maxHp,ent.hp+5);
-     ent.inventory.splice(ent.inventory.indexOf(name),1);
+     const index=ent.inventory.indexOf(name);
+     ent.inventory.splice(index,1);
+     ent.inventoryCells?.splice(index,1);
    }
  }else return;
- finishEdit();updateUI();
+ finishEdit();updateUI();saveBank();
 }
 
 function characterActionButton(label,handler){
@@ -412,34 +462,162 @@ function characterActionButton(label,handler){
 function addCharacterItem(){
  const ent=getSelectedEntity(),name=document.getElementById('characterItemPicker').value;
  if(!ent||state.mode!=='gm'||!Object.hasOwn(characterItems,name))return;
- beginEdit();ent.inventory.push(name);finishEdit();updateUI();
+ beginEdit();ent.inventory.push(name);finishEdit();updateUI();saveBank();
 }
 
+function backpackLayout(ent){
+ const positions=[];
+ const used=new Set();
+ let next=0;
+ for(let index=0;index<ent.inventory.length;index++){
+   let cell=ent.inventoryCells?.[index];
+   if(!Number.isInteger(cell)||cell<0||cell>ent.inventory.length+24||used.has(cell)){
+     while(used.has(next)||ent.inventoryCells?.includes(next))next++;
+     cell=next;
+   }
+   used.add(cell);positions.push(cell);
+ }
+ return positions;
+}
+
+function equippedInventoryIndices(ent){
+ const equipped=new Map();
+ for(const [slot,name] of Object.entries(ent.equipment||{})){
+   const index=ent.inventory.findIndex((item,i)=>item===name&&![...equipped.values()].includes(i));
+   if(index>=0)equipped.set(slot,index);
+ }
+ return equipped;
+}
+
+function moveBackpackItem(ent,index,cell,fromSlot){
+ if(ent!==getSelectedEntity()||!['gm','player'].includes(state.mode)||!ent.inventory[index])return;
+ const positions=backpackLayout(ent);
+ const occupant=positions.indexOf(cell);
+ if(fromSlot&&occupant>=0&&occupant!==index&&![...equippedInventoryIndices(ent).values()].includes(occupant))return;
+ beginEdit();
+ if(fromSlot){
+   delete ent.equipment[fromSlot];
+   if(fromSlot==='light')ent.lanternLit=false;
+ }
+ if(occupant>=0)positions[occupant]=positions[index];
+ positions[index]=cell;
+ ent.inventoryCells=positions;
+ finishEdit();updateUI();saveBank();
+}
+
+function characterItemDetails(name){
+ const data=characterItems[name]?.data;
+ if(!data)return '';
+ const labels={categoria:'Categoria',peso:'Peso',preco:'Preço',pa:'PA',pv:'PV',
+   alcanceMetros:'Alcance',dano:'Dano',penetracao:'Penetração',municao:'Munição',
+   locaisProtegidos:'Proteção',uso:'Usos',nivelAcesso:'Acesso',material:'Material',municoesCompativeis:'Munição compatível'};
+ const fields=Object.entries(labels).filter(([field])=>data[field]&&
+   (!['alcanceMetros','penetracao'].includes(field)||data[field]!=='0')).map(([field,label])=>{
+     const unit=field==='peso'?' kg':field==='alcanceMetros'?' m':'';
+     return translateSiteText(label)+' · '+translateSiteText(data[field])+unit;
+   });
+ const description=siteLanguage==='zh-CN'&&data.descricao_zh||data.descricao;
+ return [description,fields.join('  ·  ')].filter(Boolean).join('\n');
+}
+
+function inventoryIcon(name){
+ const item=characterItems[name];
+ if(item?.slot==='hand')return {shield:'◈',bow:'➶',staff:'✧',gun:'▰',blade:'†'}[characterHandStyle(name)];
+ return {head:'◓',body:'♜',feet:'◩',light:'☼',waist:'═'}[item?.slot]||
+   (item?.use==='heal'?'✚':item?.use==='food'?'◒':item?.data?.categoria==='Munição'?'⋮':'◇');
+}
+
+let selectedInventoryItem=null;
 function renderCharacterEquipment(ent){
  drawCharacterPortrait('characterPortrait',ent);
  const slots=document.getElementById('equipmentSlots'),inventory=document.getElementById('inventoryList');
- slots.replaceChildren(...Object.entries(characterSlots).map(([slot,label])=>{
-   const row=document.createElement('div'),text=document.createElement('span');row.className='character-equipment-slot';
-   const name=ent.equipment?.[slot];
-   text.textContent=translateSiteText(label)+' · '+(name?translateSiteText(name):'—');row.append(text);
-   if(name)row.append(characterActionButton('Tirar',()=>characterItemAction(ent,name,'remove')));
-   return row;
+ const details=document.getElementById('inventoryDetails');
+ const positions=backpackLayout(ent),equipped=equippedInventoryIndices(ent);
+ const equippedIndices=new Set(equipped.values());
+ let dragged=null;
+ const setTarget=(button,accept,drop)=>{
+   button.ondragover=event=>{
+     if(!dragged||!accept(dragged))return;
+     event.preventDefault();event.dataTransfer.dropEffect='move';button.classList.add('inventory-drop');
+   };
+   button.ondragleave=()=>button.classList.remove('inventory-drop');
+   button.ondrop=event=>{
+     event.preventDefault();button.classList.remove('inventory-drop');
+     if(dragged&&accept(dragged)){
+       selectedInventoryItem=null;
+       drop(dragged);
+     }
+   };
+ };
+ const showSelection=()=>{
+   details.replaceChildren();
+   const selection=selectedInventoryItem;
+   if(selection?.entity!==ent||ent.inventory[selection.index]!==selection.name)return;
+   const {index,name}=selection;
+   const slot=[...equipped].find(([,i])=>i===index)?.[0];
+   const item=characterItems[name];
+   const title=document.createElement('strong');title.textContent=characterItemName(name);
+   const stats=document.createElement('small');stats.textContent=characterItemDetails(name);
+   details.append(title,stats);
+   const action=(label,key)=>characterActionButton(label,()=>{
+     selectedInventoryItem=null;
+     characterItemAction(ent,name,key);
+     showSelection();
+   });
+   if(slot)details.append(action('Tirar','remove'));
+   else if(item?.slot)details.append(action('Equipar','equip'));
+   if(item?.use&&(!item.slot||slot))details.append(action(
+     item.use==='light'?(ent.lanternLit?'Apagar':'Acender'):'Usar','use'));
+ };
+ const cellButton=(index,label,slot)=>{
+   const button=document.createElement('button');button.type='button';button.className='inventory-cell';
+   const name=ent.inventory[index];
+   if(slot)button.dataset.slot=slot;
+   const icon=document.createElement('span');icon.textContent=name?inventoryIcon(name):'';
+   const caption=document.createElement('small');caption.textContent=name?characterItemName(name):slot?label:'';
+   button.append(icon,caption);
+   button.setAttribute('aria-label',[label,name&&characterItemName(name)].filter(Boolean).join(' · '));
+   if(name){
+     button.title=characterItemName(name);
+     button.draggable=true;
+     button.ondragstart=event=>{
+       dragged={index,name,slot};
+       event.dataTransfer.setData('text/plain',name);event.dataTransfer.effectAllowed='move';
+     };
+     button.ondragend=()=>{
+       dragged=null;
+       slots.parentElement.parentElement.querySelectorAll('.inventory-drop').forEach(cell=>cell.classList.remove('inventory-drop'));
+     };
+     button.onclick=()=>{
+       selectedInventoryItem={entity:ent,index,name};
+       showSelection();
+     };
+   }
+   return button;
+ };
+ slots.replaceChildren(...Object.entries(characterSlots).map(([slot,key])=>{
+   const button=cellButton(equipped.get(slot),translateSiteText(key),slot);
+   setTarget(button,source=>!source.slot&&characterItems[source.name]?.slot===slot,
+     source=>characterItemAction(ent,source.name,'equip'));
+   return button;
  }));
- const items=new Map();
- for(const name of ent.inventory)items.set(name,(items.get(name)||0)+1);
- inventory.replaceChildren(...[...items].map(([name,count])=>{
-   const row=document.createElement('div'),text=document.createElement('span');row.className='list-item character-inventory-row';
-   text.textContent=translateSiteText(name)+(count>1?' ×'+count:'');row.append(text);
-   const definition=characterItems[name],equipped=definition?.slot&&ent.equipment?.[definition.slot]===name;
-   if(definition?.slot&&!equipped)row.append(characterActionButton('Equipar',()=>characterItemAction(ent,name,'equip')));
-   if(definition?.use&&(!definition.slot||equipped))row.append(characterActionButton(
-     definition.use==='light'?(ent.lanternLit?'Apagar':'Acender'):'Usar',()=>characterItemAction(ent,name,'use')));
-   return row;
+ const byCell=new Map(positions.map((cell,index)=>[cell,index]));
+ const size=Math.max(12,Math.ceil((Math.max(-1,...positions)+2)/4)*4);
+ inventory.replaceChildren(...Array.from({length:size},(_,cell)=>{
+   const index=byCell.get(cell),visible=!equippedIndices.has(index);
+   const button=cellButton(visible?index:undefined,index===undefined||!visible?translateSiteText('Espaço vazio'):'');
+   setTarget(button,source=>!source.slot||!visible||index===undefined,
+     source=>moveBackpackItem(ent,source.index,cell,source.slot));
+   return button;
  }));
- if(!items.size)inventory.textContent=translateSiteText('Mochila vazia');
+ showSelection();
  const picker=document.getElementById('characterItemPicker');
  picker.parentElement.classList.toggle('hidden',state.mode!=='gm');
- if(!picker.options.length)for(const name of Object.keys(characterItems))picker.add(new Option(translateSiteText(name),name));
+ if(picker.dataset.language!==siteLanguage){
+   const names=Object.keys(characterItems).sort((a,b)=>characterItemName(a).localeCompare(characterItemName(b),siteLanguage));
+   picker.replaceChildren(...names.map(name=>new Option(characterItemName(name),name)));
+   picker.dataset.language=siteLanguage;
+ }
 }
 
 const localRolls=[];
