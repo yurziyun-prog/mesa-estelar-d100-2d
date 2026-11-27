@@ -11,7 +11,7 @@ const characterItems={
  'Ração':{use:'food'},'Poção':{use:'heal'}
 };
 const characterSlots={head:'Cabeça',body:'Tronco',feet:'Pés',hand:'Mão',light:'Luz'};
-const avatarDefaults={body:'balanced',hairStyle:'short',hair:'#62442a',eyes:'#292229',skin:'#e6b48d',clothing:'#688aab'};
+const avatarDefaults={body:'balanced',form:'species',helmet:'none',helmetColor:'#4f6075',hairStyle:'short',hair:'#62442a',eyes:'#292229',skin:'#e6b48d',clothing:'#688aab'};
 let editedCharacterId=null;
 let characterEditorMap=null;
 
@@ -19,28 +19,104 @@ function characterAppearance(ent){
  return {...avatarDefaults,clothing:ent.color||avatarDefaults.clothing,...ent.appearance};
 }
 
+function characterVisualForm(ent,a){
+ if(a.form!=='species')return a.form;
+ const species=String(ent.species||'Humano').toLowerCase();
+ if(/drac|drag/.test(species))return 'dragon';
+ if(/croc|jacar/.test(species))return 'crocodile';
+ return characterSpecies.find(([name])=>name.toLowerCase()===species)?.[2]||'human';
+}
+
+function avatarShape(g,color,points){
+ g.fillStyle=color;g.strokeStyle='#202935';g.lineWidth=1.1;
+ g.beginPath();g.moveTo(...points[0]);
+ for(const point of points.slice(1))g.lineTo(...point);
+ g.closePath();g.fill();g.stroke();
+}
+
+function drawAvatarHead(g,a,form,cap){
+ if(a.helmet!=='none'){
+   avatarShape(g,a.helmetColor,[[-10,-19],[-5,-24],[5,-24],[10,-19],[11,-9],[7,-3],[-7,-3],[-11,-9]]);
+   g.fillStyle='#121b27';g.fillRect(-8,-16,16,5);
+   g.fillStyle=a.helmet==='visor'?a.eyes:'#8b9eb0';g.fillRect(-6,-15,12,1.5);
+   g.fillStyle='rgba(255,255,255,.3)';g.fillRect(-4,-22,8,1);
+   if(a.helmet==='closed')g.fillRect(-1,-10,2,5);
+   return;
+ }
+ if(['dragon','crocodile','thalassian'].includes(form)){
+   const snout=form==='crocodile'?1:-4;
+   if(form==='dragon'){
+     avatarShape(g,'#dac3a1',[[-8,-17],[-13,-28],[-4,-23],[-3,-17]]);
+     avatarShape(g,'#dac3a1',[[8,-17],[13,-28],[4,-23],[3,-17]]);
+   }
+   if(form==='thalassian'){
+     avatarShape(g,a.skin,[[-5,-17],[-15,-19],[-9,-6]]);
+     avatarShape(g,a.skin,[[5,-17],[15,-19],[9,-6]]);
+   }
+   avatarShape(g,a.skin,[[-9,-17],[-5,-21],[5,-21],[9,-17],[7,-10],[7,snout],[-7,snout],[-7,-10]]);
+   g.fillStyle='rgba(24,30,32,.57)';
+   g.fillRect(-5,snout-2,10,1);g.fillRect(-4,snout-6,1.5,1.5);g.fillRect(2.5,snout-6,1.5,1.5);
+ }else if(form==='robot'||form==='insect'){
+   avatarShape(g,form==='robot'?'#8397a8':a.skin,[[-9,-20],[9,-20],[11,-13],[8,-5],[-8,-5],[-11,-13]]);
+   g.fillStyle='#263447';g.fillRect(-8,-16,16,5);
+   if(form==='insect'){
+     g.strokeStyle=a.skin;g.lineWidth=1.5;g.beginPath();
+     g.moveTo(-7,-19);g.lineTo(-11,-25);g.moveTo(7,-19);g.lineTo(11,-25);g.stroke();
+   }
+ }else{
+   if(form==='nymari'||form==='aeral'){
+     avatarShape(g,a.skin,[[-8,-15],[-14,-20],[-10,-10],[-7,-9]]);
+     avatarShape(g,a.skin,[[8,-15],[14,-20],[10,-10],[7,-9]]);
+   }
+   const large=form==='grey'||form==='arisian';
+   g.fillStyle=a.skin;g.strokeStyle='#28323b';g.lineWidth=1;
+   g.beginPath();g.ellipse(0,-13,large?11:9,large?11:9,0,0,Math.PI*2);g.fill();g.stroke();
+   if(!large&&(a.hairStyle!=='shaved'||cap)){
+     g.fillStyle=cap?'#ad9261':a.hair;g.beginPath();g.arc(0,-16,9,Math.PI,Math.PI*2);g.fill();
+   }
+   g.fillStyle='rgba(67,43,38,.5)';g.fillRect(-2,-7,4,1);
+   if(form==='grey'){
+     g.fillStyle=a.eyes;
+     for(const x of [-5,5]){g.beginPath();g.ellipse(x,-14,3,2,.3,0,Math.PI*2);g.fill();}
+     return;
+   }
+ }
+ g.fillStyle=a.eyes;g.fillRect(-5,-14,2.8,2);g.fillRect(2.2,-14,2.8,2);
+}
+
 function drawCharacterAppearance(g,ent,stride=0){
- const a=characterAppearance(ent),half=a.body==='slim'?9:a.body==='broad'?14:11;
+ const a=characterAppearance(ent),form=characterVisualForm(ent,a);
+ const half=(a.body==='slim'?9:a.body==='broad'?14:11)+(form==='zutariano'?2:0);
  const equipped=ent.equipment||{};
+ const cloth=characterItems[equipped.body]?.color||a.clothing;
+ g.save();
+ if(form==='dragon'||form==='crocodile'){
+   g.strokeStyle='#23313a';g.lineWidth=6;g.lineCap='round';g.beginPath();
+   g.moveTo(7,10);g.quadraticCurveTo(19,23,23,14);g.stroke();
+   g.strokeStyle=a.skin;g.lineWidth=3.6;g.stroke();
+   if(form==='dragon')for(const side of [-1,1]){
+     avatarShape(g,cloth,[[side*4,-4],[side*19,-12],[side*22,0],[side*13,-3],[side*10,8]]);
+   }
+ }
  g.fillStyle=equipped.feet?'#533c2b':'#2b2c38';
  g.fillRect(-10,6+stride,7,12);g.fillRect(3,6-stride,7,12);
  g.fillStyle=characterItems[equipped.body]?.color||a.clothing;
  g.strokeStyle='#263044';g.lineWidth=2;
  g.beginPath();g.roundRect(-half,-8,half*2,21,5);g.fill();g.stroke();
- if(a.hairStyle==='long'){
-   g.fillStyle=a.hair;
-   g.beginPath();g.roundRect(-10,-21,20,23,6);g.fill();
+ g.fillStyle='rgba(239,224,213,.23)';g.fillRect(-half+2,-5,half*2-4,2);
+ g.fillStyle='rgba(18,22,29,.58)';g.fillRect(-half+1,7,half*2-2,3);
+ g.fillStyle='#c6aa79';g.fillRect(-2,6.7,4,3.6);
+ if(a.hairStyle==='long'&&a.helmet==='none'&&['human','nymari','aeral','zutariano'].includes(form)){
+   g.fillStyle=a.hair;g.beginPath();g.roundRect(-10,-21,20,23,6);g.fill();
  }
+ g.strokeStyle=cloth;g.lineWidth=6;g.lineCap='round';
+ g.beginPath();g.moveTo(-half+1,-3);g.lineTo(-half-4,5-stride);
+ g.moveTo(half-1,-3);g.lineTo(half+4,5+stride);g.stroke();
  g.fillStyle=a.skin;
- g.beginPath();g.arc(0,-12,9,0,Math.PI*2);g.fill();
- if(a.hairStyle!=='shaved'||equipped.head){
-   g.fillStyle=equipped.head?'#ad9261':a.hair;
-   g.beginPath();g.arc(0,-16,9,Math.PI,Math.PI*2);g.fill();
+ for(const [x,y] of [[-half-4,8-stride],[half+4,8+stride]]){
+   g.beginPath();g.arc(x,y,2.8,0,Math.PI*2);g.fill();
  }
- g.fillStyle=a.eyes;g.fillRect(-4,-12,2,2);g.fillRect(3,-12,2,2);
- g.strokeStyle=a.skin;g.lineWidth=5;g.lineCap='round';
- g.beginPath();g.moveTo(-half+1,-3);g.lineTo(-half-4,8-stride);
- g.moveTo(half-1,-3);g.lineTo(half+4,8+stride);g.stroke();
+ drawAvatarHead(g,a,form,equipped.head);
  if(equipped.hand||(!ent.equipment&&ent.inventory?.some(item=>/Espada|Lança|Cajado|Arco/i.test(item)))){
    g.strokeStyle='#bfcbd5';g.lineWidth=2.5;
    g.beginPath();g.moveTo(half+4,8+stride);g.lineTo(half+7,-14);g.stroke();
@@ -48,11 +124,16 @@ function drawCharacterAppearance(g,ent,stride=0){
  if(equipped.light){
    g.fillStyle=ent.lanternLit?'#ffdf9b':'#655846';g.fillRect(-half-10,8-stride,6,8);
  }
+ g.restore();
 }
 
 function drawCharacterPortrait(id,ent){
  const picture=document.getElementById(id),g=picture.getContext('2d');
  g.clearRect(0,0,picture.width,picture.height);
+ const light=g.createRadialGradient(picture.width*.47,picture.height*.38,4,
+   picture.width*.52,picture.height*.55,picture.width*.62);
+ light.addColorStop(0,'#3b5167');light.addColorStop(1,'#121b28');
+ g.fillStyle=light;g.fillRect(0,0,picture.width,picture.height);
  g.save();g.translate(picture.width/2,picture.height/2+4);g.scale(2.2,2.2);
  drawCharacterAppearance(g,ent);g.restore();
 }
@@ -69,13 +150,26 @@ function characterInputAppearance(form){
  return output;
 }
 
+function setCharacterChoices(select,entries,current,placeholder=null){
+ select.replaceChildren();
+ if(placeholder!==null)select.add(new Option(translateSiteText(placeholder),''));
+ for(const [name,zh] of entries)select.add(new Option(siteLanguage==='zh-CN'&&zh?zh:translateSiteText(name),name));
+ if(current&&!Array.from(select.options).some(option=>option.value===current)){
+   select.add(new Option(current,current));
+ }
+ select.value=current;
+}
+
 function openCharacterEditor(ent=null){
  if(!['gm','player'].includes(state.mode))return;
  const dialog=document.getElementById('characterEditor'),form=dialog.querySelector('form');
  editedCharacterId=ent?.id||null;
  characterEditorMap={scene:state.activeSceneId,floor:state.currentFloor,mode:state.mode};
  form.reset();
- const data={name:ent?.name||'',sex:ent?.sex||'',species:ent?.species||'',profession:ent?.role||'',
+ setCharacterChoices(form.elements.sex,[['Feminino'],['Masculino'],['Outro']],ent?.sex||'','Selecione');
+ setCharacterChoices(form.elements.species,characterSpecies,ent?.species||'Humano');
+ setCharacterChoices(form.elements.profession,characterProfessions,ent?.role||'','Sem profissão');
+ const data={name:ent?.name||'',
    type:ent?.type||'pc',...characterAppearance(ent||{})};
  for(const [key,value] of Object.entries(data))form.elements[key].value=value;
  document.getElementById('characterEditorTitle').textContent=translateSiteText(ent?'Editar personagem':'Novo personagem');
@@ -88,9 +182,22 @@ function openCharacterEditor(ent=null){
  document.getElementById('characterKitOptions').replaceChildren(...Object.keys(characterItems)
    .filter(name=>name!=='Pistola').map(name=>labeledChoice('item',name,name)));
  const preview=()=>drawCharacterPortrait('characterEditorPortrait',{
-   appearance:characterInputAppearance(form),equipment:ent?.equipment
+   appearance:characterInputAppearance(form),species:form.elements.species.value,equipment:ent?.equipment
  });
- form.oninput=preview;preview();
+ const palette={dragon:'#9c604b',crocodile:'#6c8b57',robot:'#8593a6',grey:'#929ba3',
+   thalassian:'#5b8b94',insect:'#937754',arisian:'#ae8293'};
+ let previousForm=characterVisualForm({species:form.elements.species.value},characterInputAppearance(form));
+ form.oninput=event=>{
+   if(['species','form'].includes(event.target.name)){
+     const next=characterVisualForm({species:form.elements.species.value},characterInputAppearance(form));
+     if(form.elements.skin.value===(palette[previousForm]||avatarDefaults.skin)){
+       form.elements.skin.value=palette[next]||avatarDefaults.skin;
+     }
+     previousForm=next;
+   }
+   preview();
+ };
+ preview();
  document.getElementById('characterEditorStatus').textContent='';
  dialog.showModal();form.elements.name.focus();
 }

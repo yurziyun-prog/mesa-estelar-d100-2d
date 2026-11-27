@@ -45,6 +45,21 @@ Salvar personagem|保存角色
 Personagem ativo|当前角色
 Nome|姓名
 Sexo|性别
+Feminino|女
+Masculino|男
+Outro|其他
+Selecione|请选择
+Sem profissão|未选职业
+Forma visual|角色外形
+Da espécie|按种族
+Humana|人形
+Dracônica|龙形
+Crocodiliana|鳄鱼形
+Capacete visual permanente|常戴头盔
+Sem capacete|无头盔
+Capacete fechado|全封闭头盔
+Capacete com visor|面罩头盔
+Cor do capacete|头盔颜色
 Espécie|种族
 Profissão|职业
 Personagem jogador|玩家角色
