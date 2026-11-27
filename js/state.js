@@ -390,11 +390,15 @@ function exportJSON() {
 function importJSON(e) {
   const file = e.target.files[0];
   if (!file) return;
+  e.target.value = '';
   const reader = new FileReader();
   reader.onload = ev => {
     try {
+      const data = JSON.parse(ev.target.result);
+      if(data?.formato==='mesa-estelar-fichas'){importMesaPlayerSheets(data);return;}
+      if(!data?.scenes||!Array.isArray(data.entities))throw new Error('Banco inválido.');
       beginEdit();
-      state = JSON.parse(ev.target.result);
+      state = data;
       migrateFixedTerrain();
       migrateBuildStyles();
   for(const scene of Object.values(state.scenes||{})){refreshStairDestinationLinks(scene);repairExistingStairLandings(scene);}
