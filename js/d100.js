@@ -291,5 +291,9 @@ function saveD100Sheet(event){
    const key=skill.name.toLowerCase(),value=known.get(key);known.delete(key);return value?[value]:[];
  });
  beginEdit();ent.attrs=attrs;ent.skillsD100=[...ordered,...known.values()];ent.d100SheetConfigured=true;finishEdit();
+ if(!saveBank()){
+   document.getElementById('d100SheetStatus').textContent=translateSiteText('O navegador não conseguiu salvar a ficha. Exporte um JSON para guardar as alterações.');
+   return;
+ }
  dialog.close();updateUI();
 }

@@ -83,6 +83,20 @@ function drawProfessionDetails(g,outfit,half,hips){
  }
 }
 
+function avatarShading(g,color,x,y,w,h){
+ const gradient=g.createLinearGradient(x,y,x+w,y+h);
+ gradient.addColorStop(0,'#ffffff32');
+ gradient.addColorStop(.45,'#ffffff00');
+ gradient.addColorStop(1,'#0f172a6a');
+ g.save();
+ g.clip();
+ g.fillStyle=color;
+ g.fillRect(x,y,w,h);
+ g.fillStyle=gradient;
+ g.fillRect(x,y,w,h);
+ g.restore();
+}
+
 function drawAvatarHead(g,a,form,cap,sex){
  if(a.helmet!=='none'){
    avatarShape(g,a.helmetColor,[[-10,-19],[-5,-24],[5,-24],[10,-19],[11,-9],[7,-3],[-7,-3],[-11,-9]]);
@@ -118,19 +132,40 @@ function drawAvatarHead(g,a,form,cap,sex){
      avatarShape(g,a.skin,[[8,-15],[14,-20],[10,-10],[7,-9]]);
    }
    const large=form==='grey'||form==='arisian';
-   g.fillStyle=a.skin;g.strokeStyle='#28323b';g.lineWidth=1;
-   g.beginPath();g.ellipse(0,-13,large?11:sex==='Feminino'?8.2:9.1,large?11:sex==='Feminino'?9.3:9,0,0,Math.PI*2);g.fill();g.stroke();
+   const faceWidth=large?11:sex==='Feminino'?8.4:9.5;
+   const jaw=sex==='Feminino'?faceWidth*.67:faceWidth*.80;
+   g.strokeStyle='#28323b';g.lineWidth=.85;
+   g.beginPath();
+   g.moveTo(-faceWidth,-14);
+   g.bezierCurveTo(-faceWidth,-26,faceWidth,-26,faceWidth,-14);
+   g.quadraticCurveTo(faceWidth,-7.2,jaw,-5.8);
+   g.quadraticCurveTo(0,-.5,-jaw,-5.8);
+   g.quadraticCurveTo(-faceWidth,-7.2,-faceWidth,-14);
+   g.closePath();
+   avatarShading(g,a.skin,-faceWidth-1,-25,2*faceWidth+2,25);
+   g.stroke();
    if(!large&&(a.hairStyle!=='shaved'||cap)){
-     g.fillStyle=cap?'#ad9261':a.hair;g.beginPath();g.arc(0,-16,9,Math.PI,Math.PI*2);g.fill();
+     g.fillStyle=cap?'#ad9261':a.hair;
+     g.beginPath();g.moveTo(-faceWidth,-13);
+     g.bezierCurveTo(-faceWidth-1,-25,faceWidth-1,-26,faceWidth+.5,-15);
+     g.quadraticCurveTo(faceWidth*.32,-17.5,-.8,-19.5);
+     g.quadraticCurveTo(-faceWidth*.45,-15.2,-faceWidth,-13);g.fill();
+     g.strokeStyle='rgba(245,219,182,.24)';g.lineWidth=.65;
+     for(let i=0;i<3;i++){
+       g.beginPath();g.moveTo(-faceWidth+2+i*2,-17.5-i);
+       g.quadraticCurveTo(-2+i,-23,3+i,-21);g.stroke();
+     }
    }
-     g.fillStyle='rgba(118,72,58,.28)';
+   g.fillStyle='rgba(122,72,60,.23)';
    for(const side of [-1,1]){
-     g.beginPath();g.ellipse(side*5,-9.4,2,1.35,0,0,Math.PI*2);g.fill();
+     g.beginPath();g.ellipse(side*5,-9.3,1.85,1.1,0,0,Math.PI*2);g.fill();
    }
-   g.strokeStyle='rgba(68,43,42,.75)';g.lineWidth=.65;
-   g.beginPath();g.moveTo(0,-13);g.quadraticCurveTo(-.1,-10,1,-9.8);g.lineTo(-.95,-9.6);g.stroke();
-   g.strokeStyle='rgba(77,43,42,.83)';
-   g.beginPath();g.moveTo(-2.4,-7.7);g.quadraticCurveTo(0,-6.7,2.4,-7.7);g.stroke();
+   g.strokeStyle='rgba(80,47,42,.69)';g.lineWidth=.63;
+   g.beginPath();g.moveTo(.2,-13);g.quadraticCurveTo(.3,-11,1.2,-10.2);g.quadraticCurveTo(.2,-9.4,-1,-9.9);g.stroke();
+   g.strokeStyle='rgba(93,48,47,.76)';
+   g.beginPath();g.moveTo(-2.4,-7.5);g.quadraticCurveTo(0,-6.7,2.4,-7.5);g.stroke();
+   g.fillStyle='rgba(255,227,197,.40)';
+   g.fillRect(-.7,-12.2,.7,1.7);
    if(form==='grey'){
      g.fillStyle=a.eyes;
      for(const x of [-5,5]){g.beginPath();g.ellipse(x,-14,3,2,.3,0,Math.PI*2);g.fill();}
@@ -141,6 +176,7 @@ function drawAvatarHead(g,a,form,cap,sex){
    g.fillStyle=form==='insect'?'#dbc88b':'#eee4d1';
    g.beginPath();g.ellipse(side*3.7,-13,2.15,1.22,0,0,Math.PI*2);g.fill();
    g.fillStyle=a.eyes;g.beginPath();g.arc(side*3.7,-13,1.05,0,Math.PI*2);g.fill();
+   g.fillStyle='#fff3d8';g.fillRect(side*3.7-.45,-13.46,.38,.38);
    g.strokeStyle='rgba(28,20,23,.68)';g.lineWidth=.6;
    g.beginPath();g.moveTo(side*1.9,-15.1);g.quadraticCurveTo(side*3.7,-15.8,side*5.5,-15.05);g.stroke();
  }
@@ -192,7 +228,16 @@ function drawCharacterAppearance(g,ent,stride=0){
  g.bezierCurveTo(half,-2,waist,1,hips,8);
  g.quadraticCurveTo(hips*.7,13,0,12);
  g.quadraticCurveTo(-hips*.7,13,-hips,8);
- g.bezierCurveTo(-waist,1,-half,-2,-half,-6);g.closePath();g.fill();g.stroke();
+ g.bezierCurveTo(-waist,1,-half,-2,-half,-6);g.closePath();
+ avatarShading(g,cloth,-half-1,-11,half*2+2,25);
+ g.stroke();
+ g.strokeStyle='rgba(29,26,35,.42)';g.lineWidth=.7;
+ for(const side of [-1,1]){
+   g.beginPath();g.moveTo(side*(half-1.8),-3.5);
+   g.quadraticCurveTo(side*(waist-1),.6,side*(hips-1.5),5);g.stroke();
+ }
+ g.strokeStyle='rgba(236,220,201,.27)';g.lineWidth=.75;
+ g.beginPath();g.moveTo(-hips+2,10.2);g.quadraticCurveTo(0,12,hips-2,10.2);g.stroke();
  drawProfessionDetails(g,outfit,half,hips);
  g.strokeStyle='rgba(232,217,204,.35)';g.lineWidth=1;
  g.beginPath();g.moveTo(-4,-7);g.quadraticCurveTo(0,-3,4,-7);g.stroke();
@@ -299,9 +344,14 @@ function saveCharacterEditor(event){
  const dialog=document.getElementById('characterEditor'),form=event.currentTarget,data=new FormData(form);
  const name=String(data.get('name')||'').trim();
  const old=editedCharacterId?state.entities.find(e=>e.id===editedCharacterId):null;
- if(!name||!characterEditorMap||characterEditorMap.mode!==state.mode||
-    characterEditorMap.scene!==state.activeSceneId||characterEditorMap.floor!==state.currentFloor||
-    (editedCharacterId&&!old)||(old&&state.mode==='player'&&old!==activeActor()))return;
+ const status=document.getElementById('characterEditorStatus');
+ if(!name){status.textContent=translateSiteText('Informe o nome do personagem.');return;}
+ const contextChanged=!characterEditorMap||characterEditorMap.mode!==state.mode||
+   (!old&&(characterEditorMap.scene!==state.activeSceneId||characterEditorMap.floor!==state.currentFloor));
+ if(contextChanged||(editedCharacterId&&!old)||(old&&state.mode==='player'&&old.id!==activeActor()?.id)){
+   status.textContent=translateSiteText('O personagem selecionado mudou. Reabra a edição.');
+   return;
+ }
  const floor=getScene().floors[state.currentFloor];
  const point=old?null:characterSpawnPoint(floor);
  if(!old&&!point){
@@ -317,9 +367,15 @@ function saveCharacterEditor(event){
  normalizeD100Character(ent);
  if(!old)state.entities.push(ent);
  state.selectedEntityId=ent.id;
+ finishEdit();
+ if(!saveBank()){
+   editedCharacterId=ent.id;
+   status.textContent=translateSiteText('O navegador não conseguiu salvar a ficha. Exporte um JSON para guardar as alterações.');
+   return;
+ }
+ dialog.close();
  if(state.mode==='player')selectPlayerChar(ent.id);
  else {gmPreviewId=ent.id;refreshGmFocus();updateUI();renderGmPullList();}
- finishEdit();dialog.close();
  if(!old)openD100Sheet(ent);
 }
 

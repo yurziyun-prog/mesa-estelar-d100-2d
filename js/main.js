@@ -125,6 +125,7 @@ function startFurnitureDrag(ent,wx,wy){
 
 function setupInputs() {
   window.addEventListener('keydown', e => {
+    if(document.querySelector('dialog[open]'))return;
     if(e.key==='Escape'&&document.getElementById('architectContextMenu')){closeArchitectContextMenu();return;}
     if(e.key==='Escape'&&typeof architectEyedropper!=='undefined'&&architectEyedropper){architectEyedropper=false;document.getElementById('architectLibrarySelected').textContent='Conta-gotas cancelado.';return;}
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName) || document.activeElement.isContentEditable) return;
@@ -328,6 +329,7 @@ function gameLoop(now) {
 }
 
 function updateSimulation(elapsed) {
+  if(document.querySelector('#characterEditor[open], #characterD100Sheet[open]'))return;
   state.entities.forEach(ent => {
     if (ent.speechTimer > 0) {
       ent.speechTimer--;

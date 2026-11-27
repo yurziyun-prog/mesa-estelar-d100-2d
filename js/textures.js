@@ -885,6 +885,18 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
   // Silhueta superior em vez de um emoji circular: pés, torso, rosto e equipamento.
   ctx.fillStyle='rgba(0,0,0,.3)';
   ctx.beginPath();ctx.ellipse(cx+3,cy+9,15+lift*.15,8+lift*.1,0,0,Math.PI*2);ctx.fill();
+  const selected=ent.id===state.selectedEntityId;
+  const preview=state.mode==='gm'&&ent.id===gmPreviewId;
+  if(selected||preview){
+    ctx.save();
+    ctx.strokeStyle=preview?'#e6c466':'#f5b942';
+    ctx.lineWidth=1.8;
+    if(preview)ctx.setLineDash([5,3]);
+    ctx.beginPath();
+    ctx.ellipse(cx,cy+(immersed?9:isMonster?12:18),isMonster?21:17,immersed?4:5.5,0,0,Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+  }
   ctx.translate(cx,cy-lift);
   if(!immersed&&state.timeOfDay==='night'){
     const light=ctx.createRadialGradient(0,0,3,0,0,70);
@@ -919,10 +931,6 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
       ctx.beginPath();ctx.moveTo(side*7,0);ctx.quadraticCurveTo(side*18,-9,side*21,-2);ctx.stroke();
     }
   }
-  if(ent.id===state.selectedEntityId){
-    ctx.strokeStyle='#f5b942';ctx.lineWidth=2;
-    ctx.beginPath();ctx.ellipse(0,5,21,17,0,0,7);ctx.stroke();
-  }
   if(grass&&lift<9){
     if(typeof grass==='string')drawGrassOverToken(cx,cy,highGrassColors[grass]);
     else{
@@ -937,7 +945,7 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
   }
   ctx.restore();
   ctx.save();
-  if(state.mode==='gm'&&ent.id===gmPreviewId){ctx.strokeStyle='#e6c466';ctx.lineWidth=3;ctx.setLineDash([6,4]);ctx.beginPath();ctx.arc(cx,cy-lift,28,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#e6c466';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('TAB · ENTER',cx,cy-56-lift);}
+  if(preview){ctx.fillStyle='#e6c466';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('TAB · ENTER',cx,cy-56-lift);}
   ctx.font='bold 11px system-ui';ctx.textAlign='center';
   const labelW=ctx.measureText(ent.name).width+11;
   ctx.fillStyle='rgba(14,18,25,.88)';

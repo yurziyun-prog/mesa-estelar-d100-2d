@@ -52,6 +52,9 @@ A ficha d100 calcula a base pelas fórmulas do Mesa Estelar.|D100 角色卡按 M
 Novo personagem|新建角色
 Editar personagem|编辑角色
 Salvar personagem|保存角色
+Informe o nome do personagem.|请输入角色姓名。
+O personagem selecionado mudou. Reabra a edição.|当前选中的角色已变更，请重新打开编辑。
+O navegador não conseguiu salvar a ficha. Exporte um JSON para guardar as alterações.|浏览器无法保存角色卡，请导出 JSON 保留修改。
 Personagem ativo|当前角色
 Nome|姓名
 Sexo|性别
