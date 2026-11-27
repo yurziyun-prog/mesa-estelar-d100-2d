@@ -1,7 +1,3 @@
-const starterSkills=[
- ['Natação',20],['Percepção',25],['Furtividade',20],['Escalada',20],
- ['Primeiros socorros',20],['Sobrevivência',15],['Persuasão',15],['Ofício',15]
-];
 const characterItems={
  'Espada Curta':{slot:'hand'},'Lança':{slot:'hand'},'Cajado Arcano':{slot:'hand'},'Pistola':{slot:'hand'},
  'Espada':{slot:'hand'},'Cajado':{slot:'hand'},'Arco':{slot:'hand'},'Escudo':{slot:'hand'},
@@ -53,6 +49,40 @@ function avatarShape(g,color,points){
  g.closePath();g.fill();g.stroke();
 }
 
+function professionOutfit(role){
+ const title=String(role||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+ if(/polic|militar|guarda|xerife|marechal|mercenar|assass/.test(title))return 'uniform';
+ if(/medic|curand|quim|cient|bio|alquim|veterin/.test(title))return 'clinic';
+ if(/sacerd|monge|mission|psiqu/.test(title))return 'robe';
+ if(/engenh|mecan|ferrei|minera|eletric|operar|tecnic|cozinh|gari/.test(title))return 'work';
+ if(/explor|cacad|arqueo|marinh|pirata|pesc|piloto|lenhad|colono/.test(title))return 'travel';
+ if(/advog|diplom|bancar|comerci|administ|polit|profess|juiz|acad/.test(title))return 'formal';
+ return 'casual';
+}
+
+function drawProfessionDetails(g,outfit,half,hips){
+ const line=(color,width,points)=>{
+   g.strokeStyle=color;g.lineWidth=width;g.beginPath();g.moveTo(...points[0]);
+   for(const p of points.slice(1))g.lineTo(...p);
+   g.stroke();
+ };
+ if(outfit==='uniform'){
+   for(const side of [-1,1])line('#b5bec5',2,[[side*half,-6],[side*5,-8]]);
+   g.fillStyle='#dfbc68';g.beginPath();g.arc(4,-2,1.4,0,Math.PI*2);g.fill();
+ }else if(outfit==='clinic'||outfit==='formal'){
+   const trim=outfit==='clinic'?'#d8deda':'#ccc2a2';
+   for(const side of [-1,1])line(trim,1.4,[[side*5,-8],[side*2,-2],[0,2]]);
+   line('rgba(10,19,26,.7)',1.1,[[0,2],[0,6]]);
+   if(outfit==='clinic')line('#d8deda',1.6,[[3,0],[7,0],[7,3],[3,3]]);
+ }else if(outfit==='work'||outfit==='travel'){
+   line('#8a6746',2.6,[[-half+2,-7],[1,-.8],[hips-1,7]]);
+   g.fillStyle='#9c7951';g.beginPath();g.roundRect(-hips,3,5,5,1);g.fill();
+ }else if(outfit==='robe'){
+   line('#c7ad72',2.3,[[-half+1,-5],[-4,-2],[4,-2],[half-1,-5]]);
+   line('#c7ad72',1.8,[[0,-1],[0,7]]);
+ }
+}
+
 function drawAvatarHead(g,a,form,cap,sex){
  if(a.helmet!=='none'){
    avatarShape(g,a.helmetColor,[[-10,-19],[-5,-24],[5,-24],[10,-19],[11,-9],[7,-3],[-7,-3],[-11,-9]]);
@@ -93,14 +123,27 @@ function drawAvatarHead(g,a,form,cap,sex){
    if(!large&&(a.hairStyle!=='shaved'||cap)){
      g.fillStyle=cap?'#ad9261':a.hair;g.beginPath();g.arc(0,-16,9,Math.PI,Math.PI*2);g.fill();
    }
-   g.fillStyle='rgba(67,43,38,.5)';g.fillRect(-2,-7,4,1);
+     g.fillStyle='rgba(118,72,58,.28)';
+   for(const side of [-1,1]){
+     g.beginPath();g.ellipse(side*5,-9.4,2,1.35,0,0,Math.PI*2);g.fill();
+   }
+   g.strokeStyle='rgba(68,43,42,.75)';g.lineWidth=.65;
+   g.beginPath();g.moveTo(0,-13);g.quadraticCurveTo(-.1,-10,1,-9.8);g.lineTo(-.95,-9.6);g.stroke();
+   g.strokeStyle='rgba(77,43,42,.83)';
+   g.beginPath();g.moveTo(-2.4,-7.7);g.quadraticCurveTo(0,-6.7,2.4,-7.7);g.stroke();
    if(form==='grey'){
      g.fillStyle=a.eyes;
      for(const x of [-5,5]){g.beginPath();g.ellipse(x,-14,3,2,.3,0,Math.PI*2);g.fill();}
      return;
    }
  }
- g.fillStyle=a.eyes;g.fillRect(-5,-14,2.8,2);g.fillRect(2.2,-14,2.8,2);
+ for(const side of [-1,1]){
+   g.fillStyle=form==='insect'?'#dbc88b':'#eee4d1';
+   g.beginPath();g.ellipse(side*3.7,-13,2.15,1.22,0,0,Math.PI*2);g.fill();
+   g.fillStyle=a.eyes;g.beginPath();g.arc(side*3.7,-13,1.05,0,Math.PI*2);g.fill();
+   g.strokeStyle='rgba(28,20,23,.68)';g.lineWidth=.6;
+   g.beginPath();g.moveTo(side*1.9,-15.1);g.quadraticCurveTo(side*3.7,-15.8,side*5.5,-15.05);g.stroke();
+ }
 }
 
 function drawCharacterAppearance(g,ent,stride=0){
@@ -108,6 +151,7 @@ function drawCharacterAppearance(g,ent,stride=0){
  const {form,sex,height,shoulders:half,hips,waist,arms}=characterAnatomy(ent,a);
  const equipped=ent.equipment||{};
  const cloth=characterItems[equipped.body]?.color||a.clothing;
+ const outfit=professionOutfit(ent.role);
  g.save();
  g.translate(0,18*(1-height));g.scale(1,height);
  if(form==='dragon'||form==='crocodile'||form==='reptilian'){
@@ -149,6 +193,7 @@ function drawCharacterAppearance(g,ent,stride=0){
  g.quadraticCurveTo(hips*.7,13,0,12);
  g.quadraticCurveTo(-hips*.7,13,-hips,8);
  g.bezierCurveTo(-waist,1,-half,-2,-half,-6);g.closePath();g.fill();g.stroke();
+ drawProfessionDetails(g,outfit,half,hips);
  g.strokeStyle='rgba(232,217,204,.35)';g.lineWidth=1;
  g.beginPath();g.moveTo(-4,-7);g.quadraticCurveTo(0,-3,4,-7);g.stroke();
  g.strokeStyle='rgba(18,23,32,.60)';g.lineWidth=2.3;
@@ -214,14 +259,10 @@ function openCharacterEditor(ent=null){
  document.getElementById('characterEditorTitle').textContent=translateSiteText(ent?'Editar personagem':'Novo personagem');
  document.getElementById('characterTypeRow').hidden=Boolean(ent)||state.mode!=='gm';
  document.getElementById('characterKit').hidden=Boolean(ent);
- const choices=new Map(starterSkills);
- for(const skill of ent?.skillsD100||[])choices.set(skill.name,skill.base);
- document.getElementById('characterSkillOptions').replaceChildren(...[...choices].map(([name])=>
-   labeledChoice('skill',name,name,Boolean(ent?.skillsD100?.some(skill=>skill.name===name)))));
  document.getElementById('characterKitOptions').replaceChildren(...Object.keys(characterItems)
    .filter(name=>name!=='Pistola').map(name=>labeledChoice('item',name,name)));
  const preview=()=>drawCharacterPortrait('characterEditorPortrait',{
-   appearance:characterInputAppearance(form),species:form.elements.species.value,sex:form.elements.sex.value,equipment:ent?.equipment
+   appearance:characterInputAppearance(form),species:form.elements.species.value,sex:form.elements.sex.value,role:form.elements.profession.value,equipment:ent?.equipment
  });
  const palette={dragon:'#9c604b',crocodile:'#6c8b57',robot:'#8593a6',grey:'#929ba3',
    thalassian:'#5b8b94',insect:'#937754',arisian:'#ae8293'};
@@ -267,24 +308,19 @@ function saveCharacterEditor(event){
    document.getElementById('characterEditorStatus').textContent=translateSiteText('Não há espaço livre próximo para colocar o personagem.');
    return;
  }
- const checked=new Set(data.getAll('skill'));
- const existing=old?.skillsD100||[];
- const skills=existing.filter(skill=>checked.has(skill.name));
- for(const [key,base] of starterSkills){
-   if(checked.has(key)&&!skills.some(skill=>skill.name===key))skills.push({name:key,base,training:0,total:base,provisional:true});
- }
  const appearance=characterInputAppearance(form);
  beginEdit();
  const ent=old||instantiateTemplate({name,type:state.mode==='gm'&&data.get('type')==='npc'?'npc':'pc',
    role:'',color:appearance.clothing,icon:'◆',hp:12,inventory:data.getAll('item')},...point);
  Object.assign(ent,{name,sex:String(data.get('sex')).trim(),species:String(data.get('species')).trim()||'Humano',
-   role:String(data.get('profession')).trim(),appearance,skillsD100:skills});
+   role:String(data.get('profession')).trim(),appearance});
  normalizeD100Character(ent);
  if(!old)state.entities.push(ent);
  state.selectedEntityId=ent.id;
  if(state.mode==='player')selectPlayerChar(ent.id);
  else {gmPreviewId=ent.id;refreshGmFocus();updateUI();renderGmPullList();}
  finishEdit();dialog.close();
+ if(!old)openD100Sheet(ent);
 }
 
 function characterItemAction(ent,name,action){
@@ -366,7 +402,7 @@ function showRollResults(){
  root.replaceChildren(...localRolls.filter(roll=>roll.session===rollSessionCode()&&
    (state.mode==='gm'||roll.actor===selected?.id)).sort((a,b)=>(a.time||0)-(b.time||0)).slice(-8).reverse().map(roll=>{
    const row=document.createElement('div');row.className='list-item';
-   row.textContent=roll.name+' · '+translateSiteText(roll.skill)+' · '+roll.roll+'/'+roll.target+
+   row.textContent=roll.name+' · '+mesaSkillLabel(roll.skill)+' · '+roll.roll+'/'+roll.target+
      ' · '+translateSiteText(roll.success?'Sucesso':'Falha');return row;
  }));
 }

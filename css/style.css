@@ -463,3 +463,14 @@ html[lang="zh-CN"] .section-title:has(> :nth-child(2)) {
 @media(max-width:560px){.character-preview-row{grid-template-columns:1fr 1fr;}.character-preview-row canvas{grid-column:1/-1;}}
 
 .character-fields [hidden], .character-preview-row [hidden] {display:none}
+
+.appearance-preview-row {grid-template-columns:132px minmax(0,1fr);}
+#characterD100Sheet {width:min(690px,94vw);}
+.d100-sheet-attributes {display:grid;grid-template-columns:repeat(auto-fit,minmax(57px,1fr));gap:6px;}
+.d100-sheet-attributes label,.d100-sheet-row label {display:grid;gap:3px;font-size:12px;min-width:0;}
+.d100-sheet-attributes input,.d100-sheet-row input[type=number] {width:100%;min-width:0;}
+#d100SheetSkills {max-height:43vh;overflow:auto;}
+.d100-sheet-row {display:grid;grid-template-columns:minmax(105px,1fr) minmax(65px,100px) minmax(60px,85px);gap:7px;align-items:center;padding:6px;border-bottom:1px solid var(--border);}
+.d100-sheet-row[hidden] {display:none;}
+.d100-sheet-row .d100-skill-choice {display:flex;align-items:center;}
+.d100-sheet-row output {font-size:11px;color:var(--text-muted);}

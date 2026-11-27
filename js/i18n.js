@@ -39,6 +39,16 @@ Expandir Mapa|扩大地图
 Cor da água|水面主色
 Profundidade da água|水深
 Água profunda|深水
+Configurar atributos e perícias|设置属性与技能
+Ficha d100|D100 角色卡
+Buscar perícia|搜索技能
+Da profissão|职业推荐
+Selecionadas|已选技能
+Salvar ficha|保存角色卡
+Treino|训练
+Básica|基础技能
+Profissional|职业技能
+A ficha d100 calcula a base pelas fórmulas do Mesa Estelar.|D100 角色卡按 Mesa Estelar 的公式计算技能基础值。
 Novo personagem|新建角色
 Editar personagem|编辑角色
 Salvar personagem|保存角色

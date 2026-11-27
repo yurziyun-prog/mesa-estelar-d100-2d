@@ -16,7 +16,7 @@ function normalizeD100Character(ent){
  ent.system='Mesa Estelar d100';
  ent.d100Version=D100_MIGRATION_VERSION;
  ent.skillsD100=Array.isArray(ent.skillsD100)?ent.skillsD100:parseLegacySkillsD100(ent.skills);
- if(!ent.skillsD100.some(isSwimmingSkill)){
+ if(!ent.d100SheetConfigured&&!ent.skillsD100.some(isSwimmingSkill)){
    ent.skillsD100.push({name:'Natação',base:null,training:null,total:null,provisional:true});
  }
  ent.powers=Array.isArray(ent.powers)?ent.powers:[];
@@ -133,7 +133,7 @@ function displayD100Skills(ent){
   const line=document.createElement('div');line.className='character-skill-line';line.draggable=true;
   const row=document.createElement('button');row.type='button';row.className='list-item d100-skill-row';
   const target=Number.isFinite(skill.total)?skill.total+'%':translateSiteText('A definir');
-  row.textContent=translateSiteText(skill.name)+' · '+target;
+  row.textContent=mesaSkillLabel(skill.name)+' · '+target;
   row.title=translateSiteText('Clique para rolar d100. Arraste para mudar a ordem.');
   row.onclick=()=>testD100Skill(index);line.append(row);
   line.ondragstart=event=>{dragSource=index;event.dataTransfer.setData('text/plain',String(index));event.dataTransfer.effectAllowed='move';};
@@ -154,7 +154,7 @@ function displayD100Skills(ent){
   const row=document.createElement('div');row.className='list-item';row.textContent='✨ '+power;root.append(row);
  }
  const note=document.createElement('div');note.className='d100-note';
- note.textContent=translateSiteText('Perícias iniciais usam valores provisórios. O mestre pode ajustar Base e Treino.');
+ note.textContent=translateSiteText('A ficha d100 calcula a base pelas fórmulas do Mesa Estelar.');
  root.append(note);
  if(state.mode==='gm'){
   const add=document.createElement('button');add.type='button';add.className='btn';add.textContent='+ Perícia';add.onclick=addD100Skill;root.append(add);
@@ -198,4 +198,98 @@ function toggleSelectedSkeletonAI(){
  ent.ai.enabled=!ent.ai.enabled;
  ent.ai.state=ent.ai.enabled?'vigiar':'desativada';
  updateUI();saveBank();
+}
+
+let d100SheetActor=null;
+let d100SheetRows=[];
+
+function mesaSkillLabel(name){
+ const source=mesaCharacterSkills.find(([,label])=>label===name);
+ return siteLanguage==='zh-CN'&&source?.[2]?source[2]:translateSiteText(name);
+}
+
+function mesaSkillBase(formula,attrs){
+ if(!/^(?:FOR|CON|TAM|DES|INT|POD|CAR)(?:\*2|\+(?:FOR|CON|TAM|DES|INT|POD|CAR|MAIOR))?(?:\+40)?$/.test(formula))return null;
+ const value=term=>term==='MAIOR'?Math.max(...['FOR','TAM','DES','INT','CAR'].map(k=>attrs[k])):Number(attrs[term]??term);
+ return formula.split('+').reduce((total,term)=>total+(term.endsWith('*2')?2*value(term.slice(0,-2)):value(term)),0);
+}
+
+function d100SheetAttributes(){
+ const root=document.getElementById('d100SheetAttrs');
+ return Object.fromEntries(D100_ATTRIBUTES.map(key=>[key,Number(root.querySelector('[name="'+key+'"]').value)]));
+}
+
+function refreshD100SheetTotals(){
+ const attrs=d100SheetAttributes();
+ for(const row of d100SheetRows){
+   const base=row.formula?mesaSkillBase(row.formula,attrs):row.existing?.base??null;
+   row.total.textContent=base===null?'—':String(base)+' + '+(Number(row.training.value)||0)+' = '+(base+(Number(row.training.value)||0))+'%';
+ }
+}
+
+function filterD100Sheet(){
+ const text=String(document.getElementById('d100SkillSearch').value).trim().toLowerCase();
+ const careerOnly=document.getElementById('d100CareerFilter').checked;
+ const selectedOnly=document.getElementById('d100SelectedFilter').checked;
+ for(const row of d100SheetRows){
+   row.node.hidden=!row.search.includes(text)||(careerOnly&&!row.career)||(selectedOnly&&!row.check.checked);
+ }
+}
+
+function openD100Sheet(ent=getSelectedEntity()){
+ if(!ent||!['gm','player'].includes(state.mode)||(state.mode==='player'&&ent!==activeActor()))return;
+ const dialog=document.getElementById('characterD100Sheet'),attrs=document.getElementById('d100SheetAttrs');
+ d100SheetActor=ent;
+ document.getElementById('d100SheetName').textContent=ent.name;
+ document.getElementById('d100SheetStatus').textContent='';
+ document.getElementById('d100SkillSearch').value='';
+ document.getElementById('d100CareerFilter').checked=false;
+ document.getElementById('d100SelectedFilter').checked=false;
+ attrs.replaceChildren(...D100_ATTRIBUTES.map(key=>{
+   const label=document.createElement('label'),name=document.createElement('span'),input=document.createElement('input');
+   name.textContent=key;input.type='number';input.name=key;input.className='ctrl';input.required=true;
+   input.min=ent.type==='pc'?(['TAM','INT'].includes(key)?6:3):1;input.max=ent.type==='pc'?18:100;
+   input.value=ent.attrs[key];input.oninput=refreshD100SheetTotals;label.append(name,input);return label;
+ }));
+ const old=ent.skillsD100||[],recommended=new Set(mesaCareerSkillIds[ent.role]||[]);
+ const names=new Set(mesaCharacterSkills.map(([,name])=>name.toLowerCase()));
+ const entries=[...mesaCharacterSkills.filter(([,name,,,,available])=>available||state.mode==='gm'||old.some(skill=>skill.name===name)),
+   ...old.filter(skill=>!names.has(skill.name.toLowerCase())).map(skill=>[null,skill.name,'','',null,true])];
+ d100SheetRows=entries.map(([id,name,zh,type,formula])=>{
+   const existing=old.find(skill=>(id&&skill.id===id)||skill.name.toLowerCase()===name.toLowerCase());
+   const node=document.createElement('div'),choice=document.createElement('label'),check=document.createElement('input'),label=document.createElement('span');
+   node.className='d100-sheet-row';choice.className='d100-skill-choice';check.type='checkbox';check.checked=Boolean(existing);
+   const translated=(siteLanguage==='zh-CN'&&zh)||translateSiteText(name);
+   label.textContent=translated;choice.append(check,label);
+   if(type)label.title=translateSiteText(type)+(formula?' · '+formula:'');
+   const trainingLabel=document.createElement('label'),trainText=document.createElement('span'),training=document.createElement('input');
+   trainText.textContent=translateSiteText('Treino');training.type='number';training.className='ctrl';training.min=0;training.max=100;
+   training.value=existing?.training??0;training.disabled=!check.checked;
+   training.oninput=refreshD100SheetTotals;
+   check.onchange=()=>{training.disabled=!check.checked;filterD100Sheet();};
+   trainingLabel.append(trainText,training);
+   const total=document.createElement('output');node.append(choice,trainingLabel,total);
+   return {id,name,formula,node,check,training,total,existing,career:recommended.has(id),search:(name+' '+translated).toLowerCase()};
+ });
+ document.getElementById('d100SheetSkills').replaceChildren(...d100SheetRows.map(row=>row.node));
+ refreshD100SheetTotals();dialog.showModal();
+}
+
+function saveD100Sheet(event){
+ event.preventDefault();
+ const ent=d100SheetActor,dialog=document.getElementById('characterD100Sheet');
+ if(!ent||!state.entities.includes(ent)||!['gm','player'].includes(state.mode)||(state.mode==='player'&&ent!==activeActor()))return;
+ const attrs=d100SheetAttributes();
+ const picked=d100SheetRows.filter(row=>row.check.checked).map(row=>{
+   const training=Number(row.training.value);
+   const base=row.formula?mesaSkillBase(row.formula,attrs):row.existing?.base??null;
+   return {...row.existing,id:row.id||row.existing?.id,name:row.name,base,training,
+     total:base===null?null:base+training,provisional:!row.formula};
+ });
+ const known=new Map(picked.map(skill=>[skill.name.toLowerCase(),skill]));
+ const ordered=(ent.skillsD100||[]).flatMap(skill=>{
+   const key=skill.name.toLowerCase(),value=known.get(key);known.delete(key);return value?[value]:[];
+ });
+ beginEdit();ent.attrs=attrs;ent.skillsD100=[...ordered,...known.values()];ent.d100SheetConfigured=true;finishEdit();
+ dialog.close();updateUI();
 }
