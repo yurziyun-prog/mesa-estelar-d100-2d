@@ -1,4 +1,7 @@
 const SITE_ZH = new Map(`
+Alvo selecionado.|已选中目标。
+Clique em uma criatura para disparar.|点击怪物即可开火。
+O personagem não pode disparar agora.|角色现在无法开火。
 Disparo errou.|射击未命中。
 Disparar arma|开火
 Equipe uma arma de disparo.|请先装备一把枪。

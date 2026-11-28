@@ -110,11 +110,42 @@ function mapWeaponHitChance(actor,weapon){
  const formula=ids[0]==='arma_laser_pesada'?'FOR+DES':ids[0]==='combate_pistola_laser'||ids[0]==='pistolas_revolveres'?'DES*2':'DES+INT';
  return Math.max(1,Math.min(99,mesaSkillBase(formula,actor.attrs)||20));
 }
-function fireAtCreature(actor,floor,x,y,weapon){
- const target=state.entities.filter(ent=>ent!==actor&&ent.sceneId===actor.sceneId&&ent.floor===actor.floor&&
-   (ent.creature||['Monstro','Fera'].includes(ent.role))&&Math.hypot(ent.x-x,ent.y-y-5)<26)
-   .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))[0];
- if(!target)return false;
+let combatTarget=null;
+function combatCreature(ent){
+ return Boolean(ent.creature||['Monstro','Fera'].includes(ent.role));
+}
+function selectedCombatCreature(actor){
+ if(!actor||combatTarget?.actor!==actor||actor.sceneId!==state.activeSceneId||actor.floor!==state.currentFloor)return null;
+ const target=combatTarget.target;
+ return state.entities.includes(target)&&target.sceneId===actor.sceneId&&target.floor===actor.floor?target:null;
+}
+function targetCreatureAt(actor,x,y){
+ let selected=null,distance=Infinity;
+ for(const ent of state.entities){
+   if(ent===actor||ent.sceneId!==actor.sceneId||ent.floor!==actor.floor||!combatCreature(ent))continue;
+   const scale=ent.creature?.scale||1;
+   const dx=(x-ent.x)/(27*scale+3),dy=(y-ent.y)/(27*scale+3);
+   const score=dx*dx+dy*dy;
+   if(score<=1&&score<=distance){selected=ent;distance=score;}
+ }
+ return selected;
+}
+function equippedMapGun(actor){
+ const weapon=actor.equipment?.hand;
+ return weapon&&characterHandStyle(weapon)==='gun'?weapon:null;
+}
+function selectCombatCreature(actor,target){
+ combatTarget={actor,target};
+ worldNotice(translateSiteText('Alvo selecionado.')+' '+target.name+' · '+target.hp+'/'+target.maxHp+' PV');
+}
+function useMapFireButton(){
+ const actor=activeActor();
+ const target=selectedCombatCreature(actor);
+ if(!target){chooseWorldAction('shoot');worldNotice('Clique em uma criatura para disparar.');return;}
+ if(actor.sleepPose||liftRides.has(actor)){worldNotice('O personagem não pode disparar agora.');return;}
+ fireAtCreature(actor,getScene().floors[actor.floor],target,equippedMapGun(actor));
+}
+function fireAtCreature(actor,floor,target,weapon){
  if(target.hp<=0){worldNotice('Criatura já derrotada.');return true;}
  if(!weapon){worldNotice('Equipe uma arma de disparo.');return true;}
  if(Math.hypot(target.x-actor.x,target.y-actor.y)>320){worldNotice('Alvo fora de alcance.');return true;}
@@ -159,8 +190,15 @@ function drawMapShot(floor){
 }
 
 function inspectOrDamage(actor,floor,x,y){
- const weapon=actor.equipment?.hand&&characterHandStyle(actor.equipment.hand)==='gun'?actor.equipment.hand:null;
- if(worldAction==='shoot'&&fireAtCreature(actor,floor,x,y,weapon))return;
+ const weapon=equippedMapGun(actor);
+ if(worldAction==='shoot'){
+   const creature=targetCreatureAt(actor,x,y);
+   if(creature){
+     selectCombatCreature(actor,creature);
+     fireAtCreature(actor,floor,creature,weapon);
+     return;
+   }
+ }
  const target=damageTargetAt(floor,x,y);
  if(!target){worldNotice('Nenhum objeto neste ponto.');return;}
  const health=materialDurability(target.item,target.kind);

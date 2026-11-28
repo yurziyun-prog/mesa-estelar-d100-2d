@@ -250,6 +250,9 @@ function setupInputs() {
         else inspectOrDamage(ent,floor,wx,wy);
         return;
       }
+      const creature=targetCreatureAt(ent,wx,wy);
+      if(creature){selectCombatCreature(ent,creature);return;}
+      combatTarget=null;
       if(startFurnitureDrag(ent,wx,wy))return;
       interactNearby(ent);
     }

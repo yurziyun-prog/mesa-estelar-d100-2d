@@ -904,6 +904,10 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
     ctx.stroke();
     ctx.restore();
   }
+  if(!isBelow&&state.mode==='player'&&selectedCombatCreature(activeActor())===ent){
+    ctx.save();ctx.strokeStyle='#ff7867';ctx.lineWidth=2;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.ellipse(cx,cy+10,22*(ent.creature?.scale||1),8,0,0,Math.PI*2);ctx.stroke();ctx.restore();
+  }
   ctx.translate(cx,cy-lift);
   if(!immersed&&state.timeOfDay==='night'){
     const light=ctx.createRadialGradient(0,0,3,0,0,70);
