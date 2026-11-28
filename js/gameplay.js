@@ -232,8 +232,9 @@ function canWalkStep(ent,x,y){
  }
  return false;
 }
-function canMoveTo(floorIdx, nx, ny, jumpLanding = false, waterAccess = null) {
-  const floor = getScene().floors[floorIdx];
+function canMoveTo(floorIdx, nx, ny, jumpLanding = false, waterAccess = null, ignoredProp = null) {
+  const source = getScene().floors[floorIdx];
+  const floor = source && ignoredProp ? {...source,props:source.props.filter(prop=>prop!==ignoredProp)} : source;
   if (!floor) return false;
   const r = 12;
   if(chimneyBlocksMovement(getScene(),floorIdx,nx,ny,r))return false;

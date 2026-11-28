@@ -1,4 +1,10 @@
 const SITE_ZH = new Map(`
+Empurrar|推
+Aponte para uma criatura, personagem ou objeto móvel.|点击怪物、角色或可移动物件。
+Aproxime-se do alvo para empurrar.|靠近目标再推。
+Não há espaço livre para empurrar.|没有空位可以把目标推开。
+Alvo empurrado.|已推开目标。
+Não conseguiu empurrar.|未能推开目标。
 Anterior|上一页
 Próxima|下一页
 Selecione um pacote Kenney e escolha um recurso para usar no mapa. Licença CC0.|选择一个 Kenney 素材包，再选要放在地图上的素材。采用 CC0 授权。

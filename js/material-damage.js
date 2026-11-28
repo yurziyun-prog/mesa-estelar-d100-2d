@@ -133,6 +133,7 @@ function restoreGmTargetAt(x,y){
 let worldAction=null;
 function chooseWorldAction(action){
  worldAction=worldAction===action?null:action;
+ if(worldAction==='push')worldNotice('Aponte para uma criatura, personagem ou objeto móvel.');
  for(const button of document.querySelectorAll('[data-world-action]'))
    button.classList.toggle('active',button.dataset.worldAction===worldAction);
 }
@@ -143,6 +144,67 @@ function worldNotice(message){
  logEvent(translated);
 }
 
+function findPushTarget(actor,floor,x,y){
+ const people=state.entities.filter(ent=>ent!==actor&&ent.sceneId===actor.sceneId&&ent.floor===actor.floor);
+ const props=floor.props.filter(prop=>isMovableFurniture(prop)&&!plantTrunkRadius(prop.type)&&
+   !/^(?:log|bridge|floor|tree)/i.test(prop.type)&&!(isPortableLadder(prop)&&uprightPortableLadder(prop)));
+ return [...people.map(item=>({item,isProp:false,radius:item.creature?creatureMapWidth(item)/2:24})),
+   ...props.map(item=>({item,isProp:true,radius:22*(item.scale||1)}))]
+   .map(target=>({...target,distance:Math.hypot(target.item.x-x,target.item.y-y+(target.isProp?0:8))}))
+   .filter(target=>target.distance<=target.radius)
+   .sort((a,b)=>a.distance-b.distance)[0];
+}
+function pushChance(actor,target,isProp){
+ const raw=target.weightKg??target.mesaSourceSheet?.pesoCorporal;
+ const weight=parseFloat(String(raw??'').replace(',','.'));
+ const scale=isProp?target.scale||1:target.creature?creatureRenderScale(target):1;
+ const mass=Number.isFinite(weight)&&weight>0?weight:isProp?35*scale**2:70*scale**2;
+ const difficulty=Math.max(0,(mass-55)/4)+Math.max(0,scale-1)*13+
+   (isProp?0:Math.max(0,(target.attrs?.FOR||10)-(actor.attrs?.FOR||10))*2);
+ return Math.round(Math.max(5,Math.min(95,46+(actor.attrs?.FOR||10)*3-difficulty)));
+}
+function pushDestination(actor,target,isProp){
+ const angle=Math.atan2(target.y-actor.y,target.x-actor.x);
+ const distance=Math.max(26,Math.min(42,18+(actor.attrs?.FOR||10)));
+ for(const offset of [0,.85,-.85,1.55,-1.55]){
+   const dx=Math.cos(angle+offset),dy=Math.sin(angle+offset);
+   let x=target.x,y=target.y;
+   for(let step=4;step<=distance;step+=4){
+     const nextX=target.x+dx*step,nextY=target.y+dy*step;
+     const floor=getScene().floors[actor.floor];
+     const depth=waterDepthAt(floor,nextX,nextY);
+     const walker=isProp?{...target,sceneId:actor.sceneId,floor:actor.floor}:target;
+     if(depth==='deep'||Math.abs(reliefAt(floor,nextX,nextY)-reliefAt(floor,target.x,target.y))>.25||
+       !canMoveTo(actor.floor,nextX,nextY,false,depth,isProp?target:null)||
+       tokenBlocksStep(walker,nextX,nextY))break;
+     x=nextX;y=nextY;
+   }
+   if(Math.hypot(x-target.x,y-target.y)>=20)return {x,y};
+ }
+ return null;
+}
+function pushMapTarget(actor,floor,x,y){
+ if(actor.hp<=0){worldNotice('Personagem caído. O Mestre pode restaurar seus PV.');return;}
+ const selected=findPushTarget(actor,floor,x,y);
+ if(!selected){worldNotice('Aponte para uma criatura, personagem ou objeto móvel.');return;}
+ const {item,isProp}=selected;
+ if(Math.hypot(actor.x-item.x,actor.y-item.y)>50||crossesWall(floor,actor.x,actor.y,item.x,item.y)){
+   worldNotice('Aproxime-se do alvo para empurrar.');
+   return;
+ }
+ const destination=pushDestination(actor,item,isProp);
+ if(!destination){worldNotice('Não há espaço livre para empurrar.');return;}
+ const chance=pushChance(actor,item,isProp),roll=d100Roll();
+ const success=roll<=chance;
+ if(success){
+   beginEdit();
+   if(!isProp)awakenEntity(item);
+   Object.assign(item,destination);
+   finishEdit();saveBank();updateUI();
+   playGameSound('hit',.16);
+ }
+ worldNotice(translateSiteText(success?'Alvo empurrado.':'Não conseguiu empurrar.')+' D100 '+roll+' / '+chance+'%');
+}
 function carriesPistol(actor){
  return (actor.inventory||[]).some(i=>typeof i==='string'&&/(pistola|pistol|手枪)/i.test(i));
 }

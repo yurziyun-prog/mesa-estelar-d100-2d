@@ -248,7 +248,8 @@ function setupInputs() {
       const floor=getScene().floors[ent.floor];
       if(worldAction){
         if(ent.sleepPose||liftRides.has(ent))return;
-        if(worldAction==='dig'||worldAction==='trim')digGround(ent,floor,wx,wy);
+        if(worldAction==='push')pushMapTarget(ent,floor,wx,wy);
+        else if(worldAction==='dig'||worldAction==='trim')digGround(ent,floor,wx,wy);
         else inspectOrDamage(ent,floor,wx,wy);
         return;
       }
