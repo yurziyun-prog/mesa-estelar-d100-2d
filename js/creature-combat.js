@@ -1,5 +1,7 @@
 let gmCreatureAttack=null;
 let gmCreatureOrder=null;
+let armedCreatureMove=null;
+let displayedCreature=null;
 const creatureAttackReady=new WeakMap();
 let creatureStrike=null;
 
@@ -9,22 +11,53 @@ function gmCombatCreature(){
  const ent=controlled&&combatCreature(controlled)?controlled:gmActors().find(actor=>actor.id===gmPreviewId);
  return ent?.hp>0&&combatCreature(ent)?ent:null;
 }
+function creatureMoveList(ent){
+ const sheet=ent?.mesaSourceSheet;
+ const links=Object.fromEntries(String(sheet?.vinculosAtaquesPericias||'').split('|').map(line=>line.split(':')).filter(parts=>parts.length===2));
+ return String(sheet?.armasTexto||'').split('|').flatMap(line=>{
+   const match=line.trim().match(/^(.+?):\s*(\d+d\d+(?:[+-](?:\d+|MD))?|0)$/i);
+   if(!match)return [];
+   const [,name,damage]=match;
+   return [{name,damage,skill:links[name]}];
+ });
+}
+function creatureCombatNotice(message){
+ document.getElementById('gmCreatureStatus').textContent=translateSiteText(message);
+}
 function refreshCreatureCombatControls(){
  const ent=gmCombatCreature();
  const toggle=document.getElementById('gmCreatureAuto');
  document.getElementById('gmCreatureCombat').hidden=!ent;
+ if(displayedCreature!==ent){
+   displayedCreature=ent;
+   const select=document.getElementById('gmCreatureMove');
+   select.replaceChildren(new Option(translateSiteText('Ataque básico'),''));
+   creatureMoveList(ent).forEach((move,i)=>select.add(new Option(move.name+' · '+move.damage,String(i))));
+   const text=ent?.mesaSourceSheet?.habilidadesTexto||'';
+   document.getElementById('gmCreatureActivities').hidden=!text;
+   document.getElementById('gmCreatureActivityText').textContent=text;
+ }
  toggle.checked=Boolean(ent?.autoCreatureAttack);
  document.getElementById('gmCreatureAttack').setAttribute('aria-pressed',String(Boolean(ent&&gmCreatureAttack===ent)));
 }
 function armCreatureAttack(){
  const ent=gmCombatCreature();
  if(!ent)return;
+ const value=document.getElementById('gmCreatureMove').value;
+ armedCreatureMove=value===''?null:creatureMoveList(ent)[Number(value)];
+ if(armedCreatureMove?.damage==='0'){
+   const skill=ent.skillsD100?.find(skill=>skill.name===armedCreatureMove.skill&&Number.isFinite(skill.total));
+   const result=skill?' · D100 '+(Math.floor(Math.random()*100)+1)+' / '+skill.total+'%':'';
+   const message=ent.name+' · '+armedCreatureMove.name+result;
+   creatureCombatNotice(message);logEvent(message);
+   return;
+ }
  if(gmRestoreArmed)toggleGmRestore();
  gmRosterPlacementIds=null;gmPlacementTemplate=null;
  gmCreatureOrder=null;
  gmCreatureAttack=gmCreatureAttack===ent?null:ent;
  refreshCreatureCombatControls();
- gmRestoreNotice(gmCreatureAttack?'Clique no personagem que a criatura vai atacar.':'');
+ creatureCombatNotice(gmCreatureAttack?'Clique no personagem que a criatura vai atacar.':'');
 }
 function setCreatureAutonomy(enabled){
  const ent=gmCombatCreature();
@@ -33,21 +66,27 @@ function setCreatureAutonomy(enabled){
  refreshCreatureCombatControls();
 }
 
-function creatureMeleeAttack(attacker,target,floor,now){
+function creatureMeleeAttack(attacker,target,floor,now,move=null){
  if(attacker.hp<=0||target.hp<=0||Math.hypot(target.x-attacker.x,target.y-attacker.y)>creatureAttackReach(attacker)||
    crossesWall(floor,attacker.x,attacker.y,target.x,target.y))return false;
  if((creatureAttackReady.get(attacker)||0)>now)return false;
  creatureAttackReady.set(attacker,now+1800);
- const chance=Math.max(5,Math.min(95,attacker.skillsD100?.find(s=>/combate desarmado/i.test(s.name)&&Number.isFinite(s.total))?.total||
+ const chance=Math.max(5,Math.min(95,attacker.skillsD100?.find(s=>(move?.skill?s.name===move.skill:/combate desarmado/i.test(s.name))&&Number.isFinite(s.total))?.total||
    (attacker.attrs.FOR+attacker.attrs.DES)));
  const roll=Math.floor(Math.random()*100)+1;
  creatureStrike={floor,x0:attacker.x,y0:attacker.y,x:target.x,y:target.y,hit:roll<=chance,until:now+270};
  if(roll<=chance){
-   const damage=1+Math.floor(Math.random()*6)+Math.max(0,Math.floor((attacker.attrs.FOR-10)/5));
+   const profile=move?.damage?.match(/^(\d+)d(\d+)(?:([+-])(\d+|MD))?$/i);
+   const bonus=Math.max(0,Math.floor((attacker.attrs.FOR-10)/5));
+   let damage=0;
+   for(let i=0;i<Number(profile?.[1]||1);i++)damage+=1+Math.floor(Math.random()*Number(profile?.[2]||6));
+   if(!profile||profile[4]?.toUpperCase()==='MD')damage+=bonus;
+   else if(profile[4])damage+=Number(profile[3]+profile[4]);
+   damage=Math.max(0,damage);
    beginEdit();target.hp=Math.max(0,target.hp-damage);finishEdit();updateUI();saveBank();
  }
- const message=attacker.name+' → '+target.name+' · '+translateSiteText(roll<=chance?'Acertou.':'Errou.')+' D100 '+roll+'/'+chance+'% · '+target.hp+'/'+target.maxHp+' PV';
- if(state.mode==='player')worldNotice(message);else gmRestoreNotice(message);
+ const message=attacker.name+(move?' · '+move.name:'')+' → '+target.name+' · '+translateSiteText(roll<=chance?'Acertou.':'Errou.')+' D100 '+roll+'/'+chance+'% · '+target.hp+'/'+target.maxHp+' PV';
+ if(state.mode==='player')worldNotice(message);else creatureCombatNotice(message);
  return true;
 }
 function creatureAttackReach(attacker){
@@ -60,20 +99,20 @@ function handleCreatureAttackClick(x,y){
    (Math.hypot(ent.x-x,ent.y-y)<24||Math.hypot(ent.x-x,ent.y-15-y)<22))
    .sort((a,b)=>Math.hypot(a.x-x,a.y-7-y)-Math.hypot(b.x-x,b.y-7-y))[0];
  if(!gmActors().includes(attacker)||!target){
-   gmRestoreNotice('Clique em um personagem jogador vivo para escolher o alvo.');
+   creatureCombatNotice('Clique em um personagem jogador vivo para escolher o alvo.');
    return true;
  }
  gmCreatureAttack=null;
- gmCreatureOrder={attacker,target};
+ gmCreatureOrder={attacker,target,move:armedCreatureMove};
  refreshCreatureCombatControls();
- gmRestoreNotice(translateSiteText('Alvo selecionado.')+' '+target.name);
+ creatureCombatNotice(translateSiteText('Alvo selecionado.')+' '+target.name);
  return true;
 }
-function advanceCreatureAttack(attacker,target,floor,now,elapsed){
+function advanceCreatureAttack(attacker,target,floor,now,elapsed,move=null){
  if(crossesWall(floor,attacker.x,attacker.y,target.x,target.y))return 'blocked';
  const dx=target.x-attacker.x,dy=target.y-attacker.y,distance=Math.hypot(dx,dy);
  if(distance<=creatureAttackReach(attacker)){
-   return creatureMeleeAttack(attacker,target,floor,now)?'done':'waiting';
+   return creatureMeleeAttack(attacker,target,floor,now,move)?'done':'waiting';
  }
  const speed=Math.min(4,elapsed*65);
  const stepX=dx/distance*speed,stepY=dy/distance*speed;
@@ -90,12 +129,12 @@ function updateCreatureAutonomy(elapsed){
  const actors=gmActors(),players=actors.filter(ent=>ent.type==='pc'&&ent.hp>0);
  const orderedAttacker=gmCreatureOrder?.attacker;
  if(gmCreatureOrder){
-   const {attacker,target}=gmCreatureOrder;
+   const {attacker,target,move}=gmCreatureOrder;
    if(state.mode!=='gm'||attacker.hp<=0||!actors.includes(attacker)||!players.includes(target))gmCreatureOrder=null;
    else {
-     const result=advanceCreatureAttack(attacker,target,floor,now,elapsed);
+     const result=advanceCreatureAttack(attacker,target,floor,now,elapsed,move);
      if(result==='done'||result==='blocked')gmCreatureOrder=null;
-     if(result==='blocked')gmRestoreNotice('O caminho ou a linha de ataque está bloqueada.');
+     if(result==='blocked')creatureCombatNotice('O caminho ou a linha de ataque está bloqueada.');
    }
  }
  const manualMovement=['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].some(key=>keys[key]);

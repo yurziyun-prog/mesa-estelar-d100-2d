@@ -1,4 +1,7 @@
 const SITE_ZH = new Map(`
+Ataques e ações especiais|攻击与特殊动作
+Ataque básico|基础攻击
+Atividades especiais|特殊活动
 Ações da criatura|怪物操作
 Clique em um personagem jogador vivo para escolher o alvo.|点击一名存活的玩家角色作为目标。
 O caminho ou a linha de ataque está bloqueada.|移动路线或攻击路径被挡住了。
