@@ -86,9 +86,14 @@ function buildingWallBlocks(floor,x,y) {
     if(mergedBoundary(floor,b,x,y))return false;
     if((b.wallGaps||[]).some(g=>g.orient==='v'?Math.abs(y-g.y)<g.width/2-9&&Math.abs(x-g.x)<30:
       Math.abs(x-g.x)<g.width/2-9&&Math.abs(y-g.y)<30))return false;
-    return !floor.doors.some(door=>door.open&&door.buildingId===b.id&&
-      (door.orient==='v'?Math.abs(y-door.y):Math.abs(x-door.x))<24&&
-      (door.orient==='v'?Math.abs(x-door.x):Math.abs(y-door.y))<b.wallThickness/2+12);
+    return !floor.doors.some(door=>{
+      const vertical=door.orient==='v';
+      const cross=vertical?door.x:door.y;
+      const low=vertical?b.x:b.y,high=low+(vertical?b.w:b.h);
+      return (!door.buildingId||door.buildingId===b.id)&&
+        Math.min(Math.abs(cross-low),Math.abs(cross-high))<=b.wallThickness/2+6&&
+        openDoorPassageAt(door,x,y,10,b.wallThickness/2+12);
+    });
   });
 }
 

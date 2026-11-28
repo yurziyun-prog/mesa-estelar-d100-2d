@@ -138,23 +138,38 @@ function openedDoorLeaf(d){
   const mechanism=d.mechanism||(d.style==='futurist'?'sliding':'hinged');
   if(mechanism==='sliding'||!d.open)return null;
   const side=d.hingeSide==='right'?1:-1;
+  const half=(d.width||68)/2;
   const swing=d.swing==='out'?1:-1;
   if(d.orient==='v'){
-    const hy=d.y+side*34;
-    return {x1:d.x,y1:hy,x2:d.x-68*swing,y2:hy};
+    const hy=d.y+side*half;
+    return {x1:d.x,y1:hy,x2:d.x-2*half*swing,y2:hy};
   }
-  const hx=d.x+side*34;
-  return {x1:hx,y1:d.y,x2:hx,y2:d.y+68*swing};
+  const hx=d.x+side*half;
+  return {x1:hx,y1:d.y,x2:hx,y2:d.y+2*half*swing};
 }
 function wallBlocksCharacter(wall,x,y){
  return distToSegment(x,y,wall.x1,wall.y1,wall.x2,wall.y2)<10+(wall.width||16)/2;
+}
+function openDoorPassageAt(door,x,y,clearance=0,depth=26){
+ if(!door.open)return false;
+ const along=door.orient==='v'?y-door.y:x-door.x;
+ const across=door.orient==='v'?x-door.x:y-door.y;
+ return Math.abs(along)<Math.max(2,(door.width||68)/2-clearance)&&Math.abs(across)<=depth;
+}
+function wallBlocksAtOpening(floor,wall,x,y,clearance){
+ if(!wallBlocksCharacter(wall,x,y))return false;
+ if(wall.extendedUp)return true;
+ const vertical=Math.abs(wall.x2-wall.x1)<Math.abs(wall.y2-wall.y1);
+ return !(floor.doors||[]).some(door=>(door.orient==='v')===vertical&&
+   Math.abs(vertical?door.x-wall.x1:door.y-wall.y1)<=(wall.width||16)/2+5&&
+   openDoorPassageAt(door,x,y,clearance));
 }
 function crossesWall(floor,x1,y1,x2,y2,extensionsOnly=false){
  const walls=extensionsOnly?floor.walls.filter(wall=>wall.extendedUp):floor.walls;
  const steps=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)/4));
  for(let step=1;step<=steps;step++){
    const t=step/steps,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;
-   if(caveWallBlocks(floor,x,y)||buildingWallBlocks(floor,x,y)||walls.some(wall=>wallBlocksCharacter(wall,x,y)))return true;
+   if(caveWallBlocks(floor,x,y)||buildingWallBlocks(floor,x,y)||walls.some(wall=>wallBlocksAtOpening(floor,wall,x,y,0)))return true;
  }
  return false;
 }
@@ -224,15 +239,10 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false, waterAccess = null) {
   if(chimneyBlocksMovement(getScene(),floorIdx,nx,ny,r))return false;
   if(caveWallBlocks(floor,nx,ny)||buildingWallBlocks(floor,nx,ny))return false;
 
-  for (const w of floor.walls) {
-    if (wallBlocksCharacter(w,nx,ny)) {
-      const nearOpenDoor = floor.doors.some(d => d.open && Math.hypot(d.x - nx, d.y - ny) < 38);
-      if (w.extendedUp || !nearOpenDoor) return false;
-    }
-  }
+  if(floor.walls.some(wall=>wallBlocksAtOpening(floor,wall,nx,ny,10)))return false;
 
   if (floor.doors.some(d => !d.open && Math.hypot(d.x - nx, d.y - ny) < r + 12)) return false;
-  if (floor.doors.some(d=>{const leaf=openedDoorLeaf(d);return leaf&&distToSegment(nx,ny,leaf.x1,leaf.y1,leaf.x2,leaf.y2)<r+8;}))return false;
+  if (floor.doors.some(d=>{const leaf=openedDoorLeaf(d);return leaf&&distToSegment(nx,ny,leaf.x1,leaf.y1,leaf.x2,leaf.y2)<r+2;}))return false;
   if (floor.windows.some(win => win.orient==='v'?(Math.abs(nx-win.x)<r+9&&Math.abs(ny-win.y)<(win.width||40)/2+r):(Math.abs(ny-win.y)<r+9&&Math.abs(nx-win.x)<(win.width||40)/2+r))) return false;
   if (floor.chests.some(c => Math.hypot(c.x - nx, c.y - ny) < r + 14)) return false;
 

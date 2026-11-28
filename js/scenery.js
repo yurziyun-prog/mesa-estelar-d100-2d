@@ -611,7 +611,7 @@ function exteriorSightThroughOpenings(floor,actor){
      const length=Math.hypot(px-x,py-y);
      if(length<.01)continue;
      const dx=(px-x)/length,dy=(py-y)/length;
-     const sx=px+dx*.01,sy=py+dy*.01;
+     const sx=px+dx*2,sy=py+dy*2;
      if(nearest(x,y,dx,dy,length)<length-.01||!inside(sx,sy)){
        points.push({near:{x:px,y:py},far:{x:px,y:py}});continue;
      }

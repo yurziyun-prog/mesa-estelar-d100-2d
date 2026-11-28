@@ -384,7 +384,8 @@ function roofDoorCutouts(floor,roof,actor){
    const a=vertical?inside(door.x-12,door.y):inside(door.x,door.y-12);
    const b=vertical?inside(door.x+12,door.y):inside(door.x,door.y+12);
    if(a&&b)continue;
-   const from=Math.min(edge,cross)-4,to=Math.max(edge,cross)+8;
+   const inner=door.open?(edge===crossStart?cross+25:cross-25):cross;
+   const from=Math.min(edge,cross,inner)-4,to=Math.max(edge,cross,inner)+8;
    const half=(door.width||68)/2+8;
    cutouts.push(vertical?{x:from,y:along-half,w:to-from,h:half*2}:
      {x:along-half,y:from,w:half*2,h:to-from});
@@ -468,7 +469,8 @@ function drawExternalBuildingTop(){
   if(fade.alpha<.015)continue;
   ctx.save();ctx.globalAlpha=fade.alpha;
   clipOutsideCaves(scene.floors[actor.floor].caves,area);
-  if(!clipRoofOverhang(viewFloor,area,actor))clipRoofAtDoors(viewFloor,area,actor);
+  clipRoofOverhang(viewFloor,area,actor);
+  clipRoofAtDoors(viewFloor,area,actor);
   clipCoverForExteriorSight(area,outsideViews);
   drawRoofSurface(area.x,area.y,area.w,area.h,area.mat,area.roofPitch,area.roofHeight);
   drawRoofOpenings(floor,area);

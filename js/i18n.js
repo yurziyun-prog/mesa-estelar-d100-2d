@@ -1,4 +1,5 @@
 const SITE_ZH = new Map(`
+Clique em um alvo vivo: personagem, NPC ou criatura.|请点击存活的角色、NPC 或怪物。
 Som ligado|声音开启
 Som desligado|声音关闭
 Personagem caído. O Mestre pode restaurar seus PV.|角色已倒下，主持人可以恢复生命值。

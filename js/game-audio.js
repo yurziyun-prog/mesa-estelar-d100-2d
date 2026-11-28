@@ -2,6 +2,7 @@ const soundClips={
  laser:['laser'],energy:['energy'],shot:['shot'],hit:['hit'],metal:['metal-hit'],
  melee:['melee'],dice:['dice-throw-1','dice-throw-2'],grab:['dice-grab-1'],
  open:['door-open'],close:['door-close'],click:['click'],
+ tallGrass:['step-tall-grass'],water:['step-water'],
  grass:['step-grass-a','step-grass-b'],wood:['step-wood-a','step-wood-b'],stone:['step-stone-a','step-stone-b']
 };
 const playingSounds=new Set();
@@ -41,10 +42,14 @@ function playActorStep(ent){
  if((actorStepAt.get(ent)||0)>now)return;
  actorStepAt.set(ent,now+(keys.shift?210:330));
  const floor=getScene().floors[ent.floor];
- if(waterDepthAt(floor,ent.x,ent.y))return;
- const mat=topMapSurfaceAt(floor,ent.x,ent.y)?.mat||floor.baseTerrain||'';
- const kind=/wood|bridge|madeira/i.test(mat)?'wood':/stone|paving|cobble|marble/i.test(mat)?'stone':'grass';
- playGameSound(kind,.19);
+ const surface=topMapSurfaceAt(floor,ent.x,ent.y);
+ const building=(floor.buildings||[]).find(room=>room.hasFloor&&buildingDistance(ent.x,ent.y,room)<0);
+ const mat=surface?.mat||building?.floorMaterial||floor.baseTerrain||'';
+ const kind=waterDepthAt(floor,ent.x,ent.y)?'water':
+   onPlacedBridge(floor,ent.x,ent.y)||/wood|bridge|madeira/i.test(mat)?'wood':
+   highGrassAt(floor,ent.x,ent.y)?'tallGrass':
+   /stone|paving|cobble|marble|ceramic/i.test(mat)?'stone':'grass';
+ playGameSound(kind,kind==='water'?.12:.08);
 }
 function initGameSound(){
  refreshGameSoundButton();

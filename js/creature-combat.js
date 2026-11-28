@@ -117,11 +117,11 @@ function creatureAttackReach(attacker){
 function handleCreatureAttackClick(x,y){
  const attacker=gmCreatureAttack;
  if(!attacker)return false;
- const target=gmActors().filter(ent=>ent.type==='pc'&&ent.hp>0&&
+ const target=gmActors().filter(ent=>ent!==attacker&&ent.hp>0&&(ent.type==='pc'||ent.type==='npc'||combatCreature(ent))&&
    (Math.hypot(ent.x-x,ent.y-y)<24||Math.hypot(ent.x-x,ent.y-15-y)<22))
    .sort((a,b)=>Math.hypot(a.x-x,a.y-7-y)-Math.hypot(b.x-x,b.y-7-y))[0];
  if(!gmActors().includes(attacker)||!target){
-   creatureCombatNotice('Clique em um personagem jogador vivo para escolher o alvo.');
+   creatureCombatNotice('Clique em um alvo vivo: personagem, NPC ou criatura.');
    return true;
  }
  gmCreatureAttack=null;
@@ -218,7 +218,7 @@ function updateCreatureAutonomy(elapsed){
  const orderedAttacker=gmCreatureOrder?.attacker;
  if(gmCreatureOrder){
    const {attacker,target,move}=gmCreatureOrder;
-   if(state.mode!=='gm'||attacker.hp<=0||!actors.includes(attacker)||!players.includes(target))gmCreatureOrder=null;
+   if(state.mode!=='gm'||attacker.hp<=0||!actors.includes(attacker)||!actors.includes(target)||target.hp<=0)gmCreatureOrder=null;
    else {
      const result=advanceCreatureAttack(attacker,target,floor,now,elapsed,move);
      if(result==='done'||result==='blocked')gmCreatureOrder=null;
