@@ -98,5 +98,175 @@ const mesaCreatureMotion={
     "sentinela_imperial_corrompida-motion.webp",
     6,
     8
+  ],
+  "besta_ululante": [
+    "besta_ululante-motion.webp",
+    1,
+    8
+  ],
+  "carnical_dominante": [
+    "carnical_dominante-motion.webp",
+    1,
+    12
+  ],
+  "carrapato_de_ferro": [
+    "carrapato_de_ferro-motion.webp",
+    1,
+    8
+  ],
+  "cacador_de_nevoa": [
+    "cacador_de_nevoa-motion.webp",
+    1,
+    8
+  ],
+  "cila": [
+    "cila-motion.webp",
+    1,
+    8
+  ],
+  "criatura1": [
+    "criatura1-motion.webp",
+    1,
+    8
+  ],
+  "criatura2": [
+    "criatura2-motion.webp",
+    1,
+    8
+  ],
+  "criatura3": [
+    "criatura3-motion.webp",
+    1,
+    8
+  ],
+  "criatura4": [
+    "criatura4-motion.webp",
+    1,
+    8
+  ],
+  "criatura5": [
+    "criatura5-motion.webp",
+    1,
+    8
+  ],
+  "criatura6": [
+    "criatura6-motion.webp",
+    1,
+    8
+  ],
+  "criatura7": [
+    "criatura7-motion.webp",
+    1,
+    8
+  ],
+  "limo_de_calico": [
+    "limo_de_calico-motion.webp",
+    1,
+    8
+  ],
+  "dragao_trombeta_alado_domesticado": [
+    "dragao_trombeta_alado_domesticado-motion.webp",
+    1,
+    8
+  ],
+  "dragao_trombeta_alado_selvagem": [
+    "dragao_trombeta_alado_selvagem-motion.webp",
+    1,
+    8
+  ],
+  "dragao_trombeta_corredor_domesticado": [
+    "dragao_trombeta_corredor_domesticado-motion.webp",
+    1,
+    8
+  ],
+  "dragao_trombeta_corredor_selvagem": [
+    "dragao_trombeta_corredor_selvagem-motion.webp",
+    1,
+    8
+  ],
+  "enxame_mordedor": [
+    "enxame_mordedor-motion.webp",
+    1,
+    8
+  ],
+  "escavador_de_carapaca": [
+    "escavador_de_carapaca-motion.webp",
+    1,
+    8
+  ],
+  "insetoide_predador": [
+    "insetoide_predador-motion.webp",
+    1,
+    8
+  ],
+  "predador_de_vespera": [
+    "predador_de_vespera-motion.webp",
+    1,
+    8
+  ],
+  "macacodecalico": [
+    "macacodecalico-motion.webp",
+    1,
+    8
+  ],
+  "metamorfo1": [
+    "metamorfo1-motion.webp",
+    1,
+    8
+  ],
+  "metamorfo2": [
+    "metamorfo2-motion.webp",
+    1,
+    8
+  ],
+  "metamorfo3": [
+    "metamorfo3-motion.webp",
+    1,
+    8
+  ],
+  "metamorfo4": [
+    "metamorfo4-motion.webp",
+    1,
+    8
+  ],
+  "montariapterodatil": [
+    "montariapterodatil-motion.webp",
+    1,
+    8
+  ],
+  "parasita_carniceiro": [
+    "parasita_carniceiro-motion.webp",
+    1,
+    8
+  ],
+  "predador_couracado": [
+    "predador_couracado-motion.webp",
+    1,
+    8
+  ],
+  "predador_de_nevoa": [
+    "predador_de_nevoa-motion.webp",
+    1,
+    8
+  ],
+  "rastejante_de_cinzas": [
+    "rastejante_de_cinzas-motion.webp",
+    1,
+    8
+  ],
+  "serpente_sanguessuga": [
+    "serpente_sanguessuga-motion.webp",
+    1,
+    8
+  ],
+  "vespa_de_vidro": [
+    "vespa_de_vidro-motion.webp",
+    1,
+    8
+  ],
+  "errante_parasitado": [
+    "errante_parasitado-motion.webp",
+    1,
+    12
   ]
 };
