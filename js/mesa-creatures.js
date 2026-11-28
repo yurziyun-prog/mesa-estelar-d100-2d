@@ -26,7 +26,7 @@ function drawMesaCreature(g,design,stride,key,time=null){
  const sway=(phase,amount)=>time===null?0:Math.sin(time/880+seed%19+phase)*amount;
  const eye=(x,y)=>ellipse(x,y,1.45,1.6,'#ffd27f');
  g.save();
- g.translate(0,13*(1-scale));g.scale(scale,scale);
+ g.scale(scale,scale);
  if(key==='cila'){
    for(let i=0;i<6;i++){
      g.save();g.rotate(i*Math.PI/3-.14);
@@ -135,9 +135,27 @@ function creatureArtKey(ent){
    .toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
 }
 
+function creatureRenderScale(ent){
+ const sheet=ent.mesaSourceSheet;
+ const size=String(sheet?.tamanho||'').toLowerCase();
+ const height=String(sheet?.altura||'');
+ const span=height.match(/(\d+(?:[.,]\d+)?)\s*m\s+(?:de comprimento|de envergadura|com a cauda)/i);
+ const dimension=(span||height.match(/^\s*(\d+(?:[.,]\d+)?)/))?.[1];
+ if(dimension){
+   const meters=Number(dimension.replace(',','.'));
+   const nominal=ent.creature?.form==='humanoid'?32:span?48:35;
+   return Math.max(.23,Math.min(4,meters*MAP_UNITS_PER_METER/nominal));
+ }
+ if(/titânico/.test(size))return 3.2;
+ if(/enorme|muito grande/.test(size))return 2.2;
+ if(/grande/.test(size))return 1.55;
+ if(/minúsculo/.test(size))return .34;
+ if(/pequeno/.test(size))return .65;
+ return ent.creature?.scale||1;
+}
+
 function creatureMapWidth(ent){
- const scale=ent.creature?.scale||1;
- return (creatureArtKey(ent)==='cila'?60:52)*scale;
+ return (creatureArtKey(ent)==='cila'?55:42)*creatureRenderScale(ent);
 }
 
 function drawCreatureGroundShadow(g,ent,x,y,lift){

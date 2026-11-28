@@ -318,7 +318,7 @@ function drawInsectBody(g,a,ent,half,hips,cloth,stride){
 }
 
 function drawCharacterAppearance(g,ent,stride=0){
- if(ent.creature){drawMesaCreature(g,ent.creature,stride,creatureArtKey(ent),ent.hp>0&&!terrainMotionPreference.matches?performance.now():null);return;}
+ if(ent.creature){drawMesaCreature(g,{...ent.creature,scale:creatureRenderScale(ent)},stride,creatureArtKey(ent),ent.hp>0&&!terrainMotionPreference.matches?performance.now():null);return;}
  const a=characterAppearance(ent);
  const {form,sex,height,shoulders:half,hips,waist,arms}=characterAnatomy(ent,a);
  const equipped=ent.equipment||{};
@@ -486,7 +486,7 @@ function drawCharacterPortrait(id,ent){
  light.addColorStop(0,'#3b5167');light.addColorStop(1,'#121b28');
  g.fillStyle=light;g.fillRect(0,0,picture.width,picture.height);
  const {form}=characterAnatomy(ent,characterAppearance(ent));
- const zoom=form==='dragon'?Math.min(2.2,picture.width/60,picture.height/65):2.2;
+ const zoom=ent.creature?Math.min(2.2,picture.width/(creatureMapWidth(ent)+10),picture.height/(creatureMapWidth(ent)+10)):form==='dragon'?Math.min(2.2,picture.width/60,picture.height/65):2.2;
  g.save();g.translate(picture.width/2,picture.height/2+(form==='dragon'?10:4));g.scale(zoom,zoom);
  drawCharacterAppearance(g,ent);g.restore();
 }

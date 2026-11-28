@@ -214,8 +214,8 @@ function updateSkeletonAutonomy(){
   const speed=1.15;
   const x=ent.x+dx*speed,y=ent.y+dy*speed;
   const beforeX=ent.x,beforeY=ent.y;
-  if(canMoveTo(ent.floor,x,ent.y))ent.x=x;
-  if(canMoveTo(ent.floor,ent.x,y))ent.y=y;
+  if(canWalkStep(ent,x,ent.y))ent.x=x;
+  if(canWalkStep(ent,ent.x,y))ent.y=y;
   ent.facingX=dx;ent.facingY=dy;
   if(ent.x!==beforeX||ent.y!==beforeY)markEntityWalking(ent,100);
  }

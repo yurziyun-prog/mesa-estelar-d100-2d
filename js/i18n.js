@@ -1,4 +1,7 @@
 const SITE_ZH = new Map(`
+Ações da criatura|怪物操作
+Clique em um personagem jogador vivo para escolher o alvo.|点击一名存活的玩家角色作为目标。
+O caminho ou a linha de ataque está bloqueada.|移动路线或攻击路径被挡住了。
 Atacar com a criatura|用怪物攻击
 Ataque autônomo|自动攻击
 Clique no personagem que a criatura vai atacar.|点击要攻击的玩家角色。

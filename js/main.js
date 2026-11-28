@@ -152,7 +152,7 @@ function setupInputs() {
     if(state.mode==='gm'&&!e.ctrlKey&&!e.metaKey){
       if(e.key==='Tab'){e.preventDefault();if(!e.repeat)gmCycle();return;}
       if(e.key==='Enter'){e.preventDefault();gmConfirm();return;}
-      if(e.key==='Escape'){e.preventDefault();if(gmCreatureAttack){gmCreatureAttack=null;refreshCreatureCombatControls();}else if(gmRestoreArmed)toggleGmRestore();else gmRelease();return;}
+      if(e.key==='Escape'){e.preventDefault();if(gmCreatureAttack||gmCreatureOrder){gmCreatureAttack=null;gmCreatureOrder=null;refreshCreatureCombatControls();}else if(gmRestoreArmed)toggleGmRestore();else gmRelease();return;}
     }
     if (e.ctrlKey || e.metaKey) {
       const k=e.key.toLowerCase();
@@ -235,7 +235,7 @@ function setupInputs() {
       if(gmRestoreArmed){restoreGmTargetAt(wx,wy);return;}
       if ((gmPlacementTemplate || gmRosterPlacementIds?.length) && placeGmEntityAt(wx,wy)) return;
       const clicked = state.entities.find(ent =>
-        ent.sceneId === state.activeSceneId && ent.floor === state.currentFloor && Math.hypot(ent.x - wx, ent.y - wy) < 28
+        ent.sceneId === state.activeSceneId && ent.floor === state.currentFloor && Math.hypot(ent.x - wx, ent.y - wy) < (ent.creature?Math.max(12,creatureMapWidth(ent)/2):28)
       );
       if (clicked) {
         gmPreviewId = clicked.id;

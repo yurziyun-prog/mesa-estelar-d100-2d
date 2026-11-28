@@ -1,10 +1,12 @@
 let gmCreatureAttack=null;
+let gmCreatureOrder=null;
 const creatureAttackReady=new WeakMap();
 let creatureStrike=null;
 
 function gmCombatCreature(){
  if(state.mode!=='gm')return null;
- const ent=gmActors().find(actor=>actor.id===gmPreviewId)||getGmControlledEntity();
+ const controlled=getGmControlledEntity();
+ const ent=controlled&&combatCreature(controlled)?controlled:gmActors().find(actor=>actor.id===gmPreviewId);
  return ent?.hp>0&&combatCreature(ent)?ent:null;
 }
 function refreshCreatureCombatControls(){
@@ -19,6 +21,7 @@ function armCreatureAttack(){
  if(!ent)return;
  if(gmRestoreArmed)toggleGmRestore();
  gmRosterPlacementIds=null;gmPlacementTemplate=null;
+ gmCreatureOrder=null;
  gmCreatureAttack=gmCreatureAttack===ent?null:ent;
  refreshCreatureCombatControls();
  gmRestoreNotice(gmCreatureAttack?'Clique no personagem que a criatura vai atacar.':'');
@@ -53,31 +56,57 @@ function creatureAttackReach(attacker){
 function handleCreatureAttackClick(x,y){
  const attacker=gmCreatureAttack;
  if(!attacker)return false;
- gmCreatureAttack=null;refreshCreatureCombatControls();
- const target=gmActors().filter(ent=>ent.type==='pc'&&ent.hp>0&&Math.hypot(ent.x-x,ent.y-y)<28)
-   .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))[0];
- if(!gmActors().includes(attacker)||!target||!creatureMeleeAttack(attacker,target,getScene().floors[state.currentFloor],performance.now()))
-   gmRestoreNotice('Ataque indisponível. Selecione um personagem vivo, próximo e sem parede no caminho.');
+ const target=gmActors().filter(ent=>ent.type==='pc'&&ent.hp>0&&
+   (Math.hypot(ent.x-x,ent.y-y)<24||Math.hypot(ent.x-x,ent.y-15-y)<22))
+   .sort((a,b)=>Math.hypot(a.x-x,a.y-7-y)-Math.hypot(b.x-x,b.y-7-y))[0];
+ if(!gmActors().includes(attacker)||!target){
+   gmRestoreNotice('Clique em um personagem jogador vivo para escolher o alvo.');
+   return true;
+ }
+ gmCreatureAttack=null;
+ gmCreatureOrder={attacker,target};
+ refreshCreatureCombatControls();
+ gmRestoreNotice(translateSiteText('Alvo selecionado.')+' '+target.name);
  return true;
+}
+function advanceCreatureAttack(attacker,target,floor,now,elapsed){
+ if(crossesWall(floor,attacker.x,attacker.y,target.x,target.y))return 'blocked';
+ const dx=target.x-attacker.x,dy=target.y-attacker.y,distance=Math.hypot(dx,dy);
+ if(distance<=creatureAttackReach(attacker)){
+   return creatureMeleeAttack(attacker,target,floor,now)?'done':'waiting';
+ }
+ const speed=Math.min(4,elapsed*65);
+ const stepX=dx/distance*speed,stepY=dy/distance*speed;
+ for(const [x,y] of [[attacker.x+stepX,attacker.y+stepY],[attacker.x+stepX,attacker.y],[attacker.x,attacker.y+stepY]]){
+   if((x===attacker.x&&y===attacker.y)||!canWalkStep(attacker,x,y))continue;
+   attacker.x=x;attacker.y=y;markEntityWalking(attacker,130);
+   return 'moving';
+ }
+ return 'blocked';
 }
 function updateCreatureAutonomy(elapsed){
  if(state.mode==='architect'||document.querySelector('dialog[open]'))return;
  const floor=getScene().floors[state.currentFloor],now=performance.now();
- const actors=gmActors();
- const players=actors.filter(ent=>ent.type==='pc'&&ent.hp>0);
- const controlled=getGmControlledEntity();
- for(const attacker of actors){
-   if(!attacker.autoCreatureAttack||attacker.hp<=0||attacker===controlled||attacker.sleepPose||!combatCreature(attacker))continue;
-   const target=players.filter(ent=>ent.hp>0&&!crossesWall(floor,attacker.x,attacker.y,ent.x,ent.y))
-     .sort((a,b)=>Math.hypot(a.x-attacker.x,a.y-attacker.y)-Math.hypot(b.x-attacker.x,b.y-attacker.y))[0];
-   if(!target)continue;
-   const dx=target.x-attacker.x,dy=target.y-attacker.y,distance=Math.hypot(dx,dy);
-   if(distance>170)continue;
-   if(distance<=creatureAttackReach(attacker)){creatureMeleeAttack(attacker,target,floor,now);continue;}
-   const step=Math.min(4,elapsed*58),x=attacker.x+dx/distance*step,y=attacker.y+dy/distance*step;
-   if(canMoveTo(attacker.floor,x,y)){
-     attacker.x=x;attacker.y=y;markEntityWalking(attacker,130);
+ const actors=gmActors(),players=actors.filter(ent=>ent.type==='pc'&&ent.hp>0);
+ const orderedAttacker=gmCreatureOrder?.attacker;
+ if(gmCreatureOrder){
+   const {attacker,target}=gmCreatureOrder;
+   if(state.mode!=='gm'||attacker.hp<=0||!actors.includes(attacker)||!players.includes(target))gmCreatureOrder=null;
+   else {
+     const result=advanceCreatureAttack(attacker,target,floor,now,elapsed);
+     if(result==='done'||result==='blocked')gmCreatureOrder=null;
+     if(result==='blocked')gmRestoreNotice('O caminho ou a linha de ataque está bloqueada.');
    }
+ }
+ const manualMovement=['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].some(key=>keys[key]);
+ for(const attacker of actors){
+   if(!attacker.autoCreatureAttack||attacker.hp<=0||attacker===orderedAttacker||
+      attacker===draggingEntity||attacker===gmCreatureAttack||attacker.sleepPose||!combatCreature(attacker))continue;
+   if(attacker===getGmControlledEntity()&&manualMovement)continue;
+   const target=players.filter(ent=>ent.hp>0&&Math.hypot(ent.x-attacker.x,ent.y-attacker.y)<=170&&
+     !crossesWall(floor,attacker.x,attacker.y,ent.x,ent.y))
+     .sort((a,b)=>Math.hypot(a.x-attacker.x,a.y-attacker.y)-Math.hypot(b.x-attacker.x,b.y-attacker.y))[0];
+   if(target)advanceCreatureAttack(attacker,target,floor,now,elapsed);
  }
 }
 function drawCreatureStrike(floor){

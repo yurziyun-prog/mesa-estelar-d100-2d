@@ -47,7 +47,7 @@ function refreshGmFocus(){
 }
 function setMode(mode) {
   const priorMode=state.mode;
-  if(mode!==priorMode)gmCreatureAttack=null;
+  if(mode!==priorMode){gmCreatureAttack=null;gmCreatureOrder=null;}
   if(priorMode==='gm'&&mode!=='gm'&&gmRestoreArmed)toggleGmRestore();
   if(mode!==priorMode&&typeof clearTransientStairClimbs==='function')clearTransientStairClimbs(state.entities);
   if(state.scenes && state.activeSceneId){
@@ -185,11 +185,27 @@ function trySwimmingTest(ent,point=null){
  return true;
 }
 
+// Narrow horizontal footprint leaves room to skirt a token near a doorway.
+function tokenBlocksStep(ent,x,y){
+ const scale=ent.creature?creatureRenderScale(ent):1;
+ for(const other of state.entities){
+   if(other===ent||other.hp<=0||other.sceneId!==ent.sceneId||other.floor!==ent.floor)continue;
+   const otherScale=other.creature?creatureRenderScale(other):1;
+   const size=(scale+otherScale)/2;
+   const side=15*size,depth=24*size;
+   const next=((x-other.x)/side)**2+((y-other.y)/depth)**2;
+   if(next>=1)continue;
+   const current=((ent.x-other.x)/side)**2+((ent.y-other.y)/depth)**2;
+   // Older maps may start with overlapping tokens. Let them separate.
+   if(next<=current+1e-8)return true;
+ }
+ return false;
+}
 function canWalkStep(ent,x,y){
  const floor=getScene().floors[ent.floor];
  if(Math.abs(reliefAt(floor,x,y)-reliefAt(floor,ent.x,ent.y))>.25)return false;
  const depth=waterDepthAt(floor,x,y);
- if(!canMoveTo(ent.floor,x,y,false,depth))return false;
+ if(tokenBlocksStep(ent,x,y)||!canMoveTo(ent.floor,x,y,false,depth))return false;
  if(depth!=='deep'||waterDepthAt(floor,ent.x,ent.y)==='deep')return true;
  const grant=swimPermission.get(ent),now=performance.now();
  if(grant?.floor===floor&&grant.until>now&&Math.hypot(grant.x-x,grant.y-y)<=SWIM_TARGET_RANGE){
@@ -630,7 +646,7 @@ function attemptJump(ent, dx, dy) {
   for(let d=42;d<=104;d+=8){
     const x=ent.x+ux*d,y=ent.y+uy*d;
     const startHeight=reliefAt(floor,ent.x,ent.y);
-    if(Math.abs(reliefAt(floor,x,y)-startHeight)>JUMP_CLEARANCE||!canMoveTo(ent.floor,x,y,true))continue;
+    if(tokenBlocksStep(ent,x,y)||Math.abs(reliefAt(floor,x,y)-startHeight)>JUMP_CLEARANCE||!canMoveTo(ent.floor,x,y,true))continue;
     if(crossesWall(floor,ent.x,ent.y,x,y))continue;
     let blockedTrajectory=false;
     for(let step=1;step<Math.ceil(d/5);step++){

@@ -82,7 +82,7 @@ let gmRestoreArmed=false;
 function toggleGmRestore(){
  if(state.mode!=='gm')return;
  gmRestoreArmed=!gmRestoreArmed;
- gmCreatureAttack=null;refreshCreatureCombatControls();
+ gmCreatureAttack=null;gmCreatureOrder=null;refreshCreatureCombatControls();
  gmRosterPlacementIds=null;gmPlacementTemplate=null;
  const button=document.getElementById('gmRestoreTool');
  button.setAttribute('aria-pressed',String(gmRestoreArmed));
