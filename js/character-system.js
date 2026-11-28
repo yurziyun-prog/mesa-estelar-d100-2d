@@ -113,6 +113,53 @@ function avatarShading(g,color,x,y,w,h){
  g.restore();
 }
 
+function drawScaledAvatarHead(g,a,form,cap){
+ const crocodile=form==='crocodile';
+ const jaw=crocodile
+   ? [[-10,-16],[-5,-21],[4,-21],[10,-16],[14,-12],[16,-8],[14,-4],[6,-3],[-2,-6],[-9,-8]]
+   : [[-11,-17],[-5,-22],[5,-22],[10,-18],[9,-12],[6,-5],[0,-3],[-6,-6],[-9,-11]];
+ if(!crocodile)for(const side of [-1,1]){
+   avatarShape(g,'#c8b28a',[[side*4,-20],[side*8,-30],[side*12,-32],[side*10,-25],[side*9,-18]]);
+   avatarShape(g,a.skin,[[side*8,-15],[side*14,-19],[side*12,-12],[side*8,-9]]);
+ }
+ avatarShape(g,a.skin,jaw);
+ avatarShape(g,crocodile?'#a6ab81':'#c6a47d',crocodile
+   ? [[-3,-10],[5,-9],[15,-8],[14,-4],[6,-3],[0,-5]]
+   : [[-6,-9],[0,-10],[7,-9],[6,-5],[0,-3],[-6,-6]]);
+ const brow=crocodile?[[-6,-16],[5,-15]]:[[-5,-15],[5,-15]];
+ for(const [x,y] of brow){
+   g.fillStyle='#1d282c';g.beginPath();g.ellipse(x,y,2.6,1.65,-.23,0,Math.PI*2);g.fill();
+   g.fillStyle='#eac17b';g.beginPath();g.ellipse(x,y,1.7,1.04,-.23,0,Math.PI*2);g.fill();
+   g.fillStyle=a.eyes;g.fillRect(x-.35,y-.95,.7,1.85);
+ }
+ g.strokeStyle='#273332';g.lineWidth=.85;g.beginPath();
+ g.moveTo(crocodile?-3:-5,-8);g.quadraticCurveTo(3,-6,crocodile?15:6,crocodile?-7:-8);g.stroke();
+ for(const x of crocodile?[2,6,10,13]:[-4,3]){
+   g.fillStyle='#f4e7bf';g.beginPath();g.moveTo(x,-7.6);g.lineTo(x+1.5,-7.7);g.lineTo(x+.7,-5.8);g.fill();
+ }
+ g.fillStyle='#28332d';g.fillRect(crocodile?11:1,crocodile?-10:-11,1.5,.9);
+ g.fillStyle='#ffffff36';
+ for(const [x,y] of [[-6,-19],[-1,-20],[3,-18],[8,-12]])g.fillRect(x,y,1.8,.85);
+ if(cap)avatarShape(g,'#6b513b',[[-11,-20],[-7,-23],[-5,-25],[5,-25],[8,-22],[12,-20],[7,-19],[-9,-19]]);
+}
+
+function drawScaledAvatarBack(g,a,form,cloth){
+ const crocodile=form==='crocodile';
+ avatarShape(g,a.skin,crocodile?[[4,6],[14,9],[21,14],[26,13],[23,18],[16,19],[6,15]]
+   :[[4,8],[12,12],[21,16],[25,12],[23,18],[15,20],[5,14]]);
+ for(const [x,y] of [[13,10],[17,12],[21,14]]){
+   avatarShape(g,'#47514b',[[x-2,y+1],[x,y-2],[x+2,y+2]]);
+ }
+ if(form==='dragon')for(const side of [-1,1]){
+   const wing=[[side*5,4],[side*10,-10],[side*21,-21],[side*25,-15],[side*22,1],
+     [side*20,10],[side*17,4],[side*12,8],[side*10,3]];
+   avatarShape(g,cloth,wing);
+   g.strokeStyle='#26343c';g.lineWidth=1.15;g.beginPath();
+   g.moveTo(side*6,3);g.lineTo(side*21,-20);g.lineTo(side*20,9);
+   g.moveTo(side*19,-16);g.lineTo(side*12,7);g.stroke();
+ }
+}
+
 function drawAvatarHead(g,a,form,cap,sex){
  if(a.helmet!=='none'){
    avatarShape(g,a.helmetColor,[[-10,-19],[-5,-24],[5,-24],[10,-19],[11,-9],[7,-3],[-7,-3],[-11,-9]]);
@@ -122,12 +169,12 @@ function drawAvatarHead(g,a,form,cap,sex){
    if(a.helmet==='closed')g.fillRect(-1,-10,2,5);
    return;
  }
- if(['dragon','crocodile','reptilian','thalassian'].includes(form)){
-   const snout=form==='crocodile'?1:form==='reptilian'?-2:-4;
-   if(form==='dragon'){
-     avatarShape(g,'#dac3a1',[[-8,-17],[-13,-28],[-4,-23],[-3,-17]]);
-     avatarShape(g,'#dac3a1',[[8,-17],[13,-28],[4,-23],[3,-17]]);
-   }
+ if(form==='dragon'||form==='crocodile'){
+   drawScaledAvatarHead(g,a,form,cap);
+   return;
+ }
+ if(form==='reptilian'||form==='thalassian'){
+   const snout=form==='reptilian'?-2:-4;
    if(form==='thalassian'){
      avatarShape(g,a.skin,[[-5,-17],[-15,-19],[-9,-6]]);
      avatarShape(g,a.skin,[[5,-17],[15,-19],[9,-6]]);
@@ -149,6 +196,7 @@ function drawAvatarHead(g,a,form,cap,sex){
      avatarShape(g,a.skin,[[side*6,-12],[side*7,-8],[side*2,-4],[side*3,-9]]);
    }
    if(cap)avatarShape(g,'#67513e',[[-8,-20],[-4,-23],[5,-23],[9,-20]]);
+   return;
  }else if(form==='robot'){
    avatarShape(g,'#8397a8',[[-9,-20],[9,-20],[11,-13],[8,-5],[-8,-5],[-11,-13]]);
    g.fillStyle='#263447';g.fillRect(-8,-16,16,5);
@@ -199,7 +247,7 @@ function drawAvatarHead(g,a,form,cap,sex){
    }
  }
  for(const side of [-1,1]){
-   g.fillStyle=form==='insect'?'#dbc88b':'#eee4d1';
+   g.fillStyle='#eee4d1';
    g.beginPath();g.ellipse(side*3.7,-13,2.15,1.22,0,0,Math.PI*2);g.fill();
    g.fillStyle=a.eyes;g.beginPath();g.arc(side*3.7,-13,1.05,0,Math.PI*2);g.fill();
    g.fillStyle='#fff3d8';g.fillRect(side*3.7-.45,-13.46,.38,.38);
@@ -257,13 +305,10 @@ function drawCharacterAppearance(g,ent,stride=0){
  g.translate(0,18*(1-height));g.scale(1,height);
  if(form==='insect')drawInsectBody(g,a,ent,half,hips,cloth,stride);
  else{
- if(form==='dragon'||form==='crocodile'||form==='reptilian'){
-   g.strokeStyle='#23313a';g.lineWidth=6;g.lineCap='round';g.beginPath();
+ if(form==='dragon'||form==='crocodile')drawScaledAvatarBack(g,a,form,cloth);
+ else if(form==='reptilian'){
+   g.strokeStyle=a.skin;g.lineWidth=4;g.lineCap='round';g.beginPath();
    g.moveTo(7,10);g.quadraticCurveTo(19,23,23,14);g.stroke();
-   g.strokeStyle=a.skin;g.lineWidth=3.6;g.stroke();
-   if(form==='dragon')for(const side of [-1,1]){
-     avatarShape(g,cloth,[[side*4,-4],[side*19,-12],[side*22,0],[side*13,-3],[side*10,8]]);
-   }
  }
  const leg='#353e4e',boots=equipped.feet?'#664937':'#242a36';
  g.lineCap='round';
@@ -563,11 +608,28 @@ function characterItemDetails(name){
  return [description,fields.join('  ·  ')].filter(Boolean).join('\n');
 }
 
+const equipmentSlotIcons={head:'⛑️',body:'🛡️',feet:'🥾',hand:'⚔️',light:'🔦',waist:'🪢'};
 function inventoryIcon(name){
  const item=characterItems[name];
- if(item?.slot==='hand')return {shield:'◈',bow:'➶',staff:'✧',gun:'▰',blade:'†'}[characterHandStyle(name)];
- return {head:'◓',body:'♜',feet:'◩',light:'☼',waist:'═'}[item?.slot]||
-   (item?.use==='heal'?'✚':item?.use==='food'?'◒':item?.data?.categoria==='Munição'?'⋮':'◇');
+ const key=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ const art=[
+   [/machado|picareta/,'rpg_axe_small'],[/adaga/,'rpg_dagger'],[/faca/,'rpg_knife'],
+   [/escudo/,'rpg_shield_heater'],[/arco/,'rpg_wooden_bow'],[/lanca|cajado/,'rpg_spear'],
+   [/espada|sabre/,'rpg_sword'],[/municao|flecha/,'rpg_arrow'],
+   [/armadura|biomesh|colete/,'rpg_armor_metal'],[/roupa|capa|casaco/,'rpg_armor_leather'],
+   [/mochila/,'rpg_backpack'],[/bolsa/,'rpg_bag'],[/grimorio|livro/,'rpg_book'],
+   [/convite|registro|carta/,'rpg_scroll'],[/pocao|nanogel|antidoto/,'rpg_potion_bottle'],
+   [/agua|bebida/,'food_bottle'],[/racao|comida/,'food_bread'],[/chave/,'rpg_key'],
+   [/miner|cristal/,'rpg_mineral'],[/moeda/,'rpg_coin']
+ ].find(([pattern])=>pattern.test(key))?.[1];
+ if(art)return {art};
+ if(/medic|socorro/.test(key))return {symbol:'🩹'};
+ if(/bateria|celula/.test(key))return {symbol:'🔋'};
+ if(/comunicador|scanner/.test(key))return {symbol:'📟'};
+ if(/kit|ferramenta/.test(key))return {symbol:'🧰'};
+ if(item?.slot==='hand')return {symbol:characterHandStyle(name)==='gun'?'🔫':'⚔️'};
+ if(item?.slot)return {symbol:equipmentSlotIcons[item.slot]};
+ return {art:'rpg_chest'};
 }
 
 let selectedInventoryItem=null;
@@ -618,12 +680,19 @@ function renderCharacterEquipment(ent){
    const button=document.createElement('button');button.type='button';button.className='inventory-cell';
    const name=ent.inventory[index];
    if(slot)button.dataset.slot=slot;
-   const icon=document.createElement('span');icon.textContent=name?inventoryIcon(name):'';
-   const caption=document.createElement('small');caption.textContent=name?characterItemName(name):slot?label:'';
-   button.append(icon,caption);
-   button.setAttribute('aria-label',[label,name&&characterItemName(name)].filter(Boolean).join(' · '));
+   const {art,symbol}=name?inventoryIcon(name):{symbol:equipmentSlotIcons[slot]};
+   if(art||symbol){
+     const icon=document.createElement(art?'img':'span');
+     icon.className='inventory-icon';
+     icon.setAttribute('aria-hidden','true');
+     if(art){icon.src='assets/item-icons/'+art+'.webp';icon.alt='';icon.draggable=false;}
+     else icon.textContent=symbol;
+     button.append(icon);
+   }
+   const title=name?characterItemName(name):label;
+   button.setAttribute('aria-label',[label,name&&title].filter(Boolean).join(' · '));
+   if(name||slot)button.title=title;
    if(name){
-     button.title=characterItemName(name);
      button.draggable=true;
      button.ondragstart=event=>{
        dragged={index,name,slot};

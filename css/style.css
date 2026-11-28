@@ -524,17 +524,9 @@ html .character-section-title, html[lang="zh-CN"] .character-section-title {
 }
 .inventory-cell[draggable="true"] { cursor:grab;background:#192538; }
 .inventory-cell:focus-visible,.inventory-cell.inventory-drop { outline:2px solid var(--gold);outline-offset:-2px; }
-.inventory-cell span { font-size:19px;line-height:1.15;color:var(--gold); }
-.inventory-cell small {
-  max-width:100%;
-  font-size:10px;
-  line-height:1.1;
-  overflow:hidden;
-  display:-webkit-box;
-  -webkit-line-clamp:2;
-  -webkit-box-orient:vertical;
-  overflow-wrap:anywhere;
-}
+.inventory-cell img.inventory-icon { width:88%;height:88%;object-fit:contain;pointer-events:none; }
+.inventory-cell span.inventory-icon { font-size:clamp(19px,2vw,28px);line-height:1;pointer-events:none; }
+.inventory-cell[data-slot]:not([draggable="true"]) .inventory-icon { opacity:.42; }
 #inventoryDetails:not(:empty) { margin-top:8px;display:grid;gap:5px;justify-items:start; }
 #inventoryDetails small { white-space:pre-line;overflow-wrap:anywhere;color:var(--text-muted); }
 
