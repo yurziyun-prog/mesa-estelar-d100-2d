@@ -286,31 +286,18 @@ function awakenEntity(ent){
   const rest=ent.sleepRest;
   if(rest){ent.x=rest.x;ent.y=rest.y;}
   ent.sleepPose=null;ent.sleepRest=null;ent.sleepBed=null;ent.sleepMinutes=0;
-  updateRestControls();
   logEvent('☀️ '+ent.name+' levantou.');
 }
-function interactWithBed(ent,bed){
-  if(ent.sleepPose)return;
-  if(TENT_TYPES.has(bed.type)){
-    if(state.entities.some(other=>other!==ent&&other.sleepPose&&other.sceneId===ent.sceneId&&other.floor===ent.floor&&other.sleepBed?.x===bed.x&&other.sleepBed?.y===bed.y))return;
-    if(!confirm(translateSiteText('Entrar na barraca e dormir?')))return;
-    ent.sleepRest={x:ent.x,y:ent.y};
-    ent.sleepBed={x:bed.x,y:bed.y,type:bed.type,rot:bed.rot||0};
-    ent.x=bed.x;ent.y=bed.y;ent.sleepPose='sleeping';ent.sleepMinutes=0;
-    updateRestControls();
-    return;
-  }
-  if(!confirm('Deitar em '+({bed:'cama',bedDouble:'cama de casal',sleepingBag:'saco de dormir',capsuleBed:'cápsula de sono'}[bed.type]||'cama')+'?'))return;
+function startEntitySleep(ent,bed){
   ent.sleepRest={x:ent.x,y:ent.y};
-  ent.sleepPose='lying';
-  ent.sleepBed={x:bed.x,y:bed.y,type:bed.type,rot:bed.rot||0};
+  ent.sleepBed={x:bed.x,y:bed.y,type:bed.type,rot:bed.rot||0,portable:Boolean(bed.portable)};
   ent.x=bed.x;ent.y=bed.y;
-  logEvent('🛏️ '+ent.name+' deitou.');
-  if(confirm('Dormir agora?')){
-    ent.sleepPose='sleeping';ent.sleepMinutes=0;
-    logEvent('💤 '+ent.name+' está dormindo.');
-  }
-  updateRestControls();
+  ent.sleepPose='sleeping';ent.sleepMinutes=0;
+  logEvent('💤 '+ent.name+' está dormindo.');
+}
+function interactWithBed(ent,bed){
+  if(ent.sleepPose||state.entities.some(other=>other!==ent&&other.sleepPose&&other.sceneId===ent.sceneId&&other.floor===ent.floor&&other.sleepBed?.x===bed.x&&other.sleepBed?.y===bed.y))return;
+  if(confirm(clockLabel('Dormir agora?'))){startEntitySleep(ent,bed);saveBank();}
 }
 function interactNearby(entity,clickedSeat=null) {
   const floor = getScene().floors[entity.floor];
@@ -414,8 +401,8 @@ function updateUI() {
   document.getElementById('hpBar').style.width = `${Math.max(0, (ent.hp / ent.maxHp) * 100)}%`;
   document.getElementById('hungerText').textContent = `${ent.hunger}%`;
   showFatigue(ent);
+  updateCharacterClock();
   document.getElementById('fatigueLabel').textContent=restLabel('Fadiga');
-  updateRestControls();
   document.getElementById('hungerBar').style.width = `${ent.hunger}%`;
   document.getElementById('attitudeSelect').value = ent.attitude;
 

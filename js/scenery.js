@@ -230,7 +230,10 @@ function daylightLighting(minute=daylightMinute()){
 function updateDaylightControls(){
  const minute=daylightMinute();
  document.getElementById('mapTime').value=String(Math.floor(minute/60)).padStart(2,'0')+':'+String(minute%60).padStart(2,'0');
- document.getElementById('mapTimeAuto').checked=Boolean(state.daylightAuto);
+ document.getElementById('mapTimeAuto').checked=state.daylightAuto!==false;
+ document.getElementById('mapTimeRate').value=String(state.daylightRate||1);
+ document.getElementById('worldDateSetting').value=worldDateInput();
+ updateCharacterClock();
  document.getElementById('timeOfDaySelect').value=state.timeOfDay||'day';
 }
 
@@ -242,14 +245,16 @@ function setMapDaylight(minute){
 }
 
 function advanceMapDaylight(elapsed){
- if(!state.daylightAuto){daylightSeconds=0;return;}
- daylightSeconds+=elapsed;
+ if(state.daylightAuto===false){daylightSeconds=0;return;}
+ daylightSeconds+=elapsed*(state.daylightRate||1);
  const minutes=Math.floor(daylightSeconds);
  if(!minutes)return;
  daylightSeconds-=minutes;
- const start=daylightMinute();
- advanceRestClock(start,minutes);
+ const start=worldClockStamp();
+ const save=advanceRestClock(start,minutes);
+ state.worldDay=Math.floor((start+minutes)/DAY_MINUTES);
  setMapDaylight(start+minutes);
+ if(save)saveBank();
 }
 
 function drawSunShadows(floor){

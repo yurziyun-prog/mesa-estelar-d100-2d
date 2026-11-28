@@ -246,7 +246,11 @@
             <option value="night">🌙 Noite (Lanternas)</option>
           </select></label>
           <label><span>Hora do mapa</span> <input type="time" class="ctrl" id="mapTime" onchange="if(this.value){const [h,m]=this.value.split(':').map(Number);setMapDaylight(h*60+m)}"></label>
-          <label class="gm-time-toggle"><input type="checkbox" id="mapTimeAuto" onchange="state.daylightAuto=this.checked"> <span>Tempo automático</span></label>
+          <label class="gm-time-toggle"><input type="checkbox" id="mapTimeAuto" onchange="state.daylightAuto=this.checked;saveBank()"> <span>Tempo automático</span></label>
+          <label><span>Velocidade do tempo · 时间速度</span> <select class="ctrl" id="mapTimeRate" onchange="state.daylightRate=Number(this.value);saveBank()">
+            <option value="0.25">¼×</option><option value="0.5">½×</option><option value="1">1×</option><option value="2">2×</option><option value="5">5×</option><option value="15">15×</option><option value="60">60×</option>
+          </select></label>
+          <label><span>Data do mundo · 世界日期</span> <input class="ctrl" type="date" id="worldDateSetting" onchange="setWorldDate(this.value)"></label>
         </div>
         <div style="font-size:11px; color:var(--text-muted);">
           Clique para selecionar e arraste personagens ou NPCs pelo mapa.
@@ -294,11 +298,6 @@
           <button type="button" class="tool-btn" data-world-action="push" onclick="chooseWorldAction('push')">Empurrar</button>
           <button type="button" class="tool-btn" data-world-action="trim" onclick="chooseWorldAction('trim')">Limpar vegetação</button>
           <button type="button" class="tool-btn" data-world-action="dig" onclick="chooseWorldAction('dig')">Escavar</button>
-        </div>
-        <div id="playerRestControls" class="tool-grid">
-          <button type="button" class="tool-btn" data-sit onclick="toggleGroundSeat()">Sentar no chão</button>
-          <button type="button" class="tool-btn" data-sleep="1" onclick="sleepForHours(1)" hidden>Dormir 1 hora</button>
-          <button type="button" class="tool-btn" data-sleep="8" onclick="sleepForHours(8)" hidden>Dormir 8 horas</button>
         </div>
         <p id="worldActionStatus" role="status" class="library-hint"></p>
         <div class="section-title">Comandos</div>
@@ -585,10 +584,10 @@
       <div class="bar-wrap"><div id="hungerBar" class="bar-fill" style="background:var(--gold); width:85%;"></div></div>
       <div class="row" style="justify-content:space-between;margin-top:8px;"><span id="fatigueLabel">Fadiga</span><span id="fatigueText">0</span></div>
       <div class="bar-wrap"><div id="fatigueBar" class="bar-fill" style="background:#bb8be0;width:0"></div></div>
-      <div id="gmRestControls" class="tool-grid">
-        <button type="button" class="tool-btn" data-sit onclick="toggleGroundSeat()">Sentar no chão</button>
-        <button type="button" class="tool-btn" data-sleep="1" onclick="sleepForHours(1)" hidden>Dormir 1 hora</button>
-        <button type="button" class="tool-btn" data-sleep="8" onclick="sleepForHours(8)" hidden>Dormir 8 horas</button>
+      <div id="characterClock" hidden>
+        <p id="characterClockTime" class="library-hint"></p>
+        <p id="characterClockNotice" class="library-hint" role="status"></p>
+        <button id="characterClockOpen" type="button" class="btn" onclick="openWorldReminders()">Alarmes e lembretes</button>
       </div>
 
       <div id="gmEntityControls" class="hidden" style="margin-top:6px; border-top:1px solid var(--border); padding-top:6px;">
@@ -649,13 +648,14 @@
 <script src="js/editor.js?v=rest-house-keys" defer></script>
 <script src="js/kenney-extra-data.js?v=scifi-packs" defer></script>
 <script src="js/kenney-extra.js?v=scifi-packs" defer></script>
-<script src="js/library.js?v=scifi-packs" defer></script>
-<script src="js/rest-system.js?v=1" defer></script>
-<script src="js/gameplay.js?v=rest-house-keys" defer></script>
+<script src="js/library.js?v=world-clock" defer></script>
+<script src="js/rest-system.js?v=world-clock" defer></script>
+<script src="js/world-clock.js?v=world-clock" defer></script>
+<script src="js/gameplay.js?v=world-clock" defer></script>
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/textures.js?v=rest-house-keys" defer></script>
+<script src="js/textures.js?v=world-clock" defer></script>
 <script src="js/architect-selection.js?v=surface-stack" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=stair-tree-size-20261126" defer></script>
@@ -670,17 +670,17 @@
 <script src="js/cave-brush.js?v=cave-joins-20261126" defer></script>
 <script src="js/caves.js?v=cave-joins-20261126" defer></script>
 <script src="js/plants.js?v=clear-canopies-daylight" defer></script>
-<script src="js/scenery.js?v=rest-house-keys" defer></script>
+<script src="js/scenery.js?v=world-clock" defer></script>
 <script src="js/vertical-world.js?v=cave-joins-20261126" defer></script>
 <script src="js/material-damage.js?v=push-at-doorways" defer></script>
 <script src="js/character-catalog.js?v=mesa-specialty-formulas" defer></script>
-<script src="js/item-catalog.js?v=mesa-inventory-grid" defer></script>
+<script src="js/item-catalog.js?v=world-clock" defer></script>
 <script src="js/mesa-creatures.js?v=locked-creature-targets" defer></script>
 <script src="js/mesa-character-import.js?v=mesa-specialty-formulas" defer></script>
-<script src="js/character-system.js?v=rest-house-keys" defer></script>
+<script src="js/character-system.js?v=world-clock" defer></script>
 <script src="js/creature-combat.js?v=doorway-terrain-audio" defer></script>
-<script src="js/game-audio.js?v=doorway-terrain-audio" defer></script>
-<script src="js/main.js?v=rest-house-keys" defer></script>
+<script src="js/game-audio.js?v=world-clock" defer></script>
+<script src="js/main.js?v=world-clock" defer></script>
 <dialog id="characterD100Sheet" class="lock-dialog">
  <form class="character-form" onsubmit="saveD100Sheet(event)">
   <h3><span>Ficha d100</span> <span id="d100SheetName" data-user-text></span></h3>
@@ -732,6 +732,17 @@
     </div>
     <div id="characterEditorStatus" role="status" class="library-hint"></div>
     <div class="row"><button type="button" class="btn" onclick="document.getElementById('characterEditor').close()">Cancelar</button><button class="btn btn-primary" type="submit">Salvar personagem</button></div>
+  </form>
+</dialog>
+<dialog id="worldReminderDialog" class="lock-dialog">
+  <h3 data-clock-label="Alarmes e lembretes"></h3>
+  <div id="worldReminderList"></div>
+  <form onsubmit="event.preventDefault();addWorldReminder(this)">
+    <label><span data-clock-label="Horário"></span> <input class="ctrl" name="time" type="time" required></label>
+    <label><span data-clock-label="Data (opcional)"></span> <input class="ctrl" name="date" type="date"></label>
+    <label><span data-clock-label="Mensagem"></span> <input class="ctrl" name="message" maxlength="140"></label>
+    <button class="btn" type="submit" data-clock-label="Adicionar lembrete"></button>
+    <button class="btn" type="button" onclick="this.closest('dialog').close()" data-clock-label="Fechar"></button>
   </form>
 </dialog>
 <dialog id="lockDialog" class="lock-dialog">

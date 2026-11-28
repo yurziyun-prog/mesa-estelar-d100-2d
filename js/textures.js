@@ -850,6 +850,7 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
   const cx=ent.x,cy=ent.y,now=performance.now();
   if(ent.sleepPose&&TENT_TYPES.has(ent.sleepBed?.type))return;
   if(ent.sleepPose){
+    if(ent.sleepBed?.portable)drawSleepingFurniture(ent.sleepBed);
     const bed=ent.sleepBed||{x:cx,y:cy,type:'bed',rot:0};
     ctx.save();ctx.translate(cx,cy);
     if(bed.type!=='capsuleBed'){
@@ -889,6 +890,7 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
   const hostile=ent.attitude==='Hostil';
   const isMonster=ent.role==='Monstro'||ent.role==='Fera';
   const body=ent.color||'#688aab';
+  if(ent.seatPose?.portable)drawRestSeat({x:cx,y:cy,type:'chair',color:'#527469'});
   ctx.save();
   // Silhueta superior em vez de um emoji circular: pés, torso, rosto e equipamento.
   if(ent.creature)drawCreatureGroundShadow(ctx,ent,cx,cy,lift);
@@ -1155,7 +1157,7 @@ function drawProp(p) {
   if(drawExtraKenneyProp(p))return;
   if(isKenneyObject(p.type)){drawKenneyObject(p);return;}
   if(isKenneyRoguelikeObject(p.type)){drawKenneyRoguelikeObject(p);return;}
-  if(drawRestSeat(p))return;
+  if(drawRestSeat(p)||drawClockFurniture(p))return;
   if(isSleepingFurniture(p)&&!TENT_TYPES.has(p.type)){drawSleepingFurniture(p);return;}
   if(drawDecorationItem(p)||drawWorldFixture(p)||drawSceneryProp(p)||drawMesaFurniture(p)||drawMaterialFurniture(p)||drawGeologyProp(p)||drawCatalogProp(p)||drawExpandedProp(p))return;
   if(p.type==='key'){

@@ -97,3 +97,14 @@ const mesaItemCatalog=[
  {"id":"keypad_link","nome":"Terminal de Acesso","nome_en":"Keypad Link","nome_zh":"键盘终端","categoria":"Tecnologia","peso":"0.5","preco":"200","pa":"0","pv":"2","penetracao":"0","destinoLocal":"Tecnologia","nivelAcesso":"Comum","material":"Eletrônicos","unidade":"Peça","disponivelCampanha":"true","alcanceMetros":"0","consumoPorUso":"0","inflamabilidade":"0","empuxo":"0","descricao":"Computador portátil para acesso remoto e controle de sistemas.","descricao_en":"Hand-held computer for remote system access and control.","descricao_zh":"用于远程访问和控制系统的手持计算机。"},
  {"id":"tradutor_comunicador","nome":"Tradutor-Comunicador","nome_en":"Translator-Communicator","nome_zh":"翻译通讯器","categoria":"Comunicação","peso":"1","preco":"300","pa":"0","pv":"2","penetracao":"0","nivelAcesso":"Restrito","material":"Eletrônicos","unidade":"Peça","disponivelCampanha":"true","alcanceMetros":"0","consumoPorUso":"0","inflamabilidade":"0","empuxo":"0","descricao":"Comunicador com tradução automática de idiomas registrados.","descricao_en":"Communicator with automatic translation of registered languages.","descricao_zh":"带有已登记语言自动翻译功能的通讯设备。"},
 ];
+
+
+mesaItemCatalog.push(...[
+ ['relogio_pulso','Relógio de pulso','腕表',20,'Mostra a hora e a data na ficha. Permite definir alarmes e lembretes.','在角色卡显示日期和时间，可设置闹钟和提醒。'],
+ ['comunicador_pessoal','Comunicador pessoal','个人通讯器',85,'Mostra a hora e a data na ficha. Permite definir alarmes e lembretes.','在角色卡显示日期和时间，可设置闹钟和提醒。'],
+ ['despertador_portatil','Despertador portátil','便携闹钟',15,'Mostra a hora e a data na ficha. Permite definir alarmes e lembretes.','在角色卡显示日期和时间，可设置闹钟和提醒。'],
+ ['cadeira_portatil','Cadeira portátil','便携椅',30,'Use pelo menu do chão para descansar como em uma cadeira.','通过地面右键菜单使用，恢复效果与普通椅子相同。'],
+ ['saco_de_dormir','Saco de dormir','睡袋',40,'Use pelo menu do chão para dormir com o mesmo descanso de uma cama.','通过地面右键菜单使用，恢复效果与床相同。']
+].map(([id,nome,nome_zh,preco,descricao,descricao_zh])=>({
+ id,nome,nome_zh,preco:String(preco),descricao,descricao_zh,categoria:'Exploração',disponivelCampanha:'true'
+})));

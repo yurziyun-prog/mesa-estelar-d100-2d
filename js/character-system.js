@@ -768,6 +768,9 @@ function inventoryIcon(name){
  if(art)return {art};
  if(/medic|socorro/.test(key))return {symbol:'🩹'};
  if(/bateria|celula/.test(key))return {symbol:'🔋'};
+ if(/relogio|despertador/.test(key))return {symbol:'⌚'};
+ if(/cadeira portatil/.test(key))return {symbol:'🪑'};
+ if(/saco de dormir/.test(key))return {symbol:'🛏️'};
  if(/comunicador|scanner/.test(key))return {symbol:'📟'};
  if(/kit|ferramenta/.test(key))return {symbol:'🧰'};
  if(item?.slot==='hand')return {symbol:characterHandStyle(name)==='gun'?'🔫':'⚔️'};

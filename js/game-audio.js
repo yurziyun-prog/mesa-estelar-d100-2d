@@ -1,7 +1,7 @@
 const soundClips={
  laser:['laser'],energy:['energy'],shot:['shot'],hit:['hit'],metal:['metal-hit'],
  melee:['melee'],dice:['dice-throw-1','dice-throw-2'],grab:['dice-grab-1'],
- open:['door-open'],close:['door-close'],click:['click'],
+ alarm:['alarm'],open:['door-open'],close:['door-close'],click:['click'],
  tallGrass:['step-tall-grass'],water:['step-water'],
  grass:['step-grass-a','step-grass-b'],wood:['step-wood-a','step-wood-b'],stone:['step-stone-a','step-stone-b']
 };

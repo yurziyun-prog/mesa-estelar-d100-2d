@@ -213,6 +213,7 @@ function setupInputs() {
     }
     if (e.button === 2) {
       if(state.mode==='gm'&&openGmLockAt(sx,sy))return;
+      if(state.mode!=='architect'&&openRestMapMenu(sx,sy,e.clientX,e.clientY))return;
       if(state.mode==='architect'&&openArchitectContextMenu(sx,sy,e.clientX,e.clientY)){
         isPanning=false;return;
       }
@@ -456,6 +457,7 @@ function render() {
     roofViewFloors=null;
   }
   drawMapOverlays(sc,interior);
+  hoveredFurnitureClock();
   drawHoveredTokenName();
 }
 
