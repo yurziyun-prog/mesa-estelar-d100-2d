@@ -92,6 +92,24 @@ function carriesPistol(actor){
 }
 
 let mapShot=null;
+const mapWeaponSkills={
+ pistola_energia:['combate_pistola_laser','pistolas_laser','armas_energia'],
+ rifle_energia:['rifles_laser','armas_energia'],
+ energia_pesada:['arma_laser_pesada','armas_energia'],
+ precisao:['atirador_elite','fuzis_carabinas'],
+ pistola:['pistolas_revolveres'],
+ rifle:['fuzis_carabinas']
+};
+function mapWeaponHitChance(actor,weapon){
+ const data=characterItems[weapon]?.data;
+ const ids=mapWeaponSkills[data?.familiaArma]||mapWeaponSkills[data?.plataforma]||mapWeaponSkills.pistola;
+ for(const group of [ids.filter(id=>id!=='armas_energia'),ids.filter(id=>id==='armas_energia')]){
+   const totals=(actor.skillsD100||[]).filter(skill=>group.includes(skill.id)&&Number.isFinite(skill.total)).map(skill=>skill.total);
+   if(totals.length)return Math.max(1,Math.min(99,Math.max(...totals)));
+ }
+ const formula=ids[0]==='arma_laser_pesada'?'FOR+DES':ids[0]==='combate_pistola_laser'||ids[0]==='pistolas_revolveres'?'DES*2':'DES+INT';
+ return Math.max(1,Math.min(99,mesaSkillBase(formula,actor.attrs)||20));
+}
 function fireAtCreature(actor,floor,x,y,weapon){
  const target=state.entities.filter(ent=>ent!==actor&&ent.sceneId===actor.sceneId&&ent.floor===actor.floor&&
    (ent.creature||['Monstro','Fera'].includes(ent.role))&&Math.hypot(ent.x-x,ent.y-y-5)<26)
@@ -101,6 +119,14 @@ function fireAtCreature(actor,floor,x,y,weapon){
  if(!weapon){worldNotice('Equipe uma arma de disparo.');return true;}
  if(Math.hypot(target.x-actor.x,target.y-actor.y)>320){worldNotice('Alvo fora de alcance.');return true;}
  if(crossesWall(floor,actor.x,actor.y,target.x,target.y)){worldNotice('Uma parede bloqueia o alvo.');return true;}
+ const chance=mapWeaponHitChance(actor,weapon);
+ const roll=Math.floor(Math.random()*100)+1;
+ if(roll>chance){
+   const dx=target.x-actor.x,dy=target.y-actor.y,length=Math.hypot(dx,dy)||1;
+   showMapShot(actor,floor,target.x+dy*21/length,target.y-dx*21/length,weapon,false);
+   worldNotice(translateSiteText('Disparo errou.')+' D100 '+roll+' / '+chance+'%');
+   return true;
+ }
  const damage=String(characterItems[weapon]?.data?.dano||'').match(/^(\d+)d(\d+)(?:([+-]\d+))?$/i);
  const dealt=damage?Math.max(1,Math.floor(Number(damage[1])*(Number(damage[2])+1)/2)+Number(damage[3]||0)):6;
  showMapShot(actor,floor,target.x,target.y,weapon);
@@ -108,16 +134,16 @@ function fireAtCreature(actor,floor,x,y,weapon){
  target.hp=Math.max(0,target.hp-dealt);
  if(target.hp===0&&target.ai)target.ai.enabled=false;
  finishEdit();saveBank();updateUI();
- worldNotice(target.name+' · '+(target.hp?target.hp+'/'+target.maxHp+' PV':translateSiteText('Criatura derrotada.')));
+ worldNotice(target.name+' · '+(target.hp?target.hp+'/'+target.maxHp+' PV':translateSiteText('Criatura derrotada.'))+' · D100 '+roll+' / '+chance+'%');
  return true;
 }
-function showMapShot(actor,floor,x,y,weapon){
+function showMapShot(actor,floor,x,y,weapon,impact=true){
  const energy=/laser|phaser|blaster|gauss|energia/i.test(weapon||'');
- mapShot={floor,x0:actor.x+9,y0:actor.y-9,x,y:y-7,energy,until:performance.now()+220};
+ mapShot={floor,x0:actor.x+9,y0:actor.y-9,x,y:y-7,energy,impact,until:performance.now()+220};
 }
 function drawMapShot(floor){
  if(mapShot?.floor!==floor)return;
- const {x0,y0,x,y,energy,until}=mapShot;
+ const {x0,y0,x,y,energy,impact,until}=mapShot;
  const alpha=(until-performance.now())/220;
  if(alpha<=0)return;
  ctx.save();ctx.globalAlpha=alpha;ctx.lineCap='round';
@@ -125,7 +151,7 @@ function drawMapShot(floor){
  ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x,y);ctx.stroke();
  if(energy){ctx.strokeStyle='#e4fff9';ctx.lineWidth=1.25;ctx.stroke();}
  ctx.fillStyle=energy?'#a8fff3':'#ffe2a2';
- for(let i=0;i<6;i++){
+ for(let i=0;impact&&i<6;i++){
    const a=i*Math.PI/3,push=3+(1-alpha)*9;
    ctx.beginPath();ctx.arc(x+Math.cos(a)*push,y+Math.sin(a)*push,1.4,0,Math.PI*2);ctx.fill();
  }

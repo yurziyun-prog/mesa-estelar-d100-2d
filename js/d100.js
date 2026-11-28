@@ -3,6 +3,28 @@
 const D100_ATTRIBUTES=['FOR','CON','TAM','DES','INT','POD','CAR'];
 const D100_MIGRATION_VERSION=1;
 const STARTING_CREDITS=1000;
+function mesaImportedTraining(record){
+ const points=value=>Math.max(0,parseInt(value,10)||0);
+ if(record?.investimentos)return ['origem','carreira','hobbie','xp'].reduce((sum,key)=>sum+points(record.investimentos[key]),0);
+ return points(record?.treinoTotal??record?.treinoEtapa)+points(record?.xpTreino);
+}
+function repairImportedSpecialties(ent){
+ const records=ent.mesaSourceSheet?.especializacoes;
+ if(!records)return;
+ for(const skill of ent.skillsD100){
+   if(Number.isFinite(skill.total))continue;
+   const recordEntry=Object.entries(records).find(([id,record])=>skill.id===id||
+     [id.replaceAll('_',' '),record?.nomeOriginal,record?.escola].includes(skill.name));
+   if(!recordEntry)continue;
+   const [id,record]=recordEntry;
+   const definition=mesaCharacterSkills.find(row=>row[0]===id);
+   if(!definition?.[4])continue;
+   const base=mesaSkillBase(definition[4],ent.attrs);
+   if(base===null)continue;
+   const training=skill.training>0?skill.training:mesaImportedTraining(record);
+   Object.assign(skill,{id,name:definition[1],base,training,total:base+training,provisional:false});
+ }
+}
 function normalizeD100Character(ent){
  if(!ent)return ent;
  const old=ent.attrs||{};
@@ -17,6 +39,7 @@ function normalizeD100Character(ent){
  ent.system='Mesa Estelar d100';
  ent.d100Version=D100_MIGRATION_VERSION;
  ent.skillsD100=Array.isArray(ent.skillsD100)?ent.skillsD100:parseLegacySkillsD100(ent.skills);
+ if(typeof mesaCharacterSkills!=='undefined')repairImportedSpecialties(ent);
  if(!ent.d100SheetConfigured&&!ent.skillsD100.some(isSwimmingSkill)){
    ent.skillsD100.push({name:'Natação',base:null,training:null,total:null,provisional:true});
  }
@@ -259,7 +282,7 @@ function openD100Sheet(ent=getSelectedEntity()){
  const entries=[...mesaCharacterSkills.filter(([,name,,,,available])=>available||state.mode==='gm'||old.some(skill=>skill.name===name)),
    ...old.filter(skill=>!names.has(skill.name.toLowerCase())).map(skill=>[null,skill.name,'','',null,true])];
  d100SheetRows=entries.map(([id,name,zh,type,formula])=>{
-   const existing=old.find(skill=>(id&&skill.id===id)||skill.name.toLowerCase()===name.toLowerCase());
+   const existing=old.find(skill=>(id&&skill.id===id)||(!skill.id&&skill.name.toLowerCase()===name.toLowerCase()));
    const node=document.createElement('div'),choice=document.createElement('label'),check=document.createElement('input'),label=document.createElement('span');
    node.className='d100-sheet-row';choice.className='d100-skill-choice';check.type='checkbox';check.checked=Boolean(existing);
    const translated=(siteLanguage==='zh-CN'&&zh)||translateSiteText(name);
@@ -289,9 +312,10 @@ function saveD100Sheet(event){
    return {...row.existing,id:row.id||row.existing?.id,name:row.name,base,training,
      total:base===null?null:base+training,provisional:!row.formula};
  });
- const known=new Map(picked.map(skill=>[skill.name.toLowerCase(),skill]));
+ const keyFor=skill=>skill.id||skill.name.toLowerCase();
+ const known=new Map(picked.map(skill=>[keyFor(skill),skill]));
  const ordered=(ent.skillsD100||[]).flatMap(skill=>{
-   const key=skill.name.toLowerCase(),value=known.get(key);known.delete(key);return value?[value]:[];
+   const key=keyFor(skill),value=known.get(key);known.delete(key);return value?[value]:[];
  });
  beginEdit();ent.attrs=attrs;ent.skillsD100=[...ordered,...known.values()];ent.d100SheetConfigured=true;finishEdit();
  if(!saveBank()){

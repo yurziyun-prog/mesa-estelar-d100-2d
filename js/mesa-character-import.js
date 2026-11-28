@@ -11,8 +11,8 @@ function mesaImportedCharacter(sheet,kind){
      const definition=mesaCharacterSkills.find(row=>row[0]===id);
      const name=definition?.[1]||record?.nomeOriginal||record?.escola||id.replaceAll('_',' ');
      const base=definition?.[4]?mesaSkillBase(definition[4],attrs):null;
-     const training=Number(record?.treinoTotal)||0;
-     skillsD100.push({name,base,training,total:base===null?null:base+training,provisional:base===null});
+     const training=mesaImportedTraining(record);
+     skillsD100.push({id,name,base,training,total:base===null?null:base+training,provisional:base===null});
    }
  }
  for(const text of [sheet.periciasTexto,sheet.especializacoesTexto]){

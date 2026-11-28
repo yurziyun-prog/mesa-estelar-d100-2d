@@ -1,4 +1,5 @@
 const SITE_ZH = new Map(`
+Disparo errou.|射击未命中。
 Disparar arma|开火
 Equipe uma arma de disparo.|请先装备一把枪。
 Criatura derrotada.|怪物已被击倒。

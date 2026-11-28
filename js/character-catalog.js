@@ -242,3 +242,22 @@ const mesaCareerSkillIds={
  "Xenobiólogo":["percepcao","intuicao","costumes","regiao","forca_vontade","anatomia","pesquisa","saber_lore","xenobiologia","exotecnologia"],
  "Xerife":["atletismo","influencia","intuicao","percepcao","resistencia","armeiro","direito","interrogatorio","psicologia","rastrear","submundo","tatica"],
 };
+
+// Especializações do catálogo original e IDs compatíveis das fichas antigas.
+mesaCharacterSkills.push(
+ ["combate_pistola_laser", "Pistolas de Energia", "能量手枪", "Especialização", "DES*2", false],
+ ["atirador_elite", "Atirador de Elite", "精英狙击手", "Especialização", "DES+INT", false],
+ ["arma_laser_pesada", "Armas Pesadas de Energia", "重型能量武器", "Especialização", "FOR+DES", false],
+ ["luta_gravidade_zero", "Luta em Gravidade Zero", "零重力战斗", "Especialização", "DES+INT", false],
+ ["guarda_costas_arma_longa", "Guarda-Costas (Arma Longa/Escudo)", "保镖", "Especialização", "FOR+DES", false],
+ ["combate_traje_espacial", "Combate em Traje Espacial", "太空服战斗", "Especialização", "DES+CON", false],
+ ["psiquismo_materia", "Psiquismo (Matéria)", "心灵感应(物质)", "Especialização", "INT+POD", false],
+ ["psiquismo_mente", "Psiquismo (Mente)", "心灵感应(心灵)", "Especialização", "INT+POD", false],
+ ["psiquismo_sentidos", "Psiquismo (Sentidos)", "心灵感应(感官)", "Especialização", "INT+POD", false],
+ ["pistolas_laser", "Pistolas de Energia", "能量手枪", "Especialização", "DES*2", false],
+ ["rifles_laser", "Rifles e Carabinas de Energia", "能量步枪与卡宾枪", "Especialização", "DES+INT", false],
+ ["pistolas_revolveres", "Pistolas e Revólveres", "手枪与左轮", "Especialização", "DES*2", false],
+ ["fuzis_carabinas", "Fuzis e Carabinas", "步枪与卡宾枪", "Especialização", "DES+INT", false],
+ ["armas_energia", "Armas de Energia", "能量武器", "Especialização", "DES+INT", false],
+ ["esgrima_plasma_vibro", "Lâminas de Energia / Vibrolâminas", "能量刃／振动刃", "Especialização", "FOR+DES", false]
+);
