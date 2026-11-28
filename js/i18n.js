@@ -1,4 +1,10 @@
 const SITE_ZH = new Map(`
+Atacar com a criatura|用怪物攻击
+Ataque autônomo|自动攻击
+Clique no personagem que a criatura vai atacar.|点击要攻击的玩家角色。
+Ataque indisponível. Selecione um personagem vivo, próximo e sem parede no caminho.|无法攻击。请选择附近、存活且未被墙挡住的玩家角色。
+Acertou.|命中。
+Errou.|未命中。
 Clique no botão e depois no alvo ferido ou caído.|先点按钮，再点受伤或倒下的目标。
 Restaurar no mapa|恢复地图目标
 Clique em uma criatura, personagem ou planta para restaurar.|点击怪物、角色或植物即可恢复。

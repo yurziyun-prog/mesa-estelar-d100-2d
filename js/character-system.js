@@ -401,6 +401,13 @@ function drawCharacterAppearance(g,ent,stride=0){
  g.strokeStyle='rgba(236,220,201,.27)';g.lineWidth=.75;
  g.beginPath();g.moveTo(-hips+2,10.2);g.quadraticCurveTo(0,12,hips-2,10.2);g.stroke();
  drawProfessionDetails(g,outfit,half,hips);
+ if(equipped.body){
+   g.strokeStyle='#e0d1b65e';g.lineWidth=.65;
+   for(const side of [-1,1]){
+     g.beginPath();g.moveTo(side*(half-3),-6);g.quadraticCurveTo(side*(waist-2),1,side*(hips-2),6);g.stroke();
+     g.fillStyle='#28303a';g.fillRect(side*(half-3)-.7,-5,1.4,1.4);
+   }
+ }
  if(mechanical){
    avatarShape(g,'#566d80',[[-6,-6],[6,-6],[5,0],[0,3],[-5,0]]);
    g.fillStyle='#87ddd7';g.fillRect(-2,-3,4,1.5);

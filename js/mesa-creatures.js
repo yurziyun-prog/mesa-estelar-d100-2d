@@ -62,6 +62,16 @@ function drawMesaCreature(g,design,stride,key,time=null){
      ellipse(x,y,1.1,.67,'#ffffff56',-.35);
    avatarShape(g,color,[[-7,-10],[-6,-14],[-1,-16],[3,-13],[2,-9],[-3,-7]]);
    eye(-4.5,-12);eye(.5,-12);
+ }else if(key==='lagarto_de_galeria'||key==='predador_couracado'){
+   limb([[1,9],[5,15],[13,19],[21,16]],4.2);
+   for(const side of [-1,1])for(const y of [-3,6]){
+     limb([[side*5,y],[side*10,y+2],[side*13,y+6+side*stride*.4]],3.2);
+     ellipse(side*13,y+6+side*stride*.4,2.5,1.5,'#647459');
+   }
+   ellipse(0,3,8,11,color);
+   for(const y of [-4,0,4,8])avatarShape(g,'#7f8860',[[-5,y],[-3,y-2],[3,y-2],[5,y],[0,y+2]]);
+   avatarShape(g,'#8d936d',[[-6,-4],[-6,-10],[-3,-15],[4,-15],[7,-10],[5,-5]]);
+   eye(-3.5,-10);eye(3.5,-10);
  }else if(form==='humanoid'){
    const infected=/errante_parasitado|carnical_dominante|inchado_pustulento/.test(key);
    const torso=infected?'#665349':color;
@@ -105,7 +115,14 @@ function drawMesaCreature(g,design,stride,key,time=null){
    if(form==='insect'||form==='reptile')for(const y of [1,5,9]){
      g.strokeStyle='#26373a';g.beginPath();g.moveTo(-5,y);g.quadraticCurveTo(0,y+3,5,y);g.stroke();
    }
-   ellipse(0,-6,5.7,form==='reptile'?7:5.2,color);
+   if(mechanical){
+     avatarShape(g,'#819093',[[-7,-6],[-5,-13],[4,-13],[7,-8],[4,-4],[-4,-4]]);
+     avatarShape(g,'#465b61',[[-4,-9],[4,-9],[5,-13],[-4,-13]]);
+   }else ellipse(0,-6,5.7,form==='reptile'?7:5.2,color);
+   if(form==='insect'){
+     g.strokeStyle='#d6d4ac50';g.lineWidth=.75;
+     for(const y of [1,5,9]){g.beginPath();g.moveTo(-4,y);g.quadraticCurveTo(0,y+2,4,y);g.stroke();}
+   }
    if(form==='beast'||form==='insect')for(const side of [-1,1])limb([[side*3,-8],[side*6,-14],[side*8,-13]],1.6);
    eye(-2.6,-8);eye(2.6,-8);
  }

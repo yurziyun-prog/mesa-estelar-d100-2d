@@ -82,6 +82,7 @@ let gmRestoreArmed=false;
 function toggleGmRestore(){
  if(state.mode!=='gm')return;
  gmRestoreArmed=!gmRestoreArmed;
+ gmCreatureAttack=null;refreshCreatureCombatControls();
  gmRosterPlacementIds=null;gmPlacementTemplate=null;
  const button=document.getElementById('gmRestoreTool');
  button.setAttribute('aria-pressed',String(gmRestoreArmed));
@@ -167,7 +168,7 @@ function mapWeaponHitChance(actor,weapon){
 }
 let combatTarget=null;
 function combatCreature(ent){
- return Boolean(ent.creature||['Monstro','Fera'].includes(ent.role));
+ return Boolean(ent.creature||['Monstro','Fera','Animal'].includes(ent.role));
 }
 function selectedCombatCreature(actor){
  if(!actor||combatTarget?.actor!==actor||actor.sceneId!==state.activeSceneId||actor.floor!==state.currentFloor)return null;

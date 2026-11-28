@@ -355,6 +355,7 @@ function renderGmPullList() {
   }
 }
 function armGmRosterPlacement() {
+  gmCreatureAttack=null;refreshCreatureCombatControls();
   if(gmRestoreArmed)toggleGmRestore();
   const ids=Array.from(document.querySelectorAll('#gmPullEntitiesList input:checked'),input=>input.value);
   if (!ids.length) { logEvent('Marque pelo menos um personagem para colocar.'); return; }

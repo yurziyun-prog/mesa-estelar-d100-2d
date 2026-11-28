@@ -36,6 +36,7 @@ function gmRelease(){
  refreshGmFocus();updateUI();logEvent('👑 Mestre: câmera livre.');
 }
 function refreshGmFocus(){
+ refreshCreatureCombatControls();
  const controlled=getGmControlledEntity(),preview=state.entities.find(e=>e.id===gmPreviewId);
  const hint=document.getElementById('gmControlHint');
  if(hint)hint.textContent=controlled?'Controlando '+controlled.name+' · Esc libera':preview?'Enter para controlar '+preview.name+' · Tab muda':'Tab escolhe · Enter controla · Esc libera';
@@ -46,6 +47,7 @@ function refreshGmFocus(){
 }
 function setMode(mode) {
   const priorMode=state.mode;
+  if(mode!==priorMode)gmCreatureAttack=null;
   if(priorMode==='gm'&&mode!=='gm'&&gmRestoreArmed)toggleGmRestore();
   if(mode!==priorMode&&typeof clearTransientStairClimbs==='function')clearTransientStairClimbs(state.entities);
   if(state.scenes && state.activeSceneId){

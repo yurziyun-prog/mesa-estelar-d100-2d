@@ -592,7 +592,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     drawCaveBase(cave,floor);
   }
   if(!interior)for(const building of floor.buildings||[])drawBuildingBase(building,floor);
-  if(!isBelow){drawExcavations(floor);drawMapShot(floor);}
+  if(!isBelow){drawExcavations(floor);drawMapShot(floor);drawCreatureStrike(floor);}
   // 只将楼下的自然地形和地板作为背景，隐藏门、窗、墙、家具和人物。
   if(isBelow)return;
 
