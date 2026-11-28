@@ -1,4 +1,6 @@
 const SITE_ZH = new Map(`
+Personagem caído. O Mestre pode restaurar seus PV.|角色已倒下，主持人可以恢复生命值。
+Restaurar PV|恢复生命值
 Ataques e ações especiais|攻击与特殊动作
 Ataque básico|基础攻击
 Atividades especiais|特殊活动

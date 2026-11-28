@@ -323,6 +323,7 @@ function drawCharacterAppearance(g,ent,stride=0){
  const {form,sex,height,shoulders:half,hips,waist,arms}=characterAnatomy(ent,a);
  const equipped=ent.equipment||{};
  const species=characterIdentity(ent).species;
+ const cyborg=species==='Ciborgue';
  const imperial=species==='Robô imperial',piloted=species==='Robô pilotado';
  const cloth=characterItems[equipped.body]?.color||a.clothing;
  const outfit=equipped.body?(characterItems[equipped.body]?.armor?'uniform':'travel'):professionOutfit(ent.role);
@@ -418,6 +419,10 @@ function drawCharacterAppearance(g,ent,stride=0){
  g.beginPath();g.moveTo(-hips+1,7);g.quadraticCurveTo(0,9,hips-1,7);g.stroke();
  g.fillStyle=equipped.waist?'#ced5df':'#bd9e6e';g.fillRect(-1.8,6.6,equipped.waist?5:3.6,3);
  }
+ if(cyborg){
+   avatarShape(g,'#62798a',[[-half-2,-6],[-half+3,-8],[-half+1,-1],[-half-4,0]]);
+   g.fillStyle='#7ee1d9';g.fillRect(-half-.7,-5,2.4,.9);
+ }
  if(equipped.pack){
    g.strokeStyle='#bb9267';g.lineWidth=1.6;
    for(const side of [-1,1]){
@@ -430,6 +435,7 @@ function drawCharacterAppearance(g,ent,stride=0){
  if(headAppearance.helmet==='none'){
    if(piloted){avatarShape(g,'#38606d',[[-7,-17],[-5,-22],[5,-22],[8,-16],[6,-10],[-6,-10]]);
      g.fillStyle='#8ed5df';g.fillRect(-4,-19,7,1.5);}
+   if(cyborg){g.fillStyle='#46606e';g.fillRect(5,-20,3,7);g.fillStyle='#81dccd';g.fillRect(5.5,-16,2,.85);}
    if(imperial){avatarShape(g,'#a88a51',[[-9,-18],[-6,-25],[0,-23],[6,-25],[9,-18],[5,-14],[-5,-14]]);
      g.fillStyle='#dc6f58';g.fillRect(-5,-15.3,10,1.3);}
    if(species==='Humanoide parasitado')avatarShape(g,'#6d5463',[[0,-24],[9,-25],[12,-17],[8,-11],[4,-17]]);

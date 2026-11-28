@@ -385,6 +385,8 @@ function updateUI() {
 
   document.getElementById('charHeader').textContent = [ent.name,...[ent.species,ent.sex,ent.role].filter(Boolean).map(translateSiteText)].filter(Boolean).join(' · ');
   document.getElementById('entityTypeBadge').textContent = ent.type === 'pc' ? 'PJ' : `NPC (${ent.attitude})`;
+  document.getElementById('characterDownNotice').hidden=ent.hp>0;
+  document.getElementById('restoreControlledCharacter').hidden=ent.hp>=ent.maxHp;
   document.getElementById('hpText').textContent = `${ent.hp} / ${ent.maxHp}`;
   document.getElementById('hpBar').style.width = `${Math.max(0, (ent.hp / ent.maxHp) * 100)}%`;
   document.getElementById('hungerText').textContent = `${ent.hunger}%`;
@@ -443,6 +445,11 @@ function selectPlayerChar(id) {
   updateUI();
 }
 
+function restoreControlledCharacter(){
+ const ent=getGmControlledEntity();
+ if(state.mode!=='gm'||!ent||ent.hp>=ent.maxHp)return;
+ beginEdit();ent.hp=ent.maxHp;finishEdit();updateUI();saveBank();
+}
 function adjustStat(field, delta) {
   const ent = getSelectedEntity();
   if (!ent) return;

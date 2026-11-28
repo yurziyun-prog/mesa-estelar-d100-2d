@@ -5,6 +5,20 @@ let displayedCreature=null;
 const creatureAttackReady=new WeakMap();
 let creatureStrike=null;
 
+const tokenBattleMotion=new WeakMap();
+function markBattleMotion(ent,kind,dx=0,dy=0){
+ const length=Math.hypot(dx,dy)||1;
+ tokenBattleMotion.set(ent,{kind,dx:dx/length,dy:dy/length,started:performance.now()});
+}
+function tokenBattlePose(ent,now){
+ const motion=tokenBattleMotion.get(ent);
+ if(!motion||terrainMotionPreference.matches)return null;
+ const progress=(now-motion.started)/290;
+ if(progress<0||progress>=1)return null;
+ const force=Math.sin(progress*Math.PI)*(motion.kind==='melee'?8:motion.kind==='fire'?-4:5);
+ return {x:motion.dx*force,y:motion.dy*force,kind:motion.kind,tilt:motion.dx*force*.022};
+}
+
 function gmCombatCreature(){
  if(state.mode!=='gm')return null;
  const controlled=getGmControlledEntity();
@@ -75,7 +89,9 @@ function creatureMeleeAttack(attacker,target,floor,now,move=null){
    (attacker.attrs.FOR+attacker.attrs.DES)));
  const roll=Math.floor(Math.random()*100)+1;
  creatureStrike={floor,x0:attacker.x,y0:attacker.y,x:target.x,y:target.y,hit:roll<=chance,until:now+270};
+ markBattleMotion(attacker,'melee',target.x-attacker.x,target.y-attacker.y);
  if(roll<=chance){
+   markBattleMotion(target,'hit',target.x-attacker.x,target.y-attacker.y);
    const profile=move?.damage?.match(/^(\d+)d(\d+)(?:([+-])(\d+|MD))?$/i);
    const bonus=Math.max(0,Math.floor((attacker.attrs.FOR-10)/5));
    let damage=0;

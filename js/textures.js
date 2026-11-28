@@ -917,11 +917,14 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
     light.addColorStop(0,'rgba(255,210,128,.16)');light.addColorStop(1,'rgba(255,210,128,0)');
     ctx.fillStyle=light;ctx.beginPath();ctx.arc(0,0,70,0,7);ctx.fill();
   }
+  ctx.save();
   if(immersed){
-    ctx.save();
     ctx.beginPath();ctx.rect(-40,-45,80,swimming?44:52);ctx.clip();
   }
-  if(ent.hp<=0&&(ent.creature||isMonster)){ctx.rotate(-Math.PI/2);ctx.globalAlpha*=.65;}
+  const pose=tokenBattlePose(ent,now);
+  if(pose){ctx.translate(pose.x,pose.y);ctx.rotate(pose.tilt);}
+  if(ent.hp<=0){ctx.rotate(-Math.PI/2);ctx.globalAlpha*=.72;}
+  else if(pose?.kind==='hit')ctx.filter='brightness(1.25)';
   if(isMonster&&!ent.creature){
     const beast=ent.icon==='🐉'||ent.icon==='🐺';
     ctx.fillStyle=body;ctx.strokeStyle='#233029';ctx.lineWidth=2;
@@ -932,8 +935,8 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
     for(const x of [-4,4]){ctx.beginPath();ctx.arc(x,-8,2,0,7);ctx.fill();}
     if(beast){ctx.strokeStyle=body;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(8,5);ctx.lineTo(19,13);ctx.stroke();}
   }else drawCharacterAppearance(ctx,ent,stride);
+  ctx.restore();
   if(immersed){
-    ctx.restore();
     const phase=terrainMotionPreference.matches?0:(now%900)/900;
     ctx.strokeStyle='rgba(177,235,237,.6)';ctx.lineWidth=1.25;
     for(let i=0;i<2;i++){

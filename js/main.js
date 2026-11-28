@@ -377,6 +377,10 @@ function updateSimulation(elapsed) {
     }
   }
   if (ent) {
+    if(ent.hp<=0&&['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].some(key=>keys[key])){
+      const notice=document.getElementById('worldActionStatus');
+      if(state.mode==='player')notice.textContent=translateSiteText('Personagem caído. O Mestre pode restaurar seus PV.');
+    }
     if (ent.hp>0&&ent.sceneId === state.activeSceneId) {
       // 攀爬期间锁定水平输入，动画逐帧运行，完成时才进入相邻楼层。
       if(advanceStairClimb(ent))return;

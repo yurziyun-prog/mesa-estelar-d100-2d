@@ -203,6 +203,7 @@ function useMapFireButton(){
 }
 function fireAtCreature(actor,floor,target,weapon){
  if(target.hp<=0){worldNotice('Criatura já derrotada.');return true;}
+ if(actor.hp<=0){worldNotice('Personagem caído. O Mestre pode restaurar seus PV.');return true;}
  if(!weapon){worldNotice('Equipe uma arma de disparo.');return true;}
  if(Math.hypot(target.x-actor.x,target.y-actor.y)>320){worldNotice('Alvo fora de alcance.');return true;}
  if(crossesWall(floor,actor.x,actor.y,target.x,target.y)){worldNotice('Uma parede bloqueia o alvo.');return true;}
@@ -217,6 +218,7 @@ function fireAtCreature(actor,floor,target,weapon){
  const damage=String(characterItems[weapon]?.data?.dano||'').match(/^(\d+)d(\d+)(?:([+-]\d+))?$/i);
  const dealt=damage?Math.max(1,Math.floor(Number(damage[1])*(Number(damage[2])+1)/2)+Number(damage[3]||0)):6;
  showMapShot(actor,floor,target.x,target.y,weapon);
+ markBattleMotion(target,'hit',target.x-actor.x,target.y-actor.y);
  beginEdit();
  target.hp=Math.max(0,target.hp-dealt);
  if(target.hp===0&&target.ai)target.ai.enabled=false;
@@ -225,6 +227,7 @@ function fireAtCreature(actor,floor,target,weapon){
  return true;
 }
 function showMapShot(actor,floor,x,y,weapon,impact=true){
+ markBattleMotion(actor,'fire',x-actor.x,y-actor.y);
  const energy=/laser|phaser|blaster|gauss|energia/i.test(weapon||'');
  mapShot={floor,x0:actor.x+9,y0:actor.y-9,x,y:y-7,energy,impact,until:performance.now()+220};
 }
@@ -246,6 +249,7 @@ function drawMapShot(floor){
 }
 
 function inspectOrDamage(actor,floor,x,y){
+ if(worldAction==='shoot'&&actor.hp<=0){worldNotice('Personagem caído. O Mestre pode restaurar seus PV.');return;}
  const weapon=equippedMapGun(actor);
  if(worldAction==='shoot'){
    const creature=targetCreatureAt(actor,x,y);
