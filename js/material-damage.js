@@ -226,6 +226,7 @@ function fireAtCreature(actor,floor,target,weapon){
  const chance=mapWeaponHitChance(actor,weapon);
  const roll=Math.floor(Math.random()*100)+1;
  if(roll>chance){
+   noteCreatureAttacked(target,actor);
    const dx=target.x-actor.x,dy=target.y-actor.y,length=Math.hypot(dx,dy)||1;
    showMapShot(actor,floor,target.x+dy*21/length,target.y-dx*21/length,weapon,false);
    worldNotice(translateSiteText('Disparo errou.')+' D100 '+roll+' / '+chance+'%');
@@ -237,6 +238,7 @@ function fireAtCreature(actor,floor,target,weapon){
  markBattleMotion(target,'hit',target.x-actor.x,target.y-actor.y);
  beginEdit();
  target.hp=Math.max(0,target.hp-dealt);
+ noteCreatureAttacked(target,actor,dealt);
  if(target.hp===0&&target.ai)target.ai.enabled=false;
  finishEdit();saveBank();updateUI();
  worldNotice(target.name+' · '+(target.hp?target.hp+'/'+target.maxHp+' PV':translateSiteText('Criatura derrotada.'))+' · D100 '+roll+' / '+chance+'%');
