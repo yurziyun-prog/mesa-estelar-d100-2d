@@ -1,4 +1,9 @@
 const SITE_ZH = new Map(`
+Anterior|上一页
+Próxima|下一页
+Selecione um pacote Kenney e escolha um recurso para usar no mapa. Licença CC0.|选择一个 Kenney 素材包，再选要放在地图上的素材。采用 CC0 授权。
+Pack de recursos|素材包
+Seleção original|原有素材
 Clique em um alvo vivo: personagem, NPC ou criatura.|请点击存活的角色、NPC 或怪物。
 Som ligado|声音开启
 Som desligado|声音关闭

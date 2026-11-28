@@ -44,6 +44,7 @@ const ARCHITECT_LIBRARY = {
 };
 const LIBRARY_LABELS={brush:'Pincel e texturas',create:'Criar (futuro)',downloads:'Packs baixados',terrain:'Terrenos naturais',furniture:'Móveis',nature:'Árvores e natureza',props:'Objetos e decoração',architecture:'Elementos de construção',characters:'Personagens e NPCs'};
 let architectCategory='furniture';
+let architectPackPage=0;
 let architectCharacterTemplate=null;
 function openArchitectLibrary(category){
  if(!ARCHITECT_LIBRARY[category] && !['brush','create','downloads'].includes(category))return;
@@ -64,17 +65,31 @@ function renderArchitectLibrary(){
  if(architectCategory==='brush'){selectTool('brush');syncArchitectBrushUI();}
 
  document.getElementById('architectLibraryTitle').textContent=LIBRARY_LABELS[architectCategory];
- document.getElementById('architectLibraryDescription').textContent=architectCategory==='brush'?'Pinte diretamente no mapa com formatos e texturas diferentes.':architectCategory==='create'?'Um espaço preparado para editores futuros.':architectCategory==='downloads'?'Texturas reais dos pacotes Kenney RPG Base e Kenney Roguelike RPG. Licença CC0.':architectCategory==='terrain'?'Terrenos naturais: grama, água, areia, lama e solo de cavernas. Pisos de construção ficam em Elementos de construção.':
+ document.getElementById('architectLibraryDescription').textContent=architectCategory==='brush'?'Pinte diretamente no mapa com formatos e texturas diferentes.':architectCategory==='create'?'Um espaço preparado para editores futuros.':architectCategory==='downloads'?'Selecione um pacote Kenney e escolha um recurso para usar no mapa. Licença CC0.':architectCategory==='terrain'?'Terrenos naturais: grama, água, areia, lama e solo de cavernas. Pisos de construção ficam em Elementos de construção.':
   architectCategory==='characters'?'Selecione um modelo e clique no mapa para colocá-lo.':
   'Os novos itens seguem a coleção de construção selecionada, sem modificar os anteriores.';
  const query=(document.getElementById('architectLibrarySearch')?.value||'').toLocaleLowerCase('pt-BR');
  grid.replaceChildren();
- const entries=catalogEntries(architectCategory);
+ const packs=document.getElementById('architectDownloadPack');
+ packs.hidden=architectCategory!=='downloads';
+ if(packs.options.length===1){
+   for(const [id,label] of kenneyExtraPacks)packs.add(new Option(label,id));
+ }
+ const pack=architectCategory==='downloads'&&packs.value;
+ const matching=(pack?extraKenneyEntries(pack):catalogEntries(architectCategory)).filter(([id,,label])=>
+   (label.toLocaleLowerCase('pt-BR').includes(query)||translateSiteText(label).toLocaleLowerCase().includes(query))&&
+   isItemInBuildCollection(id,architectCategory));
+ const pageSize=64,pages=Math.max(1,Math.ceil(matching.length/pageSize));
+ architectPackPage=Math.max(0,Math.min(pages-1,architectPackPage));
+ const pager=document.getElementById('architectPackPages');
+ pager.hidden=!pack||pages===1;
+ pager.style.display=pager.hidden?'none':'flex';
+ pager.firstElementChild.disabled=architectPackPage===0;
+ pager.lastElementChild.disabled=architectPackPage===pages-1;
+ document.getElementById('architectPackPageLabel').textContent=(architectPackPage+1)+' / '+pages;
+ const entries=pack?matching.slice(architectPackPage*pageSize,(architectPackPage+1)*pageSize):matching;
  let lastGroup;
  for(const [id,icon,label,kind,group] of entries){
-  if(!label.toLocaleLowerCase('pt-BR').includes(query)&&
-     !translateSiteText(label).toLocaleLowerCase().includes(query))continue;
-  if(!isItemInBuildCollection(id,architectCategory))continue;
   if(group&&group!==lastGroup){
     const heading=document.createElement('div');
     heading.className='section-title';
@@ -91,7 +106,7 @@ function renderArchitectLibrary(){
   if(thumbnail){
     button.append(thumbnail,name);
   }else if(architectCategory==='downloads'){
-    const preview=createDownloadThumbnail(id);
+    const preview=extraKenneyThumbnail(id)||createDownloadThumbnail(id);
     button.append(preview||emoji,name);
   }else button.append(emoji,name);
   button.onclick=()=>selectArchitectLibraryItem(id,label,kind);

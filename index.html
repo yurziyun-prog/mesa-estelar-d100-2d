@@ -535,7 +535,15 @@
           <p class="library-hint">Área reservada à futura criação de móveis, personagens, NPCs e monstros. Por enquanto, use os itens existentes da biblioteca.</p>
           <div class="library-grid"><div class="library-card">🪑 Móveis</div><div class="library-card">🧑 Personagens</div><div class="library-card">🐉 Criaturas</div><div class="library-card">🧱 Construções</div></div>
         </div>
-        <input class="ctrl" id="architectLibrarySearch" placeholder="Pesquisar..." oninput="renderArchitectLibrary()" style="width:100%;margin:9px 0;" />
+        <select class="ctrl" id="architectDownloadPack" aria-label="Pack de recursos" hidden onchange="architectPackPage=0;renderArchitectLibrary()">
+          <option value="">Seleção original</option>
+        </select>
+        <input class="ctrl" id="architectLibrarySearch" placeholder="Pesquisar..." oninput="architectPackPage=0;renderArchitectLibrary()" style="width:100%;margin:9px 0;" />
+        <div id="architectPackPages" class="row" hidden>
+          <button type="button" class="btn" onclick="architectPackPage--;renderArchitectLibrary()">Anterior</button>
+          <span id="architectPackPageLabel"></span>
+          <button type="button" class="btn" onclick="architectPackPage++;renderArchitectLibrary()">Próxima</button>
+        </div>
         <div class="library-grid" id="architectLibraryGrid"></div>
         <div class="library-selection" id="architectLibrarySelected">Escolha um item para colocar no mapa.</div>
       </div>
@@ -625,16 +633,18 @@
 <script src="js/roof-system.js?v=doorway-terrain-audio" defer></script>
 <script src="js/stair-system.js?v=resting-tokens" defer></script>
 <script src="js/editor.js?v=map-night-chimneys" defer></script>
-<script src="js/library.js?v=night-details-catalog" defer></script>
+<script src="js/kenney-extra-data.js?v=kenney-packs" defer></script>
+<script src="js/kenney-extra.js?v=kenney-packs" defer></script>
+<script src="js/library.js?v=kenney-packs" defer></script>
 <script src="js/gameplay.js?v=doorway-terrain-audio" defer></script>
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/textures.js?v=kenney-audio" defer></script>
+<script src="js/textures.js?v=kenney-packs" defer></script>
 <script src="js/architect-selection.js?v=surface-stack" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=stair-tree-size-20261126" defer></script>
-<script src="js/i18n.js?v=doorway-terrain-audio" defer></script>
+<script src="js/i18n.js?v=kenney-packs" defer></script>
 <script src="js/cloud-bank.js?v=character-playtest" defer></script>
 <script src="js/terrain-tools.js?v=water-depth-swimming-light" defer></script>
 <script src="js/building.js?v=doorway-terrain-audio" defer></script>

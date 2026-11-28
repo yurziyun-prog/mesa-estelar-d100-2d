@@ -1147,6 +1147,7 @@ function drawProp(p) {
     drawProp({...p,scale:1});ctx.restore();return;
   }
   if(isPortableLadder(p)){drawPortableLadder(p);return;}
+  if(drawExtraKenneyProp(p))return;
   if(isKenneyObject(p.type)){drawKenneyObject(p);return;}
   if(isKenneyRoguelikeObject(p.type)){drawKenneyRoguelikeObject(p);return;}
   if(isSleepingFurniture(p)&&!TENT_TYPES.has(p.type)){drawSleepingFurniture(p);return;}
