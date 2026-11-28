@@ -69,3 +69,22 @@ function drawMesaCreature(g,design,stride){
  }
  g.restore();
 }
+
+
+const creatureImages=new Map();
+function drawOriginalMesaCreature(g,ent){
+ const name=(ent.mesaSourceSheet?.nome||ent.name).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+   .toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+ const filename=Object.hasOwn(mesaCreatureArt,name)?mesaCreatureArt[name]:null;
+ if(!filename)return false;
+ if(!creatureImages.has(filename)){
+   const image=new Image();image.src='assets/creatures/'+filename;
+   creatureImages.set(filename,image);
+ }
+ const image=creatureImages.get(filename);
+ if(!image.complete||!image.naturalWidth)return false;
+ const width=52*ent.creature.scale;
+ const height=width*image.naturalHeight/image.naturalWidth;
+ g.drawImage(image,-width/2,-height/2,width,height);
+ return true;
+}

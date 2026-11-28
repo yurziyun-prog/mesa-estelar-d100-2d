@@ -856,8 +856,7 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
       ctx.save();ctx.textAlign='center';ctx.font='bold '+(15+Math.round((Math.sin(now/450)+1)*3))+'px system-ui';ctx.fillStyle='#e1eefb';
       ctx.fillText('Z'.repeat(n),cx+28,cy-39-Math.sin(now/600)*8);ctx.restore();
     }
-    ctx.save();ctx.textAlign='center';ctx.font='bold 11px system-ui';ctx.fillStyle='#f5f3eb';
-    ctx.fillText(ent.name,cx,cy-51);ctx.restore();
+    if(!isBelow)considerHoveredToken(ent,cx,cy);
     return;
   }
   let lift=liftVisualOffset(ent);
@@ -948,10 +947,7 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
   ctx.save();
   if(preview){ctx.fillStyle='#e6c466';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('TAB · ENTER',cx,cy-56-lift);}
   ctx.font='bold 11px system-ui';ctx.textAlign='center';
-  const labelW=ctx.measureText(ent.name).width+11;
-  ctx.fillStyle='rgba(14,18,25,.88)';
-  ctx.fillRect(cx-labelW/2,cy-44-lift,labelW,15);
-  ctx.fillStyle='#f4f5f8';ctx.fillText(ent.name,cx,cy-32-lift);
+  if(!isBelow)considerHoveredToken(ent,cx,cy-lift-4);
   if(!isBelow&&ent.speech)drawSpeechBubble(cx,cy-50-lift,ent.speech);
   ctx.restore();
 }

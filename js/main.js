@@ -99,6 +99,26 @@ function followCamera() {
   if (key !== cameraMapKey) centerMap();
 }
 let lastMouse = { x: 0, y: 0 };
+let tokenPointer=null,hoveredToken=null;
+function considerHoveredToken(ent,x,y){
+ if(!tokenPointer||isPanning||draggingEntity)return;
+ const zoom=state.camera.zoom;
+ const px=x*zoom+state.camera.x,py=y*zoom+state.camera.y;
+ const distance=Math.hypot(tokenPointer.x-px,tokenPointer.y-py);
+ if(distance>Math.max(9,23*zoom)||hoveredToken&&distance>=hoveredToken.distance)return;
+ hoveredToken={name:ent.name,distance};
+}
+function drawHoveredTokenName(){
+ if(!hoveredToken)return;
+ ctx.save();
+ ctx.font='600 12px system-ui';ctx.textBaseline='middle';
+ const width=Math.min(canvas.width-8,ctx.measureText(hoveredToken.name).width+18);
+ const x=Math.max(4,Math.min(canvas.width-width-4,tokenPointer.x+13));
+ const y=Math.max(4,Math.min(canvas.height-28,tokenPointer.y+14));
+ ctx.fillStyle='#0e141cf5';ctx.fillRect(x,y,width,24);
+ ctx.fillStyle='#fff';ctx.fillText(hoveredToken.name,x+9,y+12,width-18);
+ ctx.restore();
+}
 
 function screenToWorld(sx, sy) {
   return {
@@ -173,7 +193,7 @@ function setupInputs() {
   });
 
   window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
-  canvas.addEventListener('mouseleave',()=>{buildingPointer=null;});
+  canvas.addEventListener('mouseleave',()=>{buildingPointer=null;tokenPointer=null;});
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   document.addEventListener('pointerdown',e=>{
     if(!e.target.closest?.('#architectContextMenu'))closeArchitectContextMenu();
@@ -239,6 +259,8 @@ function setupInputs() {
     const rect = canvas.getBoundingClientRect();
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
+
+    tokenPointer=e.target===canvas?{x:sx,y:sy}:null;
 
     if (isPanning) {
       if(swimRightClick&&!swimRightClick.moved){
@@ -386,6 +408,7 @@ let roofViewFloors=null;
 
 function render() {
   const sc = getScene();
+  hoveredToken=null;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Renderizar conforme a altura física, não conforme o índice no array.
@@ -409,6 +432,7 @@ function render() {
     roofViewFloors=null;
   }
   drawMapOverlays(sc,interior);
+  drawHoveredTokenName();
 }
 
 function renderMapSurfaces(sc,visible,currentLevel,interior){
