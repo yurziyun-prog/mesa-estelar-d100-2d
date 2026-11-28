@@ -549,3 +549,12 @@ html .character-section-title, html[lang="zh-CN"] .character-section-title {
 .item-storage { margin-top:9px;border-top:1px solid var(--border);padding-top:6px; }
 .item-storage summary { cursor:pointer;font-size:13px;line-height:1.45; }
 .storage-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:6px; }
+
+.guest-player .mode-switch,
+.guest-player .floor-bar button,
+.guest-player #playerSwitchList,
+.guest-player [onclick^="openCharacterEditor"],
+.guest-player [onclick^="openMesaCloud"],
+.guest-player [onclick^="exportJSON"],
+.guest-player [onclick*="importFile"],
+.guest-player [data-world-action]:not([data-world-action="shoot"]) { display:none !important; }

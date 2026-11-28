@@ -155,6 +155,7 @@ function setupInputs() {
       if(e.key==='Enter'){e.preventDefault();gmConfirm();return;}
       if(e.key==='Escape'){e.preventDefault();if(gmCreatureAttack||gmCreatureOrder){gmCreatureAttack=null;gmCreatureOrder=null;refreshCreatureCombatControls();}else if(gmRestoreArmed)toggleGmRestore();else gmRelease();return;}
     }
+    if(guestPage&&(e.ctrlKey||e.metaKey))return;
     if (e.ctrlKey || e.metaKey) {
       const k=e.key.toLowerCase();
       if(['z','y','c','v','s'].includes(k)) e.preventDefault();
@@ -164,6 +165,7 @@ function setupInputs() {
       if(k==='v') { pasteSelectedObject(); return; }
       if(k==='s') { saveCurrentSceneToBank(); return; }
     }
+    if(guestPage&&[' ','Delete','Backspace'].includes(e.key)){e.preventDefault();return;}
     if(e.key === ' ' && activeActor()) {
       e.preventDefault();
       const ent=activeActor();
@@ -189,7 +191,7 @@ function setupInputs() {
     }
     if (e.key.toLowerCase() === 'e' && !e.repeat && activeActor()) {
       const ent = activeActor();
-      if (ent && ent.sceneId === state.activeSceneId) interactNearby(ent);
+      if (ent && ent.sceneId === state.activeSceneId&&!guestCommand('interact'))interactNearby(ent);
     }
   });
 
@@ -212,6 +214,7 @@ function setupInputs() {
       return;
     }
     if (e.button === 2) {
+      if(guestPage){isPanning=true;return;}
       if(state.mode==='gm'&&openGmLockAt(sx,sy))return;
       if(openSceneLightMenu(sx,sy,e.clientX,e.clientY))return;
       if(state.mode!=='architect'&&openRestMapMenu(sx,sy,e.clientX,e.clientY))return;
@@ -250,6 +253,14 @@ function setupInputs() {
       const ent = activeActor();
       if (!ent || ent.sceneId !== state.activeSceneId) return;
       const floor=getScene().floors[ent.floor];
+      if(guestPage){
+        const target=targetCreatureAt(ent,wx,wy);
+        if(target){
+          selectCombatCreature(ent,target);
+          if(worldAction==='shoot')guestCommand('shoot',{target:target.id});
+        }else guestCommand('interact');
+        return;
+      }
       if(worldAction){
         if(ent.sleepPose||ent.seatPose||liftRides.has(ent))return;
         if(worldAction==='push')pushMapTarget(ent,floor,wx,wy);
@@ -353,16 +364,16 @@ function gameLoop(now) {
   const elapsed = lastFrameTime===null ? 1/60 : Math.min(.15,(now-lastFrameTime)/1000);
   lastFrameTime = now;
   animTick += 0.03;
-  advanceMapDaylight(elapsed);
+  if(!guestPage)advanceMapDaylight(elapsed);
   updateSimulation(elapsed);
-  updateSkeletonAutonomy();
-  updateCreatureAutonomy(elapsed);
+  if(!guestPage){updateSkeletonAutonomy();updateCreatureAutonomy(elapsed);}
   followCamera();
   render();
   requestAnimationFrame(gameLoop);
 }
 
 function updateSimulation(elapsed) {
+  if(guestPage)return;
   if(document.querySelector('#characterEditor[open], #characterD100Sheet[open]'))return;
   state.entities.forEach(ent => {
     if (ent.speechTimer > 0) {
@@ -391,15 +402,19 @@ function updateSimulation(elapsed) {
       const notice=document.getElementById('worldActionStatus');
       if(state.mode==='player')notice.textContent=translateSiteText('Personagem caído. O Mestre pode restaurar seus PV.');
     }
+    stepControlledActor(ent,elapsed,keys);
+  }
+}
+function stepControlledActor(ent,elapsed,input){
     if (ent.hp>0&&ent.sceneId === state.activeSceneId) {
       // 攀爬期间锁定水平输入，动画逐帧运行，完成时才进入相邻楼层。
       if(advanceStairClimb(ent))return;
       if(trackHoverLift(ent))return;
       let dx = 0, dy = 0;
-      if (keys['w'] || keys['arrowup']) dy -= 1;
-      if (keys['s'] || keys['arrowdown']) dy += 1;
-      if (keys['a'] || keys['arrowleft']) dx -= 1;
-      if (keys['d'] || keys['arrowright']) dx += 1;
+      if (input['w'] || input['arrowup']) dy -= 1;
+      if (input['s'] || input['arrowdown']) dy += 1;
+      if (input['a'] || input['arrowleft']) dx -= 1;
+      if (input['d'] || input['arrowright']) dx += 1;
 
       if (dx !== 0 || dy !== 0) {
         if(ent.sleepPose){awakenEntity(ent);return;}
@@ -410,7 +425,7 @@ function updateSimulation(elapsed) {
         const floor=getScene().floors[ent.floor];
         const grass=highGrassAt(floor,ent.x,ent.y);
         const depth=waterDepthAt(floor,ent.x,ent.y);
-        const sprinting=!depth&&keys.shift&&fatigueValue(ent)<100;
+        const sprinting=!depth&&input.shift&&fatigueValue(ent)<100;
         const travelSpeed=depth?WALK_SPEED*(depth==='shallow'?.62:.48):(sprinting?SPRINT_SPEED:WALK_SPEED);
         const distance = travelSpeed*elapsed*(grass&&!depth?HIGH_GRASS_SPEED_FACTOR:1);
         const steps = Math.max(1, Math.ceil(distance / MAX_MOVEMENT_STEP));
@@ -427,7 +442,6 @@ function updateSimulation(elapsed) {
         tickActorFatigue(ent,elapsed,moved,sprinting);
       }else tickActorFatigue(ent,elapsed,false,false);
     }
-  }
 }
 
 let roofViewFloors=null;

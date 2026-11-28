@@ -191,7 +191,7 @@ function getScene() {
 }
 
 function init() {
-  const saved = localStorage.getItem('rpg_vtt_aligned_v8');
+  const saved = guestPage?null:localStorage.getItem('rpg_vtt_aligned_v8');
   state = saved ? JSON.parse(saved) : createInitialState();
   migrateFixedTerrain();
   repairHouseChest();
@@ -205,6 +205,7 @@ function init() {
   setupInputs();
   setMode(state.mode || 'architect');
   logEvent(`Cenário ativo: ${getScene().name}.`);
+  initPlayerSession();
   requestAnimationFrame(gameLoop);
 }
 
@@ -377,10 +378,11 @@ function gmSwitchScene(targetId){
   updateFloorLabel();refreshSceneSelect();updateUI();refreshGmFocus();centerMap();
   finishEdit();
 }
-function saveBank() {
+function saveBank(quiet=false) {
+  if(guestPage)return false;
   try{
-    localStorage.setItem('rpg_vtt_aligned_v8',JSON.stringify(state));
-    logEvent('💾 Cenários salvos neste navegador.');
+    localStorage.setItem('rpg_vtt_aligned_v8',snapshotState());
+    if(!quiet)logEvent('💾 Cenários salvos neste navegador.');
     return true;
   }catch(error){
     alert('Não foi possível salvar: '+error.message);
@@ -432,7 +434,7 @@ function importJSON(e) {
 
 const undoHistory = [], redoHistory = [];
 let editSnapshot = null;
-function snapshotState(){ return JSON.stringify(state); }
+function snapshotState(){ return JSON.stringify(playerHostView?{...state,...playerHostView}:state); }
 function beginEdit(){ if(editSnapshot === null) editSnapshot = snapshotState(); }
 function finishEdit(){
   if(editSnapshot === null) return;

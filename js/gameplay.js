@@ -46,6 +46,7 @@ function refreshGmFocus(){
  const stats=document.getElementById('gmSessionStats');if(stats){const actors=gmActors(),pcs=actors.filter(e=>e.type==='pc');stats.textContent='Personagens: '+pcs.length+' · NPCs/criaturas: '+(actors.length-pcs.length)+' · Total no banco: '+state.entities.length+' · Cenário: '+getScene().name;}
 }
 function setMode(mode) {
+  if(guestPage)mode='player';
   const priorMode=state.mode;
   if(mode!==priorMode){gmCreatureAttack=null;gmCreatureOrder=null;}
   if(priorMode==='gm'&&mode!=='gm'&&gmRestoreArmed)toggleGmRestore();
@@ -320,7 +321,7 @@ function interactWithBed(ent,bed){
   if(ent.sleepPose||state.entities.some(other=>other!==ent&&other.sleepPose&&other.sceneId===ent.sceneId&&other.floor===ent.floor&&other.sleepBed?.x===bed.x&&other.sleepBed?.y===bed.y))return;
   if(confirm(clockLabel('Dormir agora?'))){startEntitySleep(ent,bed);saveBank();}
 }
-function interactNearby(entity,clickedSeat=null) {
+function interactNearby(entity,clickedSeat=null,remote=false) {
   const floor = getScene().floors[entity.floor];
   if(entity.hp<=0||entity.sleepPose||liftRides.has(entity))return;
   if(entity.seatPose){standFromSeat(entity);return;}
@@ -338,6 +339,7 @@ function interactNearby(entity,clickedSeat=null) {
       return;
     }
     if (door.lockCode && !door.open) {
+      if(remote){say(entity,'Peça ao Mestre para abrir a porta com código.');return;}
       const answer=prompt('Digite o código de acesso:');
       if(answer===null)return;
       if(answer!==door.lockCode){say(entity,'Código incorreto.');return;}
@@ -372,6 +374,7 @@ function interactNearby(entity,clickedSeat=null) {
       return;
     }
     if(chest.lockCode){
+      if(remote){say(entity,'Peça ao Mestre para abrir o baú com código.');return;}
       const code=prompt('Digite o código do baú:');
       if(code===null)return;
       if(code!==chest.lockCode){say(entity,'Código incorreto.');return;}
@@ -390,7 +393,7 @@ function interactNearby(entity,clickedSeat=null) {
     return;
   }
   const nearBed=floor.props.filter(isSleepingFurniture).map(p=>({p,d:Math.hypot(p.x-entity.x,p.y-entity.y)})).sort((a,b)=>a.d-b.d)[0];
-  if(nearBed && nearBed.d<(TENT_TYPES.has(nearBed.p.type)?48*(nearBed.p.scale||1):90)){interactWithBed(entity,nearBed.p);return;}
+  if(nearBed && nearBed.d<(TENT_TYPES.has(nearBed.p.type)?48*(nearBed.p.scale||1):90)){if(remote)startEntitySleep(entity,nearBed.p);else interactWithBed(entity,nearBed.p);return;}
   const seat=floor.props.find(p=>REST_SEATS[p.type]&&seatBlocksPoint(p,entity.x,entity.y,24));
   if(seat){sitOnSeat(entity,seat);return;}
   if(toggleNearbyDecoration(floor,entity))return;
@@ -470,6 +473,7 @@ function updateUI() {
 }
 
 function selectPlayerChar(id) {
+  if(guestPage&&id!==guestActorId)return;
   const candidate=state.entities.find(e=>e.id===id);
   if(!candidate || candidate.type!=='pc')return;
   if(candidate.sceneId==null||candidate.floor<0){logEvent('📍 Esse personagem está na reserva. O Mestre deve colocá-lo no mapa primeiro.');return;}

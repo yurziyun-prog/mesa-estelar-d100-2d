@@ -203,4 +203,4 @@ function runMesaCloudBank(action) {
 mesaCloudDialog.addEventListener('close', () => {
   document.getElementById('cloudPassword').value = '';
 });
-connectMesaCloud().catch(() => {});
+if(!guestPage)connectMesaCloud().catch(() => {});

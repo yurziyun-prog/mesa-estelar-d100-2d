@@ -275,6 +275,7 @@ function useMapFireButton(){
  const actor=activeActor();
  const target=selectedCombatCreature(actor);
  if(!target){chooseWorldAction('shoot');worldNotice('Clique em uma criatura para disparar.');return;}
+ if(guestCommand('shoot',{target:target.id}))return;
  if(actor.sleepPose||liftRides.has(actor)){worldNotice('O personagem não pode disparar agora.');return;}
  fireAtCreature(actor,getScene().floors[actor.floor],target,equippedMapGun(actor));
 }

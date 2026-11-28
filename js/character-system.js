@@ -611,6 +611,7 @@ function saveCharacterEditor(event){
 }
 
 function characterItemAction(ent,name,action,chosenSlot=null,fromSlot=null){
+ if(guestCommand('equip',{name,operation:action,slot:chosenSlot,fromSlot}))return;
  if(ent!==getSelectedEntity()||!['gm','player'].includes(state.mode)||!ent.inventory.includes(name))return;
  const item=characterItems[name];
  if(!item)return;
@@ -707,7 +708,7 @@ function transferCharacterStorage(ent,kind,index,toStorage){
  const name=source[index];
  if(!name||toStorage&&[...equippedInventoryIndices(ent).values()].includes(index))return;
  if(!toStorage&&ent.inventory.length-equippedInventoryIndices(ent).size>=POCKET_CELLS+backpackCapacity(ent)){
-   alert(translateSiteText('Sem espaço para carregar mais itens.'));
+   if(actor===marketActor)alert(translateSiteText('Sem espaço para carregar mais itens.'));
    return;
  }
  beginEdit();
@@ -945,11 +946,12 @@ function openCharacterMarket(){
  renderCharacterMarket();
  document.getElementById('characterMarket').showModal();
 }
-function buyCharacterMarketItem(id){
- const actor=marketActor,item=marketItems.find(entry=>entry.id===id);
+function buyCharacterMarketItem(id,actor=marketActor){
+ if(guestCommand('buy',{id}))return null;
+ const item=marketItems.find(entry=>entry.id===id);
  if(!canShop(actor)||!item||actor.credits<Number(item.preco))return false;
  if(actor.inventory.length-equippedInventoryIndices(actor).size>=POCKET_CELLS+backpackCapacity(actor)&&characterItems[item.nome]?.slot!=='pack'){
-   alert(translateSiteText('Sem espaço para carregar mais itens.'));
+   if(actor===marketActor)alert(translateSiteText('Sem espaço para carregar mais itens.'));
    return false;
  }
  beginEdit();
@@ -984,7 +986,7 @@ function renderCharacterMarket(){
    description.textContent=characterItemDetails(item.nome);
    const buy=characterActionButton('Comprar',()=>{
      const purchased=buyCharacterMarketItem(item.id);
-     document.getElementById('marketStatus').textContent=purchased?
+     document.getElementById('marketStatus').textContent=purchased===null?sessionLabel('Aguardando confirmação do Mestre…','等待主持人确认…'):purchased?
        translateSiteText('Adicionado à mochila')+' · '+name:translateSiteText('Compra não concluída');
      if(purchased){
        document.getElementById('marketBalance').textContent=translateSiteText('Saldo')+' · '+creditLabel(actor.credits);
