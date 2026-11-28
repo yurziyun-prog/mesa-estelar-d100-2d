@@ -156,6 +156,22 @@ const mapWeaponSkills={
  pistola:['pistolas_revolveres'],
  rifle:['fuzis_carabinas']
 };
+function mapWeaponRangeMetres(weapon){
+ const data=characterItems[weapon]?.data;
+ const bands=String(data?.alcance||'').match(/^\s*(\d+(?:[.,]\d+)?(?:\s*\/\s*\d+(?:[.,]\d+)?)*)(?:\s*m)?\s*$/i);
+ const last=bands?.[1].split('/').at(-1);
+ const metres=Number(last?.trim().replace(',','.')||data?.alcanceMetros);
+ return Number.isFinite(metres)&&metres>0?metres:10;
+}
+
+function shotWithinMapRange(distance,weapon){
+ const metres=mapWeaponRangeMetres(weapon);
+ const distanceMetres=distance/MAP_UNITS_PER_METER;
+ if(distanceMetres<=metres)return true;
+ worldNotice(translateSiteText('Alvo fora de alcance.')+' '+distanceMetres.toFixed(1)+' m / '+metres+' m');
+ return false;
+}
+
 function mapWeaponHitChance(actor,weapon){
  const data=characterItems[weapon]?.data;
  const ids=mapWeaponSkills[data?.familiaArma]||mapWeaponSkills[data?.plataforma]||mapWeaponSkills.pistola;
@@ -205,7 +221,7 @@ function fireAtCreature(actor,floor,target,weapon){
  if(target.hp<=0){worldNotice('Criatura já derrotada.');return true;}
  if(actor.hp<=0){worldNotice('Personagem caído. O Mestre pode restaurar seus PV.');return true;}
  if(!weapon){worldNotice('Equipe uma arma de disparo.');return true;}
- if(Math.hypot(target.x-actor.x,target.y-actor.y)>320){worldNotice('Alvo fora de alcance.');return true;}
+ if(!shotWithinMapRange(Math.hypot(target.x-actor.x,target.y-actor.y),weapon))return true;
  if(crossesWall(floor,actor.x,actor.y,target.x,target.y)){worldNotice('Uma parede bloqueia o alvo.');return true;}
  const chance=mapWeaponHitChance(actor,weapon);
  const roll=Math.floor(Math.random()*100)+1;
@@ -268,7 +284,7 @@ function inspectOrDamage(actor,floor,x,y){
  }
  if(!weapon&&!carriesPistol(actor)){worldNotice('É preciso ter uma pistola no inventário.');return;}
  const p=target.point,range=Math.hypot(p.x-actor.x,p.y-actor.y);
- if(range>320){worldNotice('Alvo fora de alcance.');return;}
+ if(!shotWithinMapRange(range,weapon))return;
  // Stop short of the hit surface so its own collision does not block the shot.
  if(range>55&&crossesWall(floor,actor.x,actor.y,p.x+(actor.x-p.x)*40/range,p.y+(actor.y-p.y)*40/range)){
    worldNotice('Uma parede bloqueia o alvo.');return;
