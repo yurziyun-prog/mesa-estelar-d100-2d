@@ -101,7 +101,7 @@ const mesaItemCatalog=[
 
 mesaItemCatalog.push(...[
  ['relogio_pulso','Relógio de pulso','腕表',20,'Mostra a hora e a data na ficha. Permite definir alarmes e lembretes.','在角色卡显示日期和时间，可设置闹钟和提醒。'],
- ['comunicador_pessoal','Comunicador pessoal','个人通讯器',85,'Mostra a hora e a data na ficha. Permite definir alarmes e lembretes.','在角色卡显示日期和时间，可设置闹钟和提醒。'],
+ ['comunicador_pessoal','Comunicador pessoal','便携通讯器',85,'Comunicador portátil de pulso com mensagens, relógio, alarmes e luz.','戴在手腕上的便携通讯器，可发消息、看时间、设闹钟和照明。'],
  ['despertador_portatil','Despertador portátil','便携闹钟',15,'Mostra a hora e a data na ficha. Permite definir alarmes e lembretes.','在角色卡显示日期和时间，可设置闹钟和提醒。'],
  ['cadeira_portatil','Cadeira portátil','便携椅',30,'Use pelo menu do chão para descansar como em uma cadeira.','通过地面右键菜单使用，恢复效果与普通椅子相同。'],
  ['saco_de_dormir','Saco de dormir','睡袋',40,'Use pelo menu do chão para dormir com o mesmo descanso de uma cama.','通过地面右键菜单使用，恢复效果与床相同。']

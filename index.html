@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <title>Mesa RPG 2D — Arquiteto, Mestre & Jogador</title>
-  <link rel="stylesheet" href="css/style.css?v=equipped-packs" />
+  <link rel="stylesheet" href="css/style.css?v=equipment-controls" />
 </head>
 <body>
 
@@ -587,6 +587,7 @@
       <div id="characterClock" hidden>
         <p id="characterClockTime" class="library-hint"></p>
         <p id="characterClockNotice" class="library-hint" role="status"></p>
+        <button id="characterMessagesOpen" type="button" class="btn" onclick="openCharacterMessages()" hidden>Mensagens</button>
         <button id="characterClockOpen" type="button" class="btn" onclick="openWorldReminders()">Alarmes e lembretes</button>
       </div>
 
@@ -650,12 +651,12 @@
 <script src="js/kenney-extra.js?v=scifi-packs" defer></script>
 <script src="js/library.js?v=world-clock" defer></script>
 <script src="js/rest-system.js?v=world-clock" defer></script>
-<script src="js/world-clock.js?v=world-clock" defer></script>
-<script src="js/gameplay.js?v=door-clearance" defer></script>
+<script src="js/world-clock.js?v=equipment-controls" defer></script>
+<script src="js/gameplay.js?v=equipment-controls" defer></script>
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/textures.js?v=world-clock" defer></script>
+<script src="js/textures.js?v=equipment-controls" defer></script>
 <script src="js/architect-selection.js?v=surface-stack" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=stair-tree-size-20261126" defer></script>
@@ -670,17 +671,18 @@
 <script src="js/cave-brush.js?v=door-clearance" defer></script>
 <script src="js/caves.js?v=cave-joins-20261126" defer></script>
 <script src="js/plants.js?v=clear-canopies-daylight" defer></script>
-<script src="js/scenery.js?v=world-clock" defer></script>
+<script src="js/scenery.js?v=equipment-controls" defer></script>
 <script src="js/vertical-world.js?v=cave-joins-20261126" defer></script>
-<script src="js/material-damage.js?v=push-at-doorways" defer></script>
+<script src="js/material-damage.js?v=equipment-controls" defer></script>
 <script src="js/character-catalog.js?v=mesa-specialty-formulas" defer></script>
-<script src="js/item-catalog.js?v=world-clock" defer></script>
+<script src="js/item-catalog.js?v=equipment-controls" defer></script>
 <script src="js/mesa-creatures.js?v=locked-creature-targets" defer></script>
 <script src="js/mesa-character-import.js?v=mesa-specialty-formulas" defer></script>
-<script src="js/character-system.js?v=world-clock" defer></script>
-<script src="js/creature-combat.js?v=doorway-terrain-audio" defer></script>
-<script src="js/game-audio.js?v=door-clearance" defer></script>
-<script src="js/main.js?v=world-clock" defer></script>
+<script src="js/equipment-devices.js?v=equipment-controls" defer></script>
+<script src="js/character-system.js?v=equipment-controls" defer></script>
+<script src="js/creature-combat.js?v=equipment-controls" defer></script>
+<script src="js/game-audio.js?v=equipment-controls" defer></script>
+<script src="js/main.js?v=equipment-controls" defer></script>
 <dialog id="characterD100Sheet" class="lock-dialog">
  <form class="character-form" onsubmit="saveD100Sheet(event)">
   <h3><span>Ficha d100</span> <span id="d100SheetName" data-user-text></span></h3>
@@ -732,6 +734,16 @@
     </div>
     <div id="characterEditorStatus" role="status" class="library-hint"></div>
     <div class="row"><button type="button" class="btn" onclick="document.getElementById('characterEditor').close()">Cancelar</button><button class="btn btn-primary" type="submit">Salvar personagem</button></div>
+  </form>
+</dialog>
+<dialog id="characterMessages" class="lock-dialog">
+  <h3>Comunicações</h3>
+  <div data-messages style="max-height:40vh;overflow:auto;overflow-wrap:anywhere"></div>
+  <form onsubmit="event.preventDefault();sendCharacterMessage(this)">
+    <select class="ctrl" name="recipient" aria-label="Destinatário · 收件角色" required></select>
+    <input class="ctrl" name="message" maxlength="500" aria-label="Mensagem · 消息" required>
+    <button class="btn" type="submit">Enviar</button>
+    <button class="btn" type="button" data-close onclick="this.closest('dialog').close()">Fechar</button>
   </form>
 </dialog>
 <dialog id="worldReminderDialog" class="lock-dialog">

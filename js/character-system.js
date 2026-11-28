@@ -3,15 +3,15 @@ const legacyCharacterItems={
  'Espada':{slot:'hand'},'Cajado':{slot:'hand'},'Arco':{slot:'hand'},'Escudo':{slot:'hand'},
  'Gorro de viagem':{slot:'head'},'Casaco de viagem':{slot:'body',color:'#577282'},
  'Colete de couro':{slot:'body',color:'#76543e'},'Botas':{slot:'feet'},
- 'Lanterna de Óleo':{slot:'light',use:'light'},
+ 'Lanterna de Óleo':{slot:'hand',use:'light'},
  'Mochila de Viagem':{slot:'pack',capacity:8,data:{nome_zh:'旅行背包',preco:'45',descricao:'Mochila com oito espaços.',descricao_zh:'提供八个背包格。'}},
  'Ração':{use:'food'},'Poção':{use:'heal'}
 };
-const characterSlots={head:'Cabeça',body:'Tronco',feet:'Pés',hand:'Mão',light:'Luz',waist:'Cintura',pack:'Mochila equipada'};
+const characterSlots={head:'Cabeça',body:'Tronco',feet:'Pés',hand:'Mão direita',leftHand:'Mão esquerda',wrist:'Pulso',waist:'Cintura',pack:'Mochila equipada'};
 const characterItems=Object.assign(Object.create(null),legacyCharacterItems);
 for(const data of mesaItemCatalog){
  const {id,categoria}=data;
- const slot=id==='mochila_avancada'?'pack':categoria==='Armas'?'hand':id==='lanterna'?'light':
+ const slot=isCommunicator(data.nome)||id==='relogio_pulso'||id==='despertador_portatil'?'wrist':id==='mochila_avancada'?'pack':categoria==='Armas'?'hand':id==='lanterna'?'hand':
    /capacete|chapeu/.test(id)?'head':id==='botas_couro'?'feet':id==='cinto_utilitario'?'waist':
    ['Armaduras','Roupas'].includes(categoria)?'body':null;
  const color={armadura_leve:'#70849a',armadura_militar:'#54664d',biomesh:'#496a70',
@@ -447,8 +447,8 @@ function drawCharacterAppearance(g,ent,stride=0){
    if(species==='Humanoide parasitado')avatarShape(g,'#6d5463',[[0,-24],[9,-25],[12,-17],[8,-11],[4,-17]]);
  }
  if(equipped.hand)drawCharacterHeldItem(g,equipped.hand,half+4,(form==='insect'?11:8)+stride);
- if(equipped.light){
-   g.fillStyle=ent.lanternLit?'#ffdf9b':'#655846';g.fillRect(-half-10,8-stride,6,8);
+ if(equipped.leftHand){
+   g.save();g.scale(-1,1);drawCharacterHeldItem(g,equipped.leftHand,half+4,8-stride);g.restore();
  }
  g.restore();
 }
@@ -467,7 +467,10 @@ function drawCharacterHeldItem(g,name,x,y){
  g.translate(x,y);
  g.rotate(.13);
  const style=characterHandStyle(name);
- if(style==='shield'){
+ if(characterItems[name]?.use==='light'){
+   g.fillStyle='#996c32';g.fillRect(-3,-8,6,10);
+   g.fillStyle='#f0cf84';g.fillRect(-2,-6,4,5);
+ }else if(style==='shield'){
    avatarShape(g,'#748b9c',[[-7,-8],[7,-8],[6,1],[0,7],[-6,1]]);
  }else if(style==='gun'){
    const long=/rifle|carabina|fuzil|escopeta|canhao/i.test(name);
@@ -607,30 +610,27 @@ function saveCharacterEditor(event){
  if(!old)openD100Sheet(ent);
 }
 
-function characterItemAction(ent,name,action){
+function characterItemAction(ent,name,action,chosenSlot=null,fromSlot=null){
  if(ent!==getSelectedEntity()||!['gm','player'].includes(state.mode)||!ent.inventory.includes(name))return;
  const item=characterItems[name];
  if(!item)return;
- if(action==='equip'&&item.slot){
+ const slot=chosenSlot||item.slot;
+ if(action==='equip'&&slot&&canEquipInSlot(name,slot)){
    beginEdit();
-   if(item.slot==='light'&&ent.equipment?.light!==name)ent.lanternLit=false;
-   (ent.equipment||={})[item.slot]=name;
- }else if(action==='remove'&&item.slot&&ent.equipment?.[item.slot]===name){
+   setEquippedItem(ent,name,slot,fromSlot);
+ }else if(action==='remove'&&slot&&ent.equipment?.[slot]===name){
    beginEdit();
-   delete ent.equipment[item.slot];
-   if(item.slot==='light')ent.lanternLit=false;
+   delete ent.equipment[slot];
+   clearEquipmentLight(ent,slot);
  }else if(action==='use'&&item.use){
-   if(item.use==='light'&&ent.equipment?.light!==name)return;
+   if(item.use==='light'){toggleEquipmentLight(ent,slot);return;}
    if(item.use==='food'&&ent.hunger>=100||item.use==='heal'&&ent.hp>=ent.maxHp)return;
    beginEdit();
-   if(item.use==='light')ent.lanternLit=!ent.lanternLit;
-   else{
-     if(item.use==='food')ent.hunger=Math.min(100,ent.hunger+25);
-     if(item.use==='heal')ent.hp=Math.min(ent.maxHp,ent.hp+5);
-     const index=ent.inventory.indexOf(name);
-     ent.inventory.splice(index,1);
-     ent.inventoryCells?.splice(index,1);
-   }
+   if(item.use==='food')ent.hunger=Math.min(100,ent.hunger+25);
+   if(item.use==='heal')ent.hp=Math.min(ent.maxHp,ent.hp+5);
+   const index=ent.inventory.indexOf(name);
+   ent.inventory.splice(index,1);
+   ent.inventoryCells?.splice(index,1);
  }else return;
  finishEdit();updateUI();saveBank();
 }
@@ -672,6 +672,7 @@ function equippedInventoryIndices(ent){
 
 const POCKET_CELLS=8;
 function migrateCharacterPack(ent){
+ migrateEquipmentSlots(ent);
  if(ent.storageLayoutVersion===1)return;
  const oldPack=(ent.mesaSourceSheet?.inventario?.equipado||[]).find(item=>
    characterItems[item?.nome]?.slot==='pack'&&ent.inventory.includes(item.nome));
@@ -728,7 +729,7 @@ function moveBackpackItem(ent,index,cell,fromSlot){
  beginEdit();
  if(fromSlot){
    delete ent.equipment[fromSlot];
-   if(fromSlot==='light')ent.lanternLit=false;
+   clearEquipmentLight(ent,fromSlot);
  }
  if(occupant>=0)positions[occupant]=positions[index];
  positions[index]=cell;
@@ -751,7 +752,7 @@ function characterItemDetails(name){
  return [description,characterItems[name]?.capacity?translateSiteText('Espaços da mochila')+' · '+characterItems[name].capacity:'',fields.join('  ·  ')].filter(Boolean).join('\n');
 }
 
-const equipmentSlotIcons={head:'⛑️',body:'🛡️',feet:'🥾',hand:'⚔️',light:'🔦',waist:'🪢',pack:'🎒'};
+const equipmentSlotIcons={head:'⛑️',body:'🛡️',feet:'🥾',hand:'🤚',leftHand:'✋',wrist:'⌚',waist:'🪢',pack:'🎒'};
 function inventoryIcon(name){
  const item=characterItems[name];
  const key=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
@@ -812,20 +813,23 @@ function renderCharacterEquipment(ent){
    const title=document.createElement('strong');title.textContent=characterItemName(name);
    const stats=document.createElement('small');stats.textContent=characterItemDetails(name);
    details.append(title,stats);
-   const action=(label,key)=>characterActionButton(label,()=>{
+   const action=(label,key,targetSlot=slot)=>characterActionButton(label,()=>{
      selectedInventoryItem=null;
-     characterItemAction(ent,name,key);
+     characterItemAction(ent,name,key,targetSlot);
      showSelection();
    });
    if(slot)details.append(action('Tirar','remove'));
-   else if(item?.slot)details.append(action('Equipar','equip'));
+   else if(item?.slot){
+     details.append(action('Equipar','equip'));
+     if(canEquipInSlot(name,'leftHand'))details.append(action(siteLanguage==='zh-CN'?'装备到左手':'Equipar na mão esquerda','equip','leftHand'));
+   }
    if(!slot){
      const store=kind=>{selectedInventoryItem=null;transferCharacterStorage(ent,kind,index,true);};
      details.append(characterActionButton('Guardar em casa',()=>store('casa')));
      if(hasVehicleStorage(ent))details.append(characterActionButton('Guardar no veículo / nave',()=>store('veiculo')));
    }
    if(item?.use&&(!item.slot||slot))details.append(action(
-     item.use==='light'?(ent.lanternLit?'Apagar':'Acender'):'Usar','use'));
+     item.use==='light'?(equipmentLightOn(ent,slot)?'Apagar':'Acender'):'Usar','use'));
  };
  const cellButton=(index,label,slot,storedName)=>{
    const button=document.createElement('button');button.type='button';button.className='inventory-cell';
@@ -842,8 +846,12 @@ function renderCharacterEquipment(ent){
    }
    const title=name?characterItemName(name):label;
    button.setAttribute('aria-label',[label,name&&title].filter(Boolean).join(' · '));
-   if(name||slot)button.title=title;
+   if(name||slot)button.title=[label,name&&title].filter(Boolean).join(' · ');
    if(name&&!storedName){
+     if(slot&&equipmentLightCapable(ent,slot)){
+       button.title+=' · '+(siteLanguage==='zh-CN'?'右键开关灯':'Botão direito: ligar ou desligar a luz');
+       button.oncontextmenu=event=>{event.preventDefault();toggleEquipmentLight(ent,slot);};
+     }
      button.draggable=true;
      button.ondragstart=event=>{
        dragged={index,name,slot};
@@ -861,9 +869,13 @@ function renderCharacterEquipment(ent){
    return button;
  };
  slots.replaceChildren(...Object.entries(characterSlots).map(([slot,key])=>{
-   const button=cellButton(equipped.get(slot),translateSiteText(key),slot);
-   setTarget(button,source=>!source.slot&&characterItems[source.name]?.slot===slot,
-     source=>characterItemAction(ent,source.name,'equip'));
+   const slotLabel=siteLanguage==='zh-CN'?({hand:'右手',leftHand:'左手',wrist:'手腕'}[slot]||translateSiteText(key)):translateSiteText(key);
+   const button=cellButton(equipped.get(slot),slotLabel,slot);
+   if(slot==='leftHand'&&twoHandedItem(ent.equipment?.hand)){
+     button.textContent='🔒';button.title=siteLanguage==='zh-CN'?'双手武器占用':'Ocupada por arma de duas mãos';button.setAttribute('aria-label',button.title);
+   }
+   setTarget(button,source=>source.slot!==slot&&canEquipInSlot(source.name,slot),
+     source=>characterItemAction(ent,source.name,'equip',slot,source.slot));
    return button;
  }));
  const byCell=new Map(positions.map((cell,index)=>[cell,index]).filter(([,index])=>!equippedIndices.has(index)));

@@ -100,7 +100,7 @@ function creatureMeleeAttack(attacker,target,floor,now,move=null,hunt=false){
    for(let i=0;i<Number(profile?.[1]||1);i++)damage+=1+Math.floor(Math.random()*Number(profile?.[2]||6));
    if(!profile||profile[4]?.toUpperCase()==='MD')damage+=bonus;
    else if(profile[4])damage+=Number(profile[3]+profile[4]);
-   damage=Math.max(0,damage);
+   damage=damageAfterArmor(target,Math.max(0,damage));
    beginEdit();target.hp=Math.max(0,target.hp-damage);
    noteCreatureAttacked(target,attacker,damage);
    if(hunt&&target.hp<=0)attacker.hunger=Math.min(100,attacker.hunger+55);

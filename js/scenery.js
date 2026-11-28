@@ -119,9 +119,10 @@ function drawSceneryProp(prop){
  ctx.save();ctx.translate(prop.x,prop.y);ctx.rotate((prop.rot||0)*Math.PI/2);
  ctx.fillStyle='rgba(12,14,20,.27)';
  ctx.beginPath();ctx.ellipse(size*.14,size*.18,size*.39,size*.21,.45,0,Math.PI*2);ctx.fill();
+ if(prop.decorationOff&&item[4])ctx.filter='brightness(.58) saturate(.4)';
  ctx.drawImage(sceneryArt,sprite%4*w,Math.floor(sprite/4)*h,w,h,-size/2,-size/2,size,size);
  if(prop.type==='neonSignCyan'&&prop.signText){
-   ctx.fillStyle='#d1ffff';ctx.font='bold '+Math.max(5,size*.14)+'px sans-serif';
+   ctx.fillStyle=prop.decorationOff?'#737e88':'#d1ffff';ctx.font='bold '+Math.max(5,size*.14)+'px sans-serif';
    ctx.textAlign='center';ctx.textBaseline='middle';
    ctx.fillText(prop.signText,0,size*.038,size*.69);
  }
@@ -421,7 +422,7 @@ function drawNightLighting(floor,interior,darkness){
 function renderSceneryLights(floor,interior){
  if(!floor)return;
  const actorLights=state.entities.filter(ent=>ent.sceneId===state.activeSceneId&&ent.floor===state.currentFloor&&
-   ent.lanternLit&&characterItems[ent.equipment?.light]?.use==='light')
+   ent.hp>0&&['head','wrist','hand','leftHand'].some(slot=>equipmentLightOn(ent,slot)))
    .map(prop=>({prop,radius:108,strength:.8}));
  const emitters=[...floor.props.map(sceneryEmitter).filter(Boolean),...lightFromLowerStairs(floor),...actorLights];
  if(!emitters.length)return;
@@ -682,4 +683,38 @@ function drawWindowCurtain(width,curtain){
    ctx.stroke();
    if(curtain.closed)break;
  }
+}
+
+function switchableSceneLight(prop){
+ const active={...prop,decorationOff:false,fireLit:true};
+ return Boolean(sceneryEmitter(active))&&(
+   Boolean(fireplaceDesign(prop.type))||Boolean(decorationItems.get(prop.type)?.[3])||
+   Boolean(sceneryItems.get(prop.type)?.[4])||['campfire','braziers','torch','oilLamp','lamp'].includes(prop.type)
+ );
+}
+function openSceneLightMenu(sx,sy,clientX,clientY){
+ const {wx,wy}=screenToWorld(sx,sy);
+ const floor=getScene().floors[state.currentFloor];
+ const actor=activeActor();
+ if(state.mode==='player'&&(!actor||actor.hp<=0||actor.sleepPose||actor.floor!==state.currentFloor||actor.sceneId!==state.activeSceneId))return false;
+ const hit=floor?.props.filter(p=>switchableSceneLight(p)&&
+   Math.hypot(p.x-wx,p.y-wy)<Math.min(55,25*(p.scale||1))&&
+   (state.mode!=='player'||Math.hypot(p.x-actor.x,p.y-actor.y)<78))
+   .sort((a,b)=>Math.hypot(a.x-wx,a.y-wy)-Math.hypot(b.x-wx,b.y-wy))[0];
+ if(!hit)return false;
+ closeArchitectContextMenu();
+ const menu=document.createElement('div');menu.id='architectContextMenu';menu.className='architect-context-menu';
+ const button=document.createElement('button');button.type='button';
+ const isOff=!sceneryEmitter(hit);
+ button.textContent=siteLanguage==='zh-CN'?(isOff?'开灯／点火':'关灯／熄火'):(isOff?'Acender':'Apagar');
+ button.onclick=()=>{
+   beginEdit();
+   hit.decorationOff=!isOff;
+   if(fireplaceDesign(hit.type))hit.fireLit=isOff;
+   finishEdit();saveBank();closeArchitectContextMenu();
+ };
+ menu.append(button);document.body.append(menu);
+ menu.style.left=Math.max(0,Math.min(clientX,innerWidth-menu.offsetWidth-6))+'px';
+ menu.style.top=Math.max(0,Math.min(clientY,innerHeight-menu.offsetHeight-6))+'px';
+ return true;
 }

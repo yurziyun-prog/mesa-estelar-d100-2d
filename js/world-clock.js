@@ -25,9 +25,12 @@ function setWorldDate(value){
  const date=Date.parse(value+'T00:00:00Z');
  if(Number.isFinite(date)){state.worldCalendarEpoch=date-worldDay()*WORLD_DAY_MS;updateDaylightControls();saveBank();}
 }
-function carriesClock(ent){return ent?.inventory?.some(item=>CLOCK_ITEMS.has(item));}
+function carriesClock(ent){return ent?.inventory?.some(item=>CLOCK_ITEMS.has(item)||isCommunicator(item));}
 function updateCharacterClock(){
  const ent=getSelectedEntity(), panel=document.getElementById('characterClock');
+ document.getElementById('characterMessagesOpen').hidden=!equippedCommunicator(ent);
+ const unread=ent?.unreadCommunications||0;
+ document.getElementById('characterMessagesOpen').textContent=(siteLanguage==='zh-CN'?'消息':'Mensagens')+(unread?' ('+unread+')':'');
  panel.hidden=!carriesClock(ent);
  if(panel.hidden)return;
  document.getElementById('characterClockTime').textContent=worldClockLabel();

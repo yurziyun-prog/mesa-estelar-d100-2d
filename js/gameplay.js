@@ -397,7 +397,10 @@ function interactNearby(entity,clickedSeat=null) {
   const fire=floor.props.filter(p=>fireplaceDesign(p.type))
     .map(p=>({p,distance:Math.hypot(p.x-entity.x,p.y-entity.y)}))
     .sort((a,b)=>a.distance-b.distance)[0];
-  if(fire&&fire.distance<62)fire.p.fireLit=fire.p.fireLit===false;
+  if(fire&&fire.distance<62){
+    fire.p.fireLit=fire.p.fireLit===false||fire.p.decorationOff===true;
+    fire.p.decorationOff=!fire.p.fireLit;
+  }
 }
 
 function say(entity, text) {

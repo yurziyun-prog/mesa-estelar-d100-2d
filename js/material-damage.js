@@ -265,8 +265,7 @@ function targetCreatureAt(actor,x,y){
  return selected;
 }
 function equippedMapGun(actor){
- const weapon=actor.equipment?.hand;
- return weapon&&characterHandStyle(weapon)==='gun'?weapon:null;
+ return [actor.equipment?.hand,actor.equipment?.leftHand].find(weapon=>weapon&&characterHandStyle(weapon)==='gun')||null;
 }
 function selectCombatCreature(actor,target){
  combatTarget={actor,target};
@@ -295,7 +294,8 @@ function fireAtCreature(actor,floor,target,weapon){
    return true;
  }
  const damage=String(characterItems[weapon]?.data?.dano||'').match(/^(\d+)d(\d+)(?:([+-]\d+))?$/i);
- const dealt=damage?Math.max(1,Math.floor(Number(damage[1])*(Number(damage[2])+1)/2)+Number(damage[3]||0)):6;
+ const rawDamage=damage?Math.max(1,Math.floor(Number(damage[1])*(Number(damage[2])+1)/2)+Number(damage[3]||0)):6;
+ const dealt=damageAfterArmor(target,rawDamage,Number(characterItems[weapon]?.data?.penetracao)||0);
  showMapShot(actor,floor,target.x,target.y,weapon);
  markBattleMotion(target,'hit',target.x-actor.x,target.y-actor.y);
  beginEdit();
