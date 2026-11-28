@@ -1,4 +1,11 @@
 const SITE_ZH = new Map(`
+Disparar arma|开火
+Equipe uma arma de disparo.|请先装备一把枪。
+Criatura derrotada.|怪物已被击倒。
+Criatura já derrotada.|这个怪物已经被击倒。
+Todos os personagens|全部角色
+Buscar por nome|按名字搜索
+Tipo de personagem|角色类型
 Bolsos|口袋
 Mochila equipada|背包装备格
 Carga excedente|超出容量的物品

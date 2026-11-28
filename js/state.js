@@ -333,8 +333,12 @@ function renderGmPullList() {
   const box=document.getElementById('gmPullEntitiesList');if(!box)return;
   const selected=new Set(state.gmTransferIds||[]);
   box.replaceChildren();
-  // PJs ficam no começo, todos marcados por padrão. NPCs podem ser marcados manualmente.
+  const query=document.getElementById('gmRosterSearch').value.trim().toLocaleLowerCase();
+  const kind=document.getElementById('gmRosterKind').value;
+  // PJs ficam no começo.
   for(const ent of [...state.entities].sort((a,b)=>(a.type==='pc'?0:1)-(b.type==='pc'?0:1))){
+    const monster=Boolean(ent.creature||['Monstro','Fera'].includes(ent.role));
+    if(kind==='monster'&&!monster||query&&!ent.name.toLocaleLowerCase().includes(query))continue;
     const here=ent.sceneId===state.activeSceneId;
     const label=document.createElement('label');label.className='check-row';
     const input=document.createElement('input');input.type='checkbox';input.className='gm-pull-chk';
@@ -351,7 +355,7 @@ function renderGmPullList() {
   }
 }
 function armGmRosterPlacement() {
-  const ids = state.entities.filter(ent=>(state.gmTransferIds||[]).includes(ent.id)).map(ent=>ent.id);
+  const ids=Array.from(document.querySelectorAll('#gmPullEntitiesList input:checked'),input=>input.value);
   if (!ids.length) { logEvent('Marque pelo menos um personagem para colocar.'); return; }
   gmRosterPlacementIds = ids;
   gmPlacementTemplate = null;

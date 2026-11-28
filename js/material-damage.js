@@ -91,7 +91,50 @@ function carriesPistol(actor){
  return (actor.inventory||[]).some(i=>typeof i==='string'&&/(pistola|pistol|手枪)/i.test(i));
 }
 
+let mapShot=null;
+function fireAtCreature(actor,floor,x,y,weapon){
+ const target=state.entities.filter(ent=>ent!==actor&&ent.sceneId===actor.sceneId&&ent.floor===actor.floor&&
+   (ent.creature||['Monstro','Fera'].includes(ent.role))&&Math.hypot(ent.x-x,ent.y-y-5)<26)
+   .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))[0];
+ if(!target)return false;
+ if(target.hp<=0){worldNotice('Criatura já derrotada.');return true;}
+ if(!weapon){worldNotice('Equipe uma arma de disparo.');return true;}
+ if(Math.hypot(target.x-actor.x,target.y-actor.y)>320){worldNotice('Alvo fora de alcance.');return true;}
+ if(crossesWall(floor,actor.x,actor.y,target.x,target.y)){worldNotice('Uma parede bloqueia o alvo.');return true;}
+ const damage=String(characterItems[weapon]?.data?.dano||'').match(/^(\d+)d(\d+)(?:([+-]\d+))?$/i);
+ const dealt=damage?Math.max(1,Math.floor(Number(damage[1])*(Number(damage[2])+1)/2)+Number(damage[3]||0)):6;
+ showMapShot(actor,floor,target.x,target.y,weapon);
+ beginEdit();
+ target.hp=Math.max(0,target.hp-dealt);
+ if(target.hp===0&&target.ai)target.ai.enabled=false;
+ finishEdit();saveBank();updateUI();
+ worldNotice(target.name+' · '+(target.hp?target.hp+'/'+target.maxHp+' PV':translateSiteText('Criatura derrotada.')));
+ return true;
+}
+function showMapShot(actor,floor,x,y,weapon){
+ const energy=/laser|phaser|blaster|gauss|energia/i.test(weapon||'');
+ mapShot={floor,x0:actor.x+9,y0:actor.y-9,x,y:y-7,energy,until:performance.now()+220};
+}
+function drawMapShot(floor){
+ if(mapShot?.floor!==floor)return;
+ const {x0,y0,x,y,energy,until}=mapShot;
+ const alpha=(until-performance.now())/220;
+ if(alpha<=0)return;
+ ctx.save();ctx.globalAlpha=alpha;ctx.lineCap='round';
+ ctx.strokeStyle=energy?'#5bf7e2':'#edb965';ctx.shadowColor=ctx.strokeStyle;ctx.shadowBlur=energy?13:3;ctx.lineWidth=energy?4:1.4;
+ ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x,y);ctx.stroke();
+ if(energy){ctx.strokeStyle='#e4fff9';ctx.lineWidth=1.25;ctx.stroke();}
+ ctx.fillStyle=energy?'#a8fff3':'#ffe2a2';
+ for(let i=0;i<6;i++){
+   const a=i*Math.PI/3,push=3+(1-alpha)*9;
+   ctx.beginPath();ctx.arc(x+Math.cos(a)*push,y+Math.sin(a)*push,1.4,0,Math.PI*2);ctx.fill();
+ }
+ ctx.restore();
+}
+
 function inspectOrDamage(actor,floor,x,y){
+ const weapon=actor.equipment?.hand&&characterHandStyle(actor.equipment.hand)==='gun'?actor.equipment.hand:null;
+ if(worldAction==='shoot'&&fireAtCreature(actor,floor,x,y,weapon))return;
  const target=damageTargetAt(floor,x,y);
  if(!target){worldNotice('Nenhum objeto neste ponto.');return;}
  const health=materialDurability(target.item,target.kind);
@@ -99,13 +142,14 @@ function inspectOrDamage(actor,floor,x,y){
    worldNotice(translateSiteText('Dureza')+' '+health.hardness+' · PV '+health.pv+'/'+health.maxPv);
    return;
  }
- if(!carriesPistol(actor)){worldNotice('É preciso ter uma pistola no inventário.');return;}
+ if(!weapon&&!carriesPistol(actor)){worldNotice('É preciso ter uma pistola no inventário.');return;}
  const p=target.point,range=Math.hypot(p.x-actor.x,p.y-actor.y);
  if(range>320){worldNotice('Alvo fora de alcance.');return;}
  // Stop short of the hit surface so its own collision does not block the shot.
  if(range>55&&crossesWall(floor,actor.x,actor.y,p.x+(actor.x-p.x)*40/range,p.y+(actor.y-p.y)*40/range)){
    worldNotice('Uma parede bloqueia o alvo.');return;
  }
+ showMapShot(actor,floor,p.x,p.y,weapon);
  const hit=Math.max(0,12-health.hardness);
  if(!hit){worldNotice('A dureza absorveu o dano.');return;}
  beginEdit();

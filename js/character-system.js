@@ -322,6 +322,8 @@ function drawCharacterAppearance(g,ent,stride=0){
  const a=characterAppearance(ent);
  const {form,sex,height,shoulders:half,hips,waist,arms}=characterAnatomy(ent,a);
  const equipped=ent.equipment||{};
+ const species=characterIdentity(ent).species;
+ const imperial=species==='Robô imperial',piloted=species==='Robô pilotado';
  const cloth=characterItems[equipped.body]?.color||a.clothing;
  const outfit=equipped.body?(characterItems[equipped.body]?.armor?'uniform':'travel'):professionOutfit(ent.role);
  g.save();
@@ -331,7 +333,13 @@ function drawCharacterAppearance(g,ent,stride=0){
    avatarShape(g,large?'#735137':'#8a6948',[[-half-4,-8],[-half, -12],[half,-12],[half+4,-8],
      [half+4,5],[half,10],[-half,10],[-half-4,5]]);
  }
- if(form==='insect')drawInsectBody(g,a,ent,half,hips,cloth,stride);
+ if(species==='Blyntzyn'){
+   g.translate(0,5);g.scale(.85,.76);
+   for(const side of [-1,1])avatarShape(g,'#699c9a80',[[side*5,5],[side*20,-13],[side*21,-5],[side*13,7]]);
+ }
+ if(piloted)for(const side of [-1,1])avatarShape(g,'#64788a',[[side*7,-10],[side*18,-9],[side*17,5],[side*11,7]]);
+ if(imperial)for(const side of [-1,1])avatarShape(g,'#a88a51',[[side*5,-11],[side*16,-13],[side*17,-5],[side*8,-3]]);
+ if(form==='insect'&&species!=='Humanoide parasitado')drawInsectBody(g,a,ent,half,hips,cloth,stride);
  else{
  if(form==='dragon'||form==='crocodile')drawScaledAvatarBack(g,a,form,cloth);
  else if(form==='reptilian'){
@@ -360,7 +368,7 @@ function drawCharacterAppearance(g,ent,stride=0){
  if(a.hairStyle==='long'&&a.helmet==='none'&&['human','nymari','aeral','zutariano'].includes(form)){
    g.fillStyle=a.hair;g.beginPath();g.ellipse(0,-12,10,13,0,0,Math.PI*2);g.fill();
  }
- for(let pair=0;pair<arms/2;pair++){
+ for(let pair=0;pair<(species==='Humanoide parasitado'?1:arms/2);pair++){
    for(const side of [-1,1]){
      const bend=pair?7:4,root=pair?0:-6;
      const handX=side*(half+bend),handY=(pair?13:7)+side*stride;
@@ -412,6 +420,13 @@ function drawCharacterAppearance(g,ent,stride=0){
  const helmet=characterItems[equipped.head];
  const headAppearance=helmet?.armor&&a.helmet==='none'?{...a,helmet:'visor',helmetColor:helmet.color}:a;
  drawAvatarHead(g,headAppearance,form,equipped.head,sex);
+ if(headAppearance.helmet==='none'){
+   if(piloted){avatarShape(g,'#38606d',[[-7,-17],[-5,-22],[5,-22],[8,-16],[6,-10],[-6,-10]]);
+     g.fillStyle='#8ed5df';g.fillRect(-4,-19,7,1.5);}
+   if(imperial){avatarShape(g,'#a88a51',[[-9,-18],[-6,-25],[0,-23],[6,-25],[9,-18],[5,-14],[-5,-14]]);
+     g.fillStyle='#dc6f58';g.fillRect(-5,-15.3,10,1.3);}
+   if(species==='Humanoide parasitado')avatarShape(g,'#6d5463',[[0,-24],[9,-25],[12,-17],[8,-11],[4,-17]]);
+ }
  if(equipped.hand)drawCharacterHeldItem(g,equipped.hand,half+4,(form==='insect'?11:8)+stride);
  if(equipped.light){
    g.fillStyle=ent.lanternLit?'#ffdf9b':'#655846';g.fillRect(-half-10,8-stride,6,8);

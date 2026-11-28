@@ -515,6 +515,7 @@ function instantiateTemplate(template, wx, wy) {
   };
 }
 function placeGmEntityAt(wx, wy){
+  if(state.mode!=='gm')return false;
   if (gmRosterPlacementIds?.length) {
     beginEdit();
     gmRosterPlacementIds.forEach((id,i)=>{
@@ -529,7 +530,7 @@ function placeGmEntityAt(wx, wy){
     });
     finishEdit();
     gmRosterPlacementIds=null;
-    renderGmPullList();updateUI();
+    renderGmPullList();updateUI();saveBank();
     logEvent('📍 Personagens colocados no mapa aberto.');
     return true;
   }

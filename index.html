@@ -73,6 +73,10 @@
           <button class="btn btn-gold" style="flex:1;" onclick="armGmRosterPlacement()">📍 Colocar</button>
         </div>
         <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Personagens disponíveis (marque e clique em Colocar):</div>
+        <input type="search" id="gmRosterSearch" class="ctrl" placeholder="Buscar por nome" oninput="renderGmPullList()">
+        <select id="gmRosterKind" class="ctrl" onchange="renderGmPullList()" aria-label="Tipo de personagem">
+          <option value="all">Todos os personagens</option><option value="monster">Monstros</option>
+        </select>
         <div id="gmPullEntitiesList"></div>
       </div>
     </div>
@@ -285,7 +289,7 @@
         <div class="section-title">Ações no cenário</div>
         <div class="tool-grid">
           <button type="button" class="tool-btn" data-world-action="inspect" onclick="chooseWorldAction('inspect')">Inspecionar</button>
-          <button type="button" class="tool-btn" data-world-action="shoot" onclick="chooseWorldAction('shoot')">Disparar pistola</button>
+          <button type="button" class="tool-btn" data-world-action="shoot" onclick="chooseWorldAction('shoot')">Disparar arma</button>
           <button type="button" class="tool-btn" data-world-action="trim" onclick="chooseWorldAction('trim')">Limpar vegetação</button>
           <button type="button" class="tool-btn" data-world-action="dig" onclick="chooseWorldAction('dig')">Escavar</button>
         </div>
@@ -597,20 +601,20 @@
 </div>
 
 <script src="js/d100.js?v=equipped-packs" defer></script>
-<script src="js/state.js?v=mesa-npc-creatures" defer></script>
+<script src="js/state.js?v=creature-combat" defer></script>
 <script src="js/roof-system.js?v=night-details-catalog" defer></script>
 <script src="js/stair-system.js?v=water-surfaces-grass-stairs" defer></script>
 <script src="js/editor.js?v=map-night-chimneys" defer></script>
 <script src="js/library.js?v=night-details-catalog" defer></script>
-<script src="js/gameplay.js?v=mesa-inventory-grid" defer></script>
+<script src="js/gameplay.js?v=creature-combat" defer></script>
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/textures.js?v=mesa-npc-creatures" defer></script>
+<script src="js/textures.js?v=creature-combat" defer></script>
 <script src="js/architect-selection.js?v=surface-stack" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=stair-tree-size-20261126" defer></script>
-<script src="js/i18n.js?v=equipped-packs" defer></script>
+<script src="js/i18n.js?v=creature-combat" defer></script>
 <script src="js/cloud-bank.js?v=character-playtest" defer></script>
 <script src="js/terrain-tools.js?v=water-depth-swimming-light" defer></script>
 <script src="js/building.js?v=night-details-catalog" defer></script>
@@ -623,12 +627,12 @@
 <script src="js/plants.js?v=clear-canopies-daylight" defer></script>
 <script src="js/scenery.js?v=mesa-inventory-grid" defer></script>
 <script src="js/vertical-world.js?v=cave-joins-20261126" defer></script>
-<script src="js/material-damage.js?v=surface-stack" defer></script>
+<script src="js/material-damage.js?v=creature-combat" defer></script>
 <script src="js/character-catalog.js?v=career-attributes-skills" defer></script>
 <script src="js/item-catalog.js?v=mesa-inventory-grid" defer></script>
 <script src="js/mesa-creatures.js?v=mesa-npc-creatures" defer></script>
 <script src="js/mesa-character-import.js?v=mesa-npc-creatures" defer></script>
-<script src="js/character-system.js?v=equipped-packs" defer></script>
+<script src="js/character-system.js?v=creature-combat" defer></script>
 <script src="js/main.js?v=character-save-foot-ring" defer></script>
 <dialog id="characterD100Sheet" class="lock-dialog">
  <form class="character-form" onsubmit="saveD100Sheet(event)">

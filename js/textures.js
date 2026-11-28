@@ -592,7 +592,7 @@ function drawFloorLayer(sc, floorIdx, isBelow, interior=null) {
     drawCaveBase(cave,floor);
   }
   if(!interior)for(const building of floor.buildings||[])drawBuildingBase(building,floor);
-  if(!isBelow)drawExcavations(floor);
+  if(!isBelow){drawExcavations(floor);drawMapShot(floor);}
   // 只将楼下的自然地形和地板作为背景，隐藏门、窗、墙、家具和人物。
   if(isBelow)return;
 
@@ -907,6 +907,7 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
     ctx.save();
     ctx.beginPath();ctx.rect(-40,-45,80,swimming?44:52);ctx.clip();
   }
+  if(ent.hp<=0&&(ent.creature||isMonster)){ctx.rotate(-Math.PI/2);ctx.globalAlpha*=.65;}
   if(isMonster&&!ent.creature){
     const beast=ent.icon==='🐉'||ent.icon==='🐺';
     ctx.fillStyle=body;ctx.strokeStyle='#233029';ctx.lineWidth=2;
