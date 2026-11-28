@@ -12,7 +12,7 @@ const finishTextures=new Map([
 ]);
 const referenceGroundTextures=[
  ['pebbledTurf','pebbled-turf',224,'Relva com pedregulhos','碎石草地'],
- ['mossJointPaving','moss-joint-paving',304,'Lajes com juntas verdes','草缝石板路'],
+ ['mossJointPaving','moss-joint-paving-clean',304,'Lajes com juntas verdes','草缝石板路'],
  ['deepGreenGrass','deep-green-grass',152,'Relva verde-forte','浓绿草地'],
  ['fineGrass','fine-grass',168,'Relva de folhas finas','细叶草地'],
  ['leafyRocks','leafy-rocks',264,'Rochas entre folhagens','绿叶岩地'],
