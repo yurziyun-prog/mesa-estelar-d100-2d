@@ -12,7 +12,7 @@ function mesaCreatureDesign(sheet,seed){
  const palette=['#6c825e','#587b87','#896b5b','#82748d','#a18452','#587268'];
  return {form,scale,seed,color:palette[seed%palette.length]};
 }
-function drawMesaCreature(g,design,stride){
+function drawMesaCreature(g,design,stride,key){
  const {form,scale,seed,color}=design;
  const ellipse=(x,y,rx,ry,fill,angle=0)=>{
    g.fillStyle=fill;g.strokeStyle='#212b32';g.lineWidth=.9;
@@ -26,7 +26,18 @@ function drawMesaCreature(g,design,stride){
  const eye=(x,y)=>ellipse(x,y,1.45,1.6,'#ffd27f');
  g.save();
  g.translate(0,13*(1-scale));g.scale(scale,scale);
- if(form==='slime'){
+ if(key==='cila'){
+   for(let i=0;i<6;i++){
+     g.save();g.rotate(i*Math.PI/3-.14);
+     limb([[4,0],[10,-2],[17,0],[24,1]],3.5);
+     ellipse(24,1,3.3,2.2,'#866a4c');
+     eye(25,0);
+     g.restore();
+   }
+   ellipse(0,0,9,7.4,'#906a62');
+   ellipse(-2,-2,5.6,4,'#b48a74');
+   for(const [x,y] of [[-4,-2],[0,-4],[3,0],[-1,3]])ellipse(x,y,1.05,.75,'#77554e');
+ }else if(form==='slime'){
    ellipse(0,5,16,9,color);
    ellipse(-5,0,7,5,color);ellipse(6,2,7,6,color);
    ellipse(-5,0,2,1,'#b6dcc599');ellipse(5,5,3,2,'#b6dcc599');
@@ -40,12 +51,22 @@ function drawMesaCreature(g,design,stride){
    limb([[-13,8],[-6,13],[5,11],[10,4],[5,-1],[-4,2],[-7,-3],[-3,-9]],5);
    ellipse(-3,-10,4.8,5,color);eye(-5,-11);eye(-1,-11);
  }else if(form==='humanoid'){
+   const infected=/errante_parasitado|carnical_dominante|inchado_pustulento/.test(key);
+   const torso=infected?'#665349':color;
+   if(infected){
+     limb([[4,-6],[11,-12],[15,-8]],2.2);
+     ellipse(10,-9,3.2,2.2,'#98685a',.5);
+   }
    for(const side of [-1,1]){
      limb([[side*4,4],[side*6,10],[side*8,15+side*stride]],4);
      limb([[side*6,-6],[side*11,0],[side*13,7]],3.5);
    }
-   avatarShape(g,color,[[-8,-8],[8,-8],[6,3],[0,8],[-6,3]]);
-   ellipse(0,-12,6,6,color);eye(-2.5,-13);eye(2.5,-13);
+   avatarShape(g,torso,[[-8,-8],[8,-8],[6,3],[0,8],[-6,3]]);
+   if(infected){
+     avatarShape(g,'#b5886c',[[-3,-7],[3,-4],[2,1],[-3,4],[-4,0]]);
+     ellipse(0,-12,5.6,5.5,'#aa9772',-.12);
+   }else ellipse(0,-12,6,6,color);
+   eye(-2.5,-13);eye(2.5,-13);
  }else if(form==='rock'){
    for(let i=-2;i<=2;i++)avatarShape(g,color,[[i*5-5,10],[i*6-1,-3-Math.abs(i-1)*3],[i*6+4,-6],[i*6+6,8],[i*5+3,14]]);
    eye(0,3);eye(5,3);
@@ -54,12 +75,17 @@ function drawMesaCreature(g,design,stride){
      avatarShape(g,'#697d8b',[[side*3,1],[side*10,-10],[side*20,-13],[side*16,-3],[side*20,5],[side*7,6]]);
    }
    if(form==='reptile'||form==='beast')limb([[7,7],[14,11],[20,9]],3);
+   const mechanical=key==='cao_de_sucata';
    const legCount=form==='insect'?3:form==='winged'?1:2;
    for(const side of [-1,1])for(let i=0;i<legCount;i++){
      const y=i*5;
      limb([[side*5,y],[side*(11+i),y-2],[side*(13+i),y+4+side*stride]],form==='insect'?1.8:3);
    }
    ellipse(0,5,form==='insect'?7:9,10,color);
+   if(mechanical){
+     avatarShape(g,'#7f9398',[[-6,1],[6,1],[7,8],[3,13],[-5,12]]);
+     ellipse(0,6,2.4,1.5,'#7ed0c3');
+   }else ellipse(-2,3,4,6,'#ffffff24',-.29);
    if(form==='insect'||form==='reptile')for(const y of [1,5,9]){
      g.strokeStyle='#26373a';g.beginPath();g.moveTo(-5,y);g.quadraticCurveTo(0,y+3,5,y);g.stroke();
    }
@@ -71,15 +97,6 @@ function drawMesaCreature(g,design,stride){
 }
 
 
-const creatureImages=new Map();
-function creatureAsset(filename){
- if(!creatureImages.has(filename)){
-   const image=new Image();image.src='assets/creatures/'+filename;
-   creatureImages.set(filename,image);
- }
- const image=creatureImages.get(filename);
- return image.complete&&image.naturalWidth?image:null;
-}
 function creatureArtKey(ent){
  return (ent.mesaSourceSheet?.nome||ent.name).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
    .toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
@@ -105,31 +122,4 @@ function drawCreatureGroundShadow(g,ent,x,y,lift){
  g.fillStyle=gradient;
  g.beginPath();g.arc(0,0,1,0,Math.PI*2);g.fill();
  g.restore();
-}
-
-function drawOriginalMesaCreature(g,ent){
- const name=creatureArtKey(ent);
- const filename=Object.hasOwn(mesaCreatureArt,name)?mesaCreatureArt[name]:null;
- if(!filename)return false;
- const time=performance.now();
- const walking=ent.hp!==0&&!terrainMotionPreference.matches&&entityIsWalking(ent,time);
- const width=creatureMapWidth(ent);
- const motion=Object.hasOwn(mesaCreatureMotion,name)?mesaCreatureMotion[name]:null;
- if(motion){
-   const [sheet,,walkFrames]=motion;
-   const image=creatureAsset(sheet);
-   if(image){
-     const frame=walking?Math.floor(time/95)%walkFrames:0;
-     g.save();
-     g.filter='saturate(.91) contrast(1.08)';
-     g.drawImage(image,frame*96,walking?96:0,96,96,-width/2,-width/2,width,width);
-     g.restore();
-     return true;
-   }
- }
- const image=creatureAsset(filename);
- if(!image)return false;
- const height=width*image.naturalHeight/image.naturalWidth;
- g.drawImage(image,-width/2,-height/2,width,height);
- return true;
 }

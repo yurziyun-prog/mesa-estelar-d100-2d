@@ -338,7 +338,7 @@ function renderGmPullList() {
   // PJs ficam no começo.
   for(const ent of [...state.entities].sort((a,b)=>(a.type==='pc'?0:1)-(b.type==='pc'?0:1))){
     const monster=Boolean(ent.creature||['Monstro','Fera'].includes(ent.role));
-    if(kind==='monster'&&!monster||query&&!ent.name.toLocaleLowerCase().includes(query))continue;
+    if(ent.spawnedFrom||kind==='monster'&&!monster||query&&!ent.name.toLocaleLowerCase().includes(query))continue;
     const here=ent.sceneId===state.activeSceneId;
     const label=document.createElement('label');label.className='check-row';
     const input=document.createElement('input');input.type='checkbox';input.className='gm-pull-chk';
@@ -355,6 +355,7 @@ function renderGmPullList() {
   }
 }
 function armGmRosterPlacement() {
+  if(gmRestoreArmed)toggleGmRestore();
   const ids=Array.from(document.querySelectorAll('#gmPullEntitiesList input:checked'),input=>input.value);
   if (!ids.length) { logEvent('Marque pelo menos um personagem para colocar.'); return; }
   gmRosterPlacementIds = ids;

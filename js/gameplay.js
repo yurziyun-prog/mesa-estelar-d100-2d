@@ -514,13 +514,25 @@ function instantiateTemplate(template, wx, wy) {
     ai:template.id==='skeleton'?{kind:'skeleton',enabled:true,state:'vigiar',detection:180,reach:34}:null
   };
 }
+function newCreatureInstance(source){
+  const creature=structuredClone(source);
+  creature.id='creature_'+crypto.randomUUID();
+  creature.spawnedFrom=source.spawnedFrom||source.id;
+  creature.hp=creature.maxHp;
+  creature.speech='';creature.speechTimer=0;
+  if(creature.ai){creature.ai.enabled=source.ai.enabled||source.hp<=0;creature.ai.state='vigiar';}
+  clearTransientStairClimbs([creature]);
+  return creature;
+}
 function placeGmEntityAt(wx, wy){
   if(state.mode!=='gm')return false;
   if (gmRosterPlacementIds?.length) {
     beginEdit();
     gmRosterPlacementIds.forEach((id,i)=>{
-      const ent=state.entities.find(e=>e.id===id);
-      if(!ent)return;
+      const source=state.entities.find(e=>e.id===id);
+      if(!source)return;
+      const ent=combatCreature(source)?newCreatureInstance(source):source;
+      if(ent!==source)state.entities.push(ent);
       awakenEntity(ent);
       ent.sceneId=state.activeSceneId;
       ent.floor=state.currentFloor;

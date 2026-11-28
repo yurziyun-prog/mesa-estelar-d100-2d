@@ -62,7 +62,11 @@ function breakMapTarget(floor,{item,kind,point}){
  const lists={prop:'props',wall:'walls',door:'doors',window:'windows',chest:'chests'};
  if(lists[kind]){
    floor[lists[kind]]=floor[lists[kind]].filter(entry=>entry!==item);
-   if(kind==='prop'&&plantTrunkRadius(item.type))floor.props.push({type:'log',x:item.x,y:item.y,rot:item.rot||0,scale:item.scale||1});
+   if(kind==='prop'&&plantTrunkRadius(item.type)){
+     const restorationId=crypto.randomUUID();
+     (floor.damagedPlants||=[]).push({restorationId,plant:{...item,pv:materialDurability(item,kind).maxPv}});
+     floor.props.push({type:'log',x:item.x,y:item.y,rot:item.rot||0,scale:item.scale||1,restorationId});
+   }
    return;
  }
  // Open the damaged section, preserving the rest of the structure.
@@ -72,6 +76,55 @@ function breakMapTarget(floor,{item,kind,point}){
    item.openings.push({...point,kind:'passage',open:true,width:78});
  }
  delete item.pv;
+}
+
+let gmRestoreArmed=false;
+function toggleGmRestore(){
+ if(state.mode!=='gm')return;
+ gmRestoreArmed=!gmRestoreArmed;
+ gmRosterPlacementIds=null;gmPlacementTemplate=null;
+ document.getElementById('gmRestoreTool').setAttribute('aria-pressed',String(gmRestoreArmed));
+ gmRestoreNotice(gmRestoreArmed?'Clique em uma criatura, personagem ou planta para restaurar.':'');
+}
+function gmRestoreNotice(message){
+ document.getElementById('gmRestoreStatus').textContent=translateSiteText(message);
+}
+function restoreGmTargetAt(x,y){
+ if(state.mode!=='gm')return false;
+ const floor=getScene().floors[state.currentFloor];
+ const candidates=[];
+ function add(target,kind,point,radius){
+   const distance=Math.hypot(x-point.x,y-point.y);
+   if(distance<=radius)candidates.push({target,kind,score:distance});
+ }
+ for(const ent of state.entities){
+   if(ent.sceneId===state.activeSceneId&&ent.floor===state.currentFloor&&ent.hp<ent.maxHp)
+     add(ent,'entity',ent,ent.creature?creatureMapWidth(ent)/2+4:28);
+ }
+ for(const prop of floor.props){
+   if(plantTrunkRadius(prop.type)&&materialDurability(prop,'prop').pv<materialDurability(prop,'prop').maxPv)
+     add(prop,'plant',prop,Math.max(20,plantTrunkRadius(prop.type))*(prop.scale||1));
+ }
+ for(const entry of floor.damagedPlants||[])add(entry,'fallen',entry.plant,Math.max(22,plantTrunkRadius(entry.plant.type))*(entry.plant.scale||1));
+ for(const entry of floor.excavations||[])if(entry.trimmed)add(entry,'trimmed',entry,18);
+ candidates.sort((a,b)=>a.score-b.score);
+ const choice=candidates[0];
+ if(!choice){gmRestoreNotice('Nenhum alvo danificado neste ponto.');return false;}
+ const {target,kind}=choice;
+ beginEdit();
+ if(kind==='entity'){
+   if(target.hp<=0&&target.ai)target.ai.enabled=true;
+   target.hp=target.maxHp;
+ }else if(kind==='plant')target.pv=materialDurability(target,'prop').maxPv;
+ else if(kind==='trimmed')floor.excavations=floor.excavations.filter(item=>item!==target);
+ else{
+   floor.props=floor.props.filter(item=>item.restorationId!==target.restorationId);
+   floor.props.push(target.plant);
+   floor.damagedPlants=floor.damagedPlants.filter(entry=>entry!==target);
+ }
+ finishEdit();updateUI();saveBank();
+ gmRestoreNotice('Alvo restaurado.');
+ return true;
 }
 
 let worldAction=null;

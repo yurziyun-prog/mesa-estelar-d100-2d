@@ -1,4 +1,8 @@
 const SITE_ZH = new Map(`
+Restaurar no mapa|恢复地图目标
+Clique em uma criatura, personagem ou planta para restaurar.|点击怪物、角色或植物即可恢复。
+Nenhum alvo danificado neste ponto.|这里没有受损的目标。
+Alvo restaurado.|目标已恢复。
 Alvo selecionado.|已选中目标。
 Clique em uma criatura para disparar.|点击怪物即可开火。
 O personagem não pode disparar agora.|角色现在无法开火。

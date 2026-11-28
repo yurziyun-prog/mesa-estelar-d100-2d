@@ -78,6 +78,8 @@
           <option value="all">Todos os personagens</option><option value="monster">Monstros</option>
         </select>
         <div id="gmPullEntitiesList"></div>
+        <button class="btn" type="button" id="gmRestoreTool" aria-pressed="false" onclick="toggleGmRestore()">Restaurar no mapa</button>
+        <p id="gmRestoreStatus" role="status" class="library-hint"></p>
       </div>
     </div>
 
@@ -601,20 +603,20 @@
 </div>
 
 <script src="js/d100.js?v=resting-tokens" defer></script>
-<script src="js/state.js?v=resting-tokens" defer></script>
+<script src="js/state.js?v=creature-instances-restore" defer></script>
 <script src="js/roof-system.js?v=night-details-catalog" defer></script>
 <script src="js/stair-system.js?v=resting-tokens" defer></script>
 <script src="js/editor.js?v=map-night-chimneys" defer></script>
 <script src="js/library.js?v=night-details-catalog" defer></script>
-<script src="js/gameplay.js?v=creature-combat" defer></script>
+<script src="js/gameplay.js?v=creature-instances-restore" defer></script>
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/textures.js?v=creature-map-style" defer></script>
+<script src="js/textures.js?v=creature-instances-restore" defer></script>
 <script src="js/architect-selection.js?v=surface-stack" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=stair-tree-size-20261126" defer></script>
-<script src="js/i18n.js?v=select-creature-fire" defer></script>
+<script src="js/i18n.js?v=creature-instances-restore" defer></script>
 <script src="js/cloud-bank.js?v=character-playtest" defer></script>
 <script src="js/terrain-tools.js?v=water-depth-swimming-light" defer></script>
 <script src="js/building.js?v=night-details-catalog" defer></script>
@@ -627,14 +629,13 @@
 <script src="js/plants.js?v=clear-canopies-daylight" defer></script>
 <script src="js/scenery.js?v=mesa-inventory-grid" defer></script>
 <script src="js/vertical-world.js?v=cave-joins-20261126" defer></script>
-<script src="js/material-damage.js?v=creature-map-style" defer></script>
+<script src="js/material-damage.js?v=creature-instances-restore" defer></script>
 <script src="js/character-catalog.js?v=mesa-specialty-formulas" defer></script>
 <script src="js/item-catalog.js?v=mesa-inventory-grid" defer></script>
-<script src="js/mesa-creature-art.js?v=legacy-3d-creatures" defer></script>
-<script src="js/mesa-creatures.js?v=creature-map-style" defer></script>
+<script src="js/mesa-creatures.js?v=creature-instances-restore" defer></script>
 <script src="js/mesa-character-import.js?v=mesa-specialty-formulas" defer></script>
-<script src="js/character-system.js?v=resting-tokens" defer></script>
-<script src="js/main.js?v=creature-map-style" defer></script>
+<script src="js/character-system.js?v=creature-instances-restore" defer></script>
+<script src="js/main.js?v=creature-instances-restore" defer></script>
 <dialog id="characterD100Sheet" class="lock-dialog">
  <form class="character-form" onsubmit="saveD100Sheet(event)">
   <h3><span>Ficha d100</span> <span id="d100SheetName" data-user-text></span></h3>
