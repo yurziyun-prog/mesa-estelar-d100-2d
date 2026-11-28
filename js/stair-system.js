@@ -293,6 +293,9 @@ function clearTransientStairClimbs(entities){
   delete ent.stairClimbProgress;
   // performance.now() 的时间基准在刷新页面后会改变。
   delete ent.stairCooldown;
+  delete ent.walkingUntil;
+  delete ent.jumpUntil;
+  delete ent.fallUntil;
  }
 }
 function stairLocal(stair,x,y){
@@ -339,7 +342,7 @@ function beginStairClimb(ent,stair,dx,dy){
  };
  const forward=stairWorld(stair,0,stair.dir==='down'?1:-1);
  ent.facingX=forward.x;ent.facingY=forward.y;
- ent.walkingUntil=performance.now()+160;
+ markEntityWalking(ent,160);
  return true;
 }
 function advanceStairClimb(ent){
@@ -371,7 +374,7 @@ function advanceStairClimb(ent){
    ent.x=climb.fromX+(stair.x+endpoint.x-climb.fromX)*eased;
  }
  ent.stairClimbProgress=progress;
- ent.walkingUntil=performance.now()+140;
+ markEntityWalking(ent,140);
  if(progress>=1){
   const sourceX=climb.fromX,sourceY=climb.fromY;
   delete ent.stairClimb;

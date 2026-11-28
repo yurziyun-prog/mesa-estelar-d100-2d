@@ -408,6 +408,7 @@ function importJSON(e) {
   for(const scene of Object.values(state.scenes||{})){refreshStairDestinationLinks(scene);repairExistingStairLandings(scene);}
       migrateModeScenes();
       migrateD100Characters();
+      clearTransientStairClimbs(state.entities);
       finishEdit();
       state.currentFloor = 0;
       state.selectedWallIdx = null;

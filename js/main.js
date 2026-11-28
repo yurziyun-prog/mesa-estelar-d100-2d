@@ -293,6 +293,7 @@ function setupInputs() {
         item.y=y;
       }
     } else if (draggingEntity && state.mode === 'gm') {
+      if(Math.hypot(draggingEntity.x-wx,draggingEntity.y-wy)>.1)markEntityWalking(draggingEntity,130);
       draggingEntity.x = wx;
       draggingEntity.y = wy;
     }
@@ -393,12 +394,13 @@ function updateSimulation(elapsed) {
         const steps = Math.max(1, Math.ceil(distance / MAX_MOVEMENT_STEP));
         const vx = ent.facingX * distance / steps;
         const vy = ent.facingY * distance / steps;
+        const beforeX=ent.x,beforeY=ent.y;
         for(let step=0;step<steps;step++){
           if(tryWalkingStair(ent,ent.facingX,ent.facingY))break;
           if(vx&&canWalkStep(ent,ent.x+vx,ent.y))ent.x+=vx;
           if(vy&&canWalkStep(ent,ent.x,ent.y+vy))ent.y+=vy;
         }
-        ent.walkingUntil=performance.now()+130;
+        if(ent.x!==beforeX||ent.y!==beforeY)markEntityWalking(ent,130);
       }
     }
   }

@@ -213,9 +213,11 @@ function updateSkeletonAutonomy(){
   const dx=(target.x-ent.x)/dist,dy=(target.y-ent.y)/dist;
   const speed=1.15;
   const x=ent.x+dx*speed,y=ent.y+dy*speed;
+  const beforeX=ent.x,beforeY=ent.y;
   if(canMoveTo(ent.floor,x,ent.y))ent.x=x;
   if(canMoveTo(ent.floor,ent.x,y))ent.y=y;
-  ent.facingX=dx;ent.facingY=dy;ent.walkingUntil=now+100;
+  ent.facingX=dx;ent.facingY=dy;
+  if(ent.x!==beforeX||ent.y!==beforeY)markEntityWalking(ent,100);
  }
 }
 function toggleSelectedSkeletonAI(){

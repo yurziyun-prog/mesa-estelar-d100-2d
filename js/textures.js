@@ -837,6 +837,14 @@ function drawGrassOverToken(x,y,colors){
   }
 }
 
+// Movement animation is session-only and never serialized with an entity.
+const entityWalkUntil=new WeakMap();
+function markEntityWalking(ent,duration){
+ entityWalkUntil.set(ent,performance.now()+duration);
+}
+function entityIsWalking(ent,now=performance.now()){
+ return (entityWalkUntil.get(ent)||0)>now;
+}
 function drawCharacterToken(ent, isBelow, grass=null, water=null) {
   const cx=ent.x,cy=ent.y,now=performance.now();
   if(ent.sleepPose&&TENT_TYPES.has(ent.sleepBed?.type))return;
@@ -875,7 +883,7 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
   const immersed=water&&!ent.stairClimb&&lift<9;
   const swimming=immersed&&water==='deep';
   if(immersed)lift-=swimming?9:4;
-  const moving=ent.walkingUntil>now||Boolean(ent.stairClimb);
+  const moving=entityIsWalking(ent,now)||Boolean(ent.stairClimb);
   const stride=moving?Math.sin(now/90)*3:0;
   const hostile=ent.attitude==='Hostil';
   const isMonster=ent.role==='Monstro'||ent.role==='Fera';
