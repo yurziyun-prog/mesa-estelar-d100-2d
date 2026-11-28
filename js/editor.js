@@ -490,18 +490,44 @@ function pasteSelectedObject() {
 
 let pendingLockItem = null;
 let pendingKeyPlacement = null;
+function openGmLockAt(sx,sy){
+ const {wx,wy}=screenToWorld(sx,sy);
+ const floor=getScene().floors[state.currentFloor];
+ const door=floor.doors.find(d=>{
+   const leaf=d.open?openedDoorLeaf(d):null;
+   return Math.hypot(wx-d.x,wy-d.y)<25||Boolean(leaf&&distToSegment(wx,wy,leaf.x1,leaf.y1,leaf.x2,leaf.y2)<10);
+ });
+ const chest=door?null:floor.chests.find(c=>Math.abs(wx-c.x)<24&&Math.abs(wy-c.y)<19);
+ if(!door&&!chest)return false;
+ openLockDialog(door||chest,door?'door':'chest');
+ return true;
+}
+function removeKeyCopies(key){
+ for(const ent of state.entities)ent.inventory=ent.inventory.filter(item=>item!==key);
+ for(const scene of Object.values(state.scenes)){
+  for(const floor of scene.floors){
+   floor.props=floor.props.filter(p=>p.type!=='key'||p.keyId!==key);
+   for(const chest of floor.chests)chest.loot=(chest.loot||[]).filter(item=>item!==key);
+  }
+ }
+}
 function openLockDialog(item,kind){
   pendingLockItem={item,kind,sceneId:state.activeSceneId,floor:state.currentFloor};
   const d=document.getElementById('lockDialog');
   document.getElementById('lockDialogTitle').textContent=kind==='door'?'Configurar porta':'Configurar baú';
   document.getElementById('lockDialogHint').textContent='Chave física ou código, independentemente do estilo arquitetônico.';
   document.getElementById('lockEnabled').checked=Boolean(item.keyId||item.lockCode);
-  document.getElementById('lockValue').value=item.lockCode||item.keyLabel||'';
+  document.getElementById('lockValue').value=item.lockCode||item.keyLabel||(item.keyId==='chave_dourada'?'Chave dourada':item.keyId)||'';
   const mode=document.getElementById('lockMode');
   if(mode)mode.value=item.lockCode?'code':item.keyId?'key':'none';
   const dest=document.getElementById('lockDestination');
   dest.replaceChildren();
-  const option=document.createElement('option');option.value='map';option.textContent='🗺️ Posicionar no mapa';dest.append(option);
+  if(item.keyId)dest.add(new Option('Manter localização atual','keep'));
+  dest.add(new Option('🗺️ Posicionar no mapa','map'));
+  getScene().floors.forEach((floor,floorIndex)=>floor.chests.forEach((chest,chestIndex)=>{
+    if(chest===item||chest.keyId||chest.lockCode)return;
+    dest.add(new Option('Baú · nível '+(floor.level??floorIndex)+' · '+Math.round(chest.x)+', '+Math.round(chest.y),'chest:'+floorIndex+':'+chestIndex));
+  }));
   for(const ent of state.entities){
     const opt=document.createElement('option');opt.value=ent.id;opt.textContent='🎒 Inventário: '+ent.name;dest.append(opt);
   }
@@ -519,6 +545,7 @@ function updateLockForm(){
 function saveLockDialog(confirmLock){
   if(!pendingLockItem)return;
   const {item}=pendingLockItem;
+  pendingKeyPlacement=null;
   const on=confirmLock&&document.getElementById('lockEnabled').checked;
   const mode=document.getElementById('lockMode')?.value||'none';
   const retro=mode==='code';
@@ -527,12 +554,23 @@ function saveLockDialog(confirmLock){
   if(!on || mode==='none' || !value){item.keyId='';item.lockType='none';delete item.lockCode;}
   else if(retro){item.lockCode=value;item.keyId='';item.lockType='code';}
   else{
-    const key='chave_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+    const key=item.keyId||('chave_'+Date.now()+'_'+Math.random().toString(36).slice(2,7));
     item.keyId=key;item.keyLabel=value;item.lockType='key';delete item.lockCode;
     const destination=document.getElementById('lockDestination').value;
-    const ent=state.entities.find(e=>e.id===destination);
-    if(ent){ent.inventory.push(key);updateUI();logEvent('🔑 '+value+' adicionada ao inventário de '+ent.name+'.');}
-    else{pendingKeyPlacement={keyId:key,label:value,sceneId:state.activeSceneId,floor:state.currentFloor};logEvent('🔑 Clique no mapa para colocar '+value+'.');}
+    if(destination==='map'){
+      pendingKeyPlacement={keyId:key,label:value,sceneId:state.activeSceneId,floor:state.currentFloor,relocate:true};
+      logEvent('🔑 Clique no mapa para colocar '+value+'.');
+    }else if(destination.startsWith('chest:')){
+      const [,floorIndex,chestIndex]=destination.split(':');
+      const chest=getScene().floors[floorIndex].chests[chestIndex];
+      removeKeyCopies(key);
+      if(chest.opened)chest.loot=[];
+      chest.loot.push(key);chest.opened=false;
+      logEvent('🔑 '+value+' guardada no baú.');
+    }else if(destination!=='keep'){
+      const ent=state.entities.find(e=>e.id===destination);
+      if(ent){removeKeyCopies(key);ent.inventory.push(key);updateUI();logEvent('🔑 '+value+' adicionada ao inventário de '+ent.name+'.');}
+    }
   }
   document.getElementById('lockDialog').close();
   pendingLockItem=null;
@@ -542,12 +580,15 @@ function saveLockDialog(confirmLock){
 function placePendingKey(wx,wy){
   if(!pendingKeyPlacement)return false;
   const pk=pendingKeyPlacement;
-  const floor=state.scenes[pk.sceneId]?.floors[pk.floor];if(!floor)return false;
+  if(pk.sceneId!==state.activeSceneId)return false;
+  const floor=getScene().floors[state.currentFloor];if(!floor)return false;
   beginEdit();
+  if(pk.relocate)removeKeyCopies(pk.keyId);
   floor.props.push({type:'key',x:wx,y:wy,keyId:pk.keyId,label:pk.label,style:'normal',rot:0});
   pendingKeyPlacement=null;
   finishEdit();
   logEvent('🔑 Chave colocada no mapa.');
+  saveBank();
   return true;
 }
 

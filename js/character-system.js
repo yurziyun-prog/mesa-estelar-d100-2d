@@ -355,6 +355,12 @@ function drawCharacterAppearance(g,ent,stride=0){
  for(const side of [-1,1]){
    const lift=side*stride;
    g.strokeStyle=leg;g.lineWidth=5.7;g.beginPath();
+   if(ent.seatPose){
+     const knee=side*hips*.85;
+     g.moveTo(side*hips*.48,8);g.quadraticCurveTo(knee,10,knee,16);g.stroke();
+     g.strokeStyle=boots;g.lineWidth=5.1;g.beginPath();g.moveTo(knee,16);g.lineTo(knee+side*2,19);g.stroke();
+     continue;
+   }
    g.moveTo(side*hips*.48,8);g.quadraticCurveTo(side*hips*.53,12,side*hips*.60,16+lift);g.stroke();
    g.strokeStyle=boots;g.lineWidth=5.1;g.beginPath();
    g.moveTo(side*hips*.60,15+lift);g.lineTo(side*hips*.65,18+lift);g.stroke();

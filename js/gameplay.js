@@ -247,13 +247,14 @@ function canMoveTo(floorIdx, nx, ny, jumpLanding = false, waterAccess = null, ig
   if (floor.windows.some(win => win.orient==='v'?(Math.abs(nx-win.x)<r+9&&Math.abs(ny-win.y)<(win.width||40)/2+r):(Math.abs(ny-win.y)<r+9&&Math.abs(nx-win.x)<(win.width||40)/2+r))) return false;
   if (floor.chests.some(c => Math.hypot(c.x - nx, c.y - ny) < r + 14)) return false;
 
-  if(floor.props.some(p=>(catalogPropIsSolid(p.type)||mesaFurnitureById.has(p.type)||furnitureFinishById.has(p.type))&&Math.hypot(p.x-nx,p.y-ny)<r+19*(p.scale||1)))return false;
+  if(floor.props.some(p=>REST_SEATS[p.type]&&seatBlocksPoint(p,nx,ny,r)))return false;
+  if(floor.props.some(p=>!REST_SEATS[p.type]&&(catalogPropIsSolid(p.type)||mesaFurnitureById.has(p.type)||furnitureFinishById.has(p.type))&&Math.hypot(p.x-nx,p.y-ny)<r+19*(p.scale||1)))return false;
   if(floor.props.some(p=>plantTrunkRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+plantTrunkRadius(p.type)*(p.scale||1)*treeSizeFactor(p)))return false;
   if(floor.props.some(p=>geologyPropRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+geologyPropRadius(p.type)*(p.scale||1)))return false;
-  if(floor.props.some(p=>fixtureRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+fixtureRadius(p.type)*(p.scale||1)))return false;
+  if(floor.props.some(p=>!REST_SEATS[p.type]&&fixtureRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+fixtureRadius(p.type)*(p.scale||1)))return false;
   if(floor.props.some(p=>scenerySolidRadius(p.type)&&Math.hypot(p.x-nx,p.y-ny)<r+scenerySolidRadius(p.type)*(p.scale||1)))return false;
   const solidProps = ['table','chair','bench','desk','lowTable','crate','screen','bookshelf','barrel','cabinet','sofa','sofaBlue','sofaRed','sofaGreen','fountain'];
-  if (floor.props.some(p => (solidProps.includes(p.type)||fireplaceDesign(p.type)) && Math.hypot(p.x - nx, p.y - ny) < r + 14*(p.scale||1))) return false;
+  if (floor.props.some(p => !REST_SEATS[p.type]&&(solidProps.includes(p.type)||fireplaceDesign(p.type)) && Math.hypot(p.x - nx, p.y - ny) < r + 14*(p.scale||1))) return false;
   if (floor.props.some(p => isKenneyObject(p.type) && KENNEY_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17*(p.scale||1)))return false;
   if (floor.props.some(p => isKenneyRoguelikeObject(p.type) && KENNEY_ROGUELIKE_OBJECTS[p.type].solid && Math.hypot(p.x-nx,p.y-ny)<r+17*(p.scale||1)))return false;
   // As camas têm colisão retangular proporcional ao seu tamanho.
@@ -284,7 +285,8 @@ function awakenEntity(ent){
   if(!ent.sleepPose)return;
   const rest=ent.sleepRest;
   if(rest){ent.x=rest.x;ent.y=rest.y;}
-  ent.sleepPose=null;ent.sleepRest=null;
+  ent.sleepPose=null;ent.sleepRest=null;ent.sleepBed=null;ent.sleepMinutes=0;
+  updateRestControls();
   logEvent('☀️ '+ent.name+' levantou.');
 }
 function interactWithBed(ent,bed){
@@ -294,7 +296,8 @@ function interactWithBed(ent,bed){
     if(!confirm(translateSiteText('Entrar na barraca e dormir?')))return;
     ent.sleepRest={x:ent.x,y:ent.y};
     ent.sleepBed={x:bed.x,y:bed.y,type:bed.type,rot:bed.rot||0};
-    ent.x=bed.x;ent.y=bed.y;ent.sleepPose='sleeping';
+    ent.x=bed.x;ent.y=bed.y;ent.sleepPose='sleeping';ent.sleepMinutes=0;
+    updateRestControls();
     return;
   }
   if(!confirm('Deitar em '+({bed:'cama',bedDouble:'cama de casal',sleepingBag:'saco de dormir',capsuleBed:'cápsula de sono'}[bed.type]||'cama')+'?'))return;
@@ -304,13 +307,16 @@ function interactWithBed(ent,bed){
   ent.x=bed.x;ent.y=bed.y;
   logEvent('🛏️ '+ent.name+' deitou.');
   if(confirm('Dormir agora?')){
-    ent.sleepPose='sleeping';
+    ent.sleepPose='sleeping';ent.sleepMinutes=0;
     logEvent('💤 '+ent.name+' está dormindo.');
   }
+  updateRestControls();
 }
-function interactNearby(entity) {
+function interactNearby(entity,clickedSeat=null) {
   const floor = getScene().floors[entity.floor];
-  if(entity.sleepPose||liftRides.has(entity))return;
+  if(entity.hp<=0||entity.sleepPose||liftRides.has(entity))return;
+  if(entity.seatPose){standFromSeat(entity);return;}
+  if(clickedSeat&&seatBlocksPoint(clickedSeat,entity.x,entity.y,25)){sitOnSeat(entity,clickedSeat);return;}
   const door = floor.doors.map(d=>{
     const leaf=d.open?openedDoorLeaf(d):null;
     const center=Math.hypot(d.x-entity.x,d.y-entity.y);
@@ -340,10 +346,8 @@ function interactNearby(entity) {
   }
 
   if(useExcavation(entity)||pickupWorldTool(entity,floor)||interactCaveDoor(floor,entity)||interactPortableLadder(entity)||interactVending(entity,floor))return;
-  const nearBed=floor.props.filter(isSleepingFurniture).map(p=>({p,d:Math.hypot(p.x-entity.x,p.y-entity.y)})).sort((a,b)=>a.d-b.d)[0];
-  if(nearBed && nearBed.d<(TENT_TYPES.has(nearBed.p.type)?48*(nearBed.p.scale||1):90)){interactWithBed(entity,nearBed.p);return;}
   const keyIndex=floor.props.findIndex(p=>p.type==='key'&&Math.hypot(p.x-entity.x,p.y-entity.y)<48);
-  if(keyIndex!==-1){const key=floor.props.splice(keyIndex,1)[0];entity.inventory.push(key.keyId);updateUI();logEvent('🔑 '+entity.name+' recolheu '+(key.label||'uma chave')+'.');return;}
+  if(keyIndex!==-1){const key=floor.props.splice(keyIndex,1)[0];entity.inventory.push(key.keyId);updateUI();saveBank();logEvent('🔑 '+entity.name+' recolheu '+(key.label||'uma chave')+'.');return;}
 
   const stair=floor.stairs.find(s=>Math.hypot(s.x-entity.x,s.y-entity.y)<48);
   // E continua funcionando em escadas antigas; as novas também se atravessam caminhando.
@@ -351,7 +355,7 @@ function interactNearby(entity) {
 
   const chest = floor.chests.find(c => Math.hypot(c.x - entity.x, c.y - entity.y) < 58);
   if (chest) {
-    if (chest.opened) {
+    if (chest.opened||!chest.loot?.length) {
       say(entity, 'Baú vazio.');
       return;
     }
@@ -365,12 +369,18 @@ function interactNearby(entity) {
       return;
     }
     chest.opened = true;
-    entity.inventory.push(...chest.loot);
-    say(entity, `Peguei: ${chest.loot.join(', ')}!`);
-    logEvent(`🧰 ${entity.name} pegou: ${chest.loot.join(', ')}.`);
+    const loot=chest.loot.splice(0);
+    entity.inventory.push(...loot);
+    say(entity, `Peguei: ${loot.join(', ')}!`);
+    logEvent(`🧰 ${entity.name} pegou: ${loot.join(', ')}.`);
+    saveBank();
     updateUI();
     return;
   }
+  const nearBed=floor.props.filter(isSleepingFurniture).map(p=>({p,d:Math.hypot(p.x-entity.x,p.y-entity.y)})).sort((a,b)=>a.d-b.d)[0];
+  if(nearBed && nearBed.d<(TENT_TYPES.has(nearBed.p.type)?48*(nearBed.p.scale||1):90)){interactWithBed(entity,nearBed.p);return;}
+  const seat=floor.props.find(p=>REST_SEATS[p.type]&&seatBlocksPoint(p,entity.x,entity.y,24));
+  if(seat){sitOnSeat(entity,seat);return;}
   if(toggleNearbyDecoration(floor,entity))return;
   const fire=floor.props.filter(p=>fireplaceDesign(p.type))
     .map(p=>({p,distance:Math.hypot(p.x-entity.x,p.y-entity.y)}))
@@ -403,6 +413,9 @@ function updateUI() {
   document.getElementById('hpText').textContent = `${ent.hp} / ${ent.maxHp}`;
   document.getElementById('hpBar').style.width = `${Math.max(0, (ent.hp / ent.maxHp) * 100)}%`;
   document.getElementById('hungerText').textContent = `${ent.hunger}%`;
+  showFatigue(ent);
+  document.getElementById('fatigueLabel').textContent=restLabel('Fadiga');
+  updateRestControls();
   document.getElementById('hungerBar').style.width = `${ent.hunger}%`;
   document.getElementById('attitudeSelect').value = ent.attitude;
 

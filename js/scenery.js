@@ -247,7 +247,9 @@ function advanceMapDaylight(elapsed){
  const minutes=Math.floor(daylightSeconds);
  if(!minutes)return;
  daylightSeconds-=minutes;
- setMapDaylight(daylightMinute()+minutes);
+ const start=daylightMinute();
+ advanceRestClock(start,minutes);
+ setMapDaylight(start+minutes);
 }
 
 function drawSunShadows(floor){

@@ -88,7 +88,8 @@ function buildHouseScene(name = 'Casa de 2 Andares') {
 
   f1.props.push(
     { x: 580, y: 230, type: 'bed', rot: 0 },
-    { x: 580, y: 470, type: 'bookshelf', rot: 0 }
+    { x: 580, y: 470, type: 'bookshelf', rot: 0 },
+    { x: 178, y: 408, type: 'sofa', rot: 1 }
   );
 
   f0.chests.push({ x: 598, y: 396, opened: false, keyId: '', loot: ['Elixir Estelar', '120 Moedas'] });
@@ -193,6 +194,7 @@ function init() {
   const saved = localStorage.getItem('rpg_vtt_aligned_v8');
   state = saved ? JSON.parse(saved) : createInitialState();
   migrateFixedTerrain();
+  repairHouseChest();
   migrateBuildStyles();
   for(const scene of Object.values(state.scenes||{})){refreshStairDestinationLinks(scene);repairExistingStairLandings(scene);}
   migrateModeScenes();
@@ -321,6 +323,7 @@ function deleteCurrentScene(){
     if(entity.sceneId!==id)continue;
     entity.sceneId=null;entity.floor=0;
     entity.sleepBed=null;entity.sleepPose=null;entity.sleepRest=null;
+    delete entity.seatPose;
     delete entity.stairClimb;
   }
   state.currentFloor=0;state.selectedWallIdx=null;selectedMapObject=null;
@@ -406,6 +409,7 @@ function importJSON(e) {
       beginEdit();
       state = data;
       migrateFixedTerrain();
+      repairHouseChest();
       migrateBuildStyles();
   for(const scene of Object.values(state.scenes||{})){refreshStairDestinationLinks(scene);repairExistingStairLandings(scene);}
       migrateModeScenes();
@@ -442,6 +446,7 @@ function finishEdit(){
 function restoreState(serialized){
   state = JSON.parse(serialized);
   migrateFixedTerrain();
+  repairHouseChest();
   migrateBuildStyles();
   for(const scene of Object.values(state.scenes||{})){refreshStairDestinationLinks(scene);repairExistingStairLandings(scene);}
   migrateModeScenes();
@@ -466,6 +471,30 @@ function redoEdit(){
   undoHistory.push(snapshotState());
   restoreState(redoHistory.pop());
   logEvent('↷ Alteração refeita.');
+}
+
+function repairHouseChest(){
+ const key='chave_dourada';
+ for(const scene of Object.values(state.scenes||{})){
+  if(scene.houseChestRepaired||!scene.floors?.[0]?.doors.some(d=>d.keyId===key))continue;
+  const upstairs=scene.floors[1];
+  if(upstairs&&!upstairs.props.some(p=>/sofa/i.test(p.type))&&
+     upstairs.areas.some(a=>a.mat==='wood'&&a.x<=154&&a.x+a.w>=202&&a.y<=359&&a.y+a.h>=457)&&
+     !upstairs.props.some(p=>Math.abs(p.x-178)<40&&Math.abs(p.y-408)<56)){
+   upstairs.props.push({x:178,y:408,type:'sofa',rot:1});
+  }
+  const chest=upstairs?.chests.find(c=>Math.hypot(c.x-585,c.y-310)<65)||upstairs?.chests.find(c=>!c.keyId&&!c.lockCode);
+  if(!chest||chest.keyId||chest.lockCode)continue;
+  const keyExists=state.entities.some(ent=>ent.inventory?.includes(key))||
+   scene.floors.some(floor=>floor.props.some(p=>p.type==='key'&&p.keyId===key)||
+    floor.chests.some(c=>!c.opened&&c.loot?.includes(key)));
+  if(!keyExists){
+   if(chest.opened)chest.loot=[];
+   (chest.loot??=[]).push(key);
+   chest.opened=false;
+  }
+  scene.houseChestRepaired=true;
+ }
 }
 
 // O tamanho do terreno pintado não depende dos limites de edição.

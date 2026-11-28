@@ -295,6 +295,11 @@
           <button type="button" class="tool-btn" data-world-action="trim" onclick="chooseWorldAction('trim')">Limpar vegetação</button>
           <button type="button" class="tool-btn" data-world-action="dig" onclick="chooseWorldAction('dig')">Escavar</button>
         </div>
+        <div id="playerRestControls" class="tool-grid">
+          <button type="button" class="tool-btn" data-sit onclick="toggleGroundSeat()">Sentar no chão</button>
+          <button type="button" class="tool-btn" data-sleep="1" onclick="sleepForHours(1)" hidden>Dormir 1 hora</button>
+          <button type="button" class="tool-btn" data-sleep="8" onclick="sleepForHours(8)" hidden>Dormir 8 horas</button>
+        </div>
         <p id="worldActionStatus" role="status" class="library-hint"></p>
         <div class="section-title">Comandos</div>
         <div style="font-size:12px; line-height:1.6; color:var(--text-muted);">
@@ -578,6 +583,13 @@
         <span id="hungerText">85%</span>
       </div>
       <div class="bar-wrap"><div id="hungerBar" class="bar-fill" style="background:var(--gold); width:85%;"></div></div>
+      <div class="row" style="justify-content:space-between;margin-top:8px;"><span id="fatigueLabel">Fadiga</span><span id="fatigueText">0</span></div>
+      <div class="bar-wrap"><div id="fatigueBar" class="bar-fill" style="background:#bb8be0;width:0"></div></div>
+      <div id="gmRestControls" class="tool-grid">
+        <button type="button" class="tool-btn" data-sit onclick="toggleGroundSeat()">Sentar no chão</button>
+        <button type="button" class="tool-btn" data-sleep="1" onclick="sleepForHours(1)" hidden>Dormir 1 hora</button>
+        <button type="button" class="tool-btn" data-sleep="8" onclick="sleepForHours(8)" hidden>Dormir 8 horas</button>
+      </div>
 
       <div id="gmEntityControls" class="hidden" style="margin-top:6px; border-top:1px solid var(--border); padding-top:6px;">
         <div class="row">
@@ -631,18 +643,19 @@
 </div>
 
 <script src="js/d100.js?v=kenney-audio" defer></script>
-<script src="js/state.js?v=locked-creature-targets" defer></script>
+<script src="js/state.js?v=rest-house-keys" defer></script>
 <script src="js/roof-system.js?v=doorway-terrain-audio" defer></script>
 <script src="js/stair-system.js?v=resting-tokens" defer></script>
-<script src="js/editor.js?v=map-night-chimneys" defer></script>
+<script src="js/editor.js?v=rest-house-keys" defer></script>
 <script src="js/kenney-extra-data.js?v=scifi-packs" defer></script>
 <script src="js/kenney-extra.js?v=scifi-packs" defer></script>
 <script src="js/library.js?v=scifi-packs" defer></script>
-<script src="js/gameplay.js?v=push-at-doorways" defer></script>
+<script src="js/rest-system.js?v=1" defer></script>
+<script src="js/gameplay.js?v=rest-house-keys" defer></script>
 <script src="js/download-assets.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/download-roguelike-objects.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
-<script src="js/textures.js?v=scifi-packs" defer></script>
+<script src="js/textures.js?v=rest-house-keys" defer></script>
 <script src="js/architect-selection.js?v=surface-stack" defer></script>
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=stair-tree-size-20261126" defer></script>
@@ -657,17 +670,17 @@
 <script src="js/cave-brush.js?v=cave-joins-20261126" defer></script>
 <script src="js/caves.js?v=cave-joins-20261126" defer></script>
 <script src="js/plants.js?v=clear-canopies-daylight" defer></script>
-<script src="js/scenery.js?v=doorway-terrain-audio" defer></script>
+<script src="js/scenery.js?v=rest-house-keys" defer></script>
 <script src="js/vertical-world.js?v=cave-joins-20261126" defer></script>
 <script src="js/material-damage.js?v=push-at-doorways" defer></script>
 <script src="js/character-catalog.js?v=mesa-specialty-formulas" defer></script>
 <script src="js/item-catalog.js?v=mesa-inventory-grid" defer></script>
 <script src="js/mesa-creatures.js?v=locked-creature-targets" defer></script>
 <script src="js/mesa-character-import.js?v=mesa-specialty-formulas" defer></script>
-<script src="js/character-system.js?v=combat-token-motion" defer></script>
+<script src="js/character-system.js?v=rest-house-keys" defer></script>
 <script src="js/creature-combat.js?v=doorway-terrain-audio" defer></script>
 <script src="js/game-audio.js?v=doorway-terrain-audio" defer></script>
-<script src="js/main.js?v=push-at-doorways" defer></script>
+<script src="js/main.js?v=rest-house-keys" defer></script>
 <dialog id="characterD100Sheet" class="lock-dialog">
  <form class="character-form" onsubmit="saveD100Sheet(event)">
   <h3><span>Ficha d100</span> <span id="d100SheetName" data-user-text></span></h3>
@@ -740,6 +753,7 @@
       </div>
     </div>
     <div class="row" style="justify-content:flex-end;margin-top:15px;">
+      <button class="btn" type="button" onclick="document.getElementById('lockDialog').close()">Cancelar</button>
       <button class="btn" type="button" onclick="saveLockDialog(false)">Sem tranca</button>
       <button class="btn btn-primary" type="button" onclick="saveLockDialog(true)">Confirmar</button>
     </div>

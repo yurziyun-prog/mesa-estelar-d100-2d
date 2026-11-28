@@ -146,6 +146,7 @@ function startFurnitureDrag(ent,wx,wy){
 function setupInputs() {
   window.addEventListener('keydown', e => {
     if(document.querySelector('dialog[open]'))return;
+    if(e.key==='Escape'&&pendingKeyPlacement){pendingKeyPlacement=null;return;}
     if(e.key==='Escape'&&document.getElementById('architectContextMenu')){closeArchitectContextMenu();return;}
     if(e.key==='Escape'&&typeof architectEyedropper!=='undefined'&&architectEyedropper){architectEyedropper=false;document.getElementById('architectLibrarySelected').textContent='Conta-gotas cancelado.';return;}
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName) || document.activeElement.isContentEditable) return;
@@ -167,7 +168,7 @@ function setupInputs() {
       e.preventDefault();
       const ent=activeActor();
       if(ent && ent.sceneId===state.activeSceneId) {
-        if(ent.sleepPose||liftRides.has(ent))return;
+        if(ent.sleepPose||ent.seatPose||liftRides.has(ent))return;
         let dx=(keys['d']||keys['arrowright']?1:0)-(keys['a']||keys['arrowleft']?1:0);
         let dy=(keys['s']||keys['arrowdown']?1:0)-(keys['w']||keys['arrowup']?1:0);
         if(!dx&&!dy) {dx=ent.facingX||0;dy=ent.facingY||1;}
@@ -211,6 +212,7 @@ function setupInputs() {
       return;
     }
     if (e.button === 2) {
+      if(state.mode==='gm'&&openGmLockAt(sx,sy))return;
       if(state.mode==='architect'&&openArchitectContextMenu(sx,sy,e.clientX,e.clientY)){
         isPanning=false;return;
       }
@@ -221,11 +223,11 @@ function setupInputs() {
 
     const { wx, wy } = screenToWorld(sx, sy);
 
+    if((state.mode==='gm'||state.mode==='architect')&&placePendingKey(wx,wy))return;
     if (state.mode === 'architect') {
       architectShiftHeld=e.shiftKey;
       architectCtrlHeld=e.ctrlKey||e.metaKey;
       if(typeof sampleArchitectColorAt==='function'&&sampleArchitectColorAt(wx,wy))return;
-      if(placePendingKey(wx,wy)) return;
       beginEdit();
       isDragging = true;
       dragStart = null;
@@ -247,7 +249,7 @@ function setupInputs() {
       if (!ent || ent.sceneId !== state.activeSceneId) return;
       const floor=getScene().floors[ent.floor];
       if(worldAction){
-        if(ent.sleepPose||liftRides.has(ent))return;
+        if(ent.sleepPose||ent.seatPose||liftRides.has(ent))return;
         if(worldAction==='push')pushMapTarget(ent,floor,wx,wy);
         else if(worldAction==='dig'||worldAction==='trim')digGround(ent,floor,wx,wy);
         else inspectOrDamage(ent,floor,wx,wy);
@@ -257,7 +259,7 @@ function setupInputs() {
       if(creature){selectCombatCreature(ent,creature);return;}
       combatTarget=null;
       if(startFurnitureDrag(ent,wx,wy))return;
-      interactNearby(ent);
+      interactNearby(ent,floor.props.find(p=>REST_SEATS[p.type]&&seatBlocksPoint(p,wx,wy,0)));
     }
   });
 
@@ -368,6 +370,11 @@ function updateSimulation(elapsed) {
   });
 
   const ent = activeActor();
+  if(state.mode!=='architect'){
+    for(const other of state.entities){
+      if(other!==ent&&other.hp>0&&other.sceneId===state.activeSceneId&&other.seatPose)tickActorFatigue(other,elapsed,false,false);
+    }
+  }
   if(!ent&&state.mode!=='player'){
     const dx=Number(Boolean(keys.d||keys.arrowright))-Number(Boolean(keys.a||keys.arrowleft));
     const dy=Number(Boolean(keys.s||keys.arrowdown))-Number(Boolean(keys.w||keys.arrowup));
@@ -394,13 +401,15 @@ function updateSimulation(elapsed) {
 
       if (dx !== 0 || dy !== 0) {
         if(ent.sleepPose){awakenEntity(ent);return;}
+        if(ent.seatPose){standFromSeat(ent);return;}
         const len = Math.hypot(dx, dy);
         ent.facingX=dx/len; ent.facingY=dy/len;
         if(state.mode==='player'&&!isPanning)cameraFollowsActor=true;
         const floor=getScene().floors[ent.floor];
         const grass=highGrassAt(floor,ent.x,ent.y);
         const depth=waterDepthAt(floor,ent.x,ent.y);
-        const travelSpeed=depth?WALK_SPEED*(depth==='shallow'?.62:.48):(keys['shift']?SPRINT_SPEED:WALK_SPEED);
+        const sprinting=!depth&&keys.shift&&fatigueValue(ent)<100;
+        const travelSpeed=depth?WALK_SPEED*(depth==='shallow'?.62:.48):(sprinting?SPRINT_SPEED:WALK_SPEED);
         const distance = travelSpeed*elapsed*(grass&&!depth?HIGH_GRASS_SPEED_FACTOR:1);
         const steps = Math.max(1, Math.ceil(distance / MAX_MOVEMENT_STEP));
         const vx = ent.facingX * distance / steps;
@@ -411,8 +420,10 @@ function updateSimulation(elapsed) {
           if(vx&&canWalkStep(ent,ent.x+vx,ent.y))ent.x+=vx;
           if(vy&&canWalkStep(ent,ent.x,ent.y+vy))ent.y+=vy;
         }
-        if(ent.x!==beforeX||ent.y!==beforeY)markEntityWalking(ent,130);
-      }
+        const moved=ent.x!==beforeX||ent.y!==beforeY;
+        if(moved)markEntityWalking(ent,130);
+        tickActorFatigue(ent,elapsed,moved,sprinting);
+      }else tickActorFatigue(ent,elapsed,false,false);
     }
   }
 }

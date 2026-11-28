@@ -926,6 +926,11 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
   if(pose){ctx.translate(pose.x,pose.y);ctx.rotate(pose.tilt);}
   if(ent.hp<=0){ctx.rotate(-Math.PI/2);ctx.globalAlpha*=.72;}
   else if(pose?.kind==='hit')ctx.filter='brightness(1.25)';
+  if(ent.seatPose&&ent.hp>0){
+    ctx.rotate(ent.seatPose.angle);
+    ctx.translate(0,4);
+    ctx.scale(1,.78);
+  }
   if(isMonster&&!ent.creature){
     const beast=ent.icon==='🐉'||ent.icon==='🐺';
     ctx.fillStyle=body;ctx.strokeStyle='#233029';ctx.lineWidth=2;
@@ -1150,6 +1155,7 @@ function drawProp(p) {
   if(drawExtraKenneyProp(p))return;
   if(isKenneyObject(p.type)){drawKenneyObject(p);return;}
   if(isKenneyRoguelikeObject(p.type)){drawKenneyRoguelikeObject(p);return;}
+  if(drawRestSeat(p))return;
   if(isSleepingFurniture(p)&&!TENT_TYPES.has(p.type)){drawSleepingFurniture(p);return;}
   if(drawDecorationItem(p)||drawWorldFixture(p)||drawSceneryProp(p)||drawMesaFurniture(p)||drawMaterialFurniture(p)||drawGeologyProp(p)||drawCatalogProp(p)||drawExpandedProp(p))return;
   if(p.type==='key'){
