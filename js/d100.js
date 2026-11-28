@@ -22,6 +22,7 @@ function normalizeD100Character(ent){
  }
  ent.powers=Array.isArray(ent.powers)?ent.powers:[];
  ent.inventory=Array.isArray(ent.inventory)?ent.inventory:[];
+ if(typeof migrateCharacterPack==='function')migrateCharacterPack(ent);
  if(!Number.isFinite(ent.credits)||ent.credits<0)ent.credits=ent.type==='pc'?STARTING_CREDITS:0;
  ent.hp=Number.isFinite(Number(ent.hp))?Number(ent.hp):12;
  ent.maxHp=Number.isFinite(Number(ent.maxHp))&&Number(ent.maxHp)>0?Number(ent.maxHp):ent.hp;

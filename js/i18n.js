@@ -1,4 +1,15 @@
 const SITE_ZH = new Map(`
+Bolsos|口袋
+Mochila equipada|背包装备格
+Carga excedente|超出容量的物品
+Em casa|家中库存
+Veículo / nave|载具／飞船库存
+Tem veículo ou nave|拥有载具或飞船
+Guardar em casa|存放到家中
+Guardar no veículo / nave|存放到载具／飞船
+Levar consigo|取回随身携带
+Espaços da mochila|背包格数
+Sem espaço para carregar mais itens.|随身格子已满。
 Nenhuma ficha nova para importar.|没有新的角色卡可导入。
 Personagens jogadores|玩家角色
 NPCs com ficha avançada|有完整角色卡的 NPC

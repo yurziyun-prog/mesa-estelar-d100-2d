@@ -4,19 +4,20 @@ const legacyCharacterItems={
  'Gorro de viagem':{slot:'head'},'Casaco de viagem':{slot:'body',color:'#577282'},
  'Colete de couro':{slot:'body',color:'#76543e'},'Botas':{slot:'feet'},
  'Lanterna de Óleo':{slot:'light',use:'light'},
+ 'Mochila de Viagem':{slot:'pack',capacity:8,data:{nome_zh:'旅行背包',preco:'45',descricao:'Mochila com oito espaços.',descricao_zh:'提供八个背包格。'}},
  'Ração':{use:'food'},'Poção':{use:'heal'}
 };
-const characterSlots={head:'Cabeça',body:'Tronco',feet:'Pés',hand:'Mão',light:'Luz',waist:'Cintura'};
+const characterSlots={head:'Cabeça',body:'Tronco',feet:'Pés',hand:'Mão',light:'Luz',waist:'Cintura',pack:'Mochila equipada'};
 const characterItems=Object.assign(Object.create(null),legacyCharacterItems);
 for(const data of mesaItemCatalog){
  const {id,categoria}=data;
- const slot=categoria==='Armas'?'hand':id==='lanterna'?'light':
+ const slot=id==='mochila_avancada'?'pack':categoria==='Armas'?'hand':id==='lanterna'?'light':
    /capacete|chapeu/.test(id)?'head':id==='botas_couro'?'feet':id==='cinto_utilitario'?'waist':
    ['Armaduras','Roupas'].includes(categoria)?'body':null;
  const color={armadura_leve:'#70849a',armadura_militar:'#54664d',biomesh:'#496a70',
    biomesh_leve:'#626d8a',capa_viajante:'#465e45',roupa_viajante:'#936c49',coleto_balistico:'#454b52'}[id]
    ||(categoria==='Armaduras'?'#70849a':'#8b6853');
- characterItems[data.nome]={data,slot,color,armor:categoria==='Armaduras',
+ characterItems[data.nome]={data,slot,color,capacity:id==='mochila_avancada'?16:undefined,armor:categoria==='Armaduras',
    use:id==='lanterna'?'light':/^racao/.test(id)?'food':null};
 }
 function characterItemName(name){
@@ -159,6 +160,8 @@ function drawScaledAvatarBack(g,a,form,cloth){
  const crocodile=form==='crocodile';
  avatarShape(g,a.skin,crocodile?[[4,6],[14,9],[21,14],[26,13],[23,18],[16,19],[6,15]]
    :[[4,8],[12,12],[21,16],[25,12],[23,18],[15,20],[5,14]]);
+ g.strokeStyle='#ffffff4a';g.lineWidth=.75;g.beginPath();
+ g.moveTo(9,13);g.quadraticCurveTo(17,18,23,16);g.stroke();
  for(const [x,y] of [[13,10],[17,12],[21,14]]){
    avatarShape(g,'#47514b',[[x-2,y+1],[x,y-2],[x+2,y+2]]);
  }
@@ -168,6 +171,9 @@ function drawScaledAvatarBack(g,a,form,cloth){
    avatarShape(g,cloth,wing);
    g.strokeStyle='#26343c';g.lineWidth=1.15;g.beginPath();
    g.moveTo(side*6,3);g.lineTo(side*21,-20);g.lineTo(side*20,9);
+   g.stroke();
+   g.strokeStyle='#ffffff40';g.beginPath();
+   g.moveTo(side*11,-7);g.lineTo(side*21,-19);
    g.moveTo(side*19,-16);g.lineTo(side*12,7);g.stroke();
  }
 }
@@ -320,6 +326,11 @@ function drawCharacterAppearance(g,ent,stride=0){
  const outfit=equipped.body?(characterItems[equipped.body]?.armor?'uniform':'travel'):professionOutfit(ent.role);
  g.save();
  g.translate(0,18*(1-height));g.scale(1,height);
+ if(equipped.pack){
+   const large=characterItems[equipped.pack]?.capacity>=16;
+   avatarShape(g,large?'#735137':'#8a6948',[[-half-4,-8],[-half, -12],[half,-12],[half+4,-8],
+     [half+4,5],[half,10],[-half,10],[-half-4,5]]);
+ }
  if(form==='insect')drawInsectBody(g,a,ent,half,hips,cloth,stride);
  else{
  if(form==='dragon'||form==='crocodile')drawScaledAvatarBack(g,a,form,cloth);
@@ -392,6 +403,12 @@ function drawCharacterAppearance(g,ent,stride=0){
  g.beginPath();g.moveTo(-hips+1,7);g.quadraticCurveTo(0,9,hips-1,7);g.stroke();
  g.fillStyle=equipped.waist?'#ced5df':'#bd9e6e';g.fillRect(-1.8,6.6,equipped.waist?5:3.6,3);
  }
+ if(equipped.pack){
+   g.strokeStyle='#bb9267';g.lineWidth=1.6;
+   for(const side of [-1,1]){
+     g.beginPath();g.moveTo(side*(half-3),-9);g.lineTo(side*(half-3),4);g.stroke();
+   }
+ }
  const helmet=characterItems[equipped.head];
  const headAppearance=helmet?.armor&&a.helmet==='none'?{...a,helmet:'visor',helmetColor:helmet.color}:a;
  drawAvatarHead(g,headAppearance,form,equipped.head,sex);
@@ -419,7 +436,12 @@ function drawCharacterHeldItem(g,name,x,y){
  if(style==='shield'){
    avatarShape(g,'#748b9c',[[-7,-8],[7,-8],[6,1],[0,7],[-6,1]]);
  }else if(style==='gun'){
-   avatarShape(g,'#435366',[[-3,3],[-3,-5],[-1,-5],[-1,-15],[3,-15],[3,0],[1,0],[1,3]]);
+   const long=/rifle|carabina|fuzil|escopeta|canhao/i.test(name);
+   const energy=/laser|phaser|blaster|gauss|energia/i.test(name);
+   const tip=long?-25:-13;
+   avatarShape(g,'#45586a',[[-3,3],[-3,-5],[-1.8,-5],[-1.8,tip],[2.5,tip],[3.8,-5],[3,1],[.4,1],[.4,3]]);
+   g.fillStyle=energy?'#82dddb':'#a1a9ac';g.fillRect(.4,tip+2,.8,long?14:5);
+   if(long)avatarShape(g,'#263340',[[-2,2],[2,1],[3,7],[-2,7]]);
  }else if(style==='bow'){
    g.strokeStyle='#bfa278';g.lineWidth=2;
    g.beginPath();g.moveTo(-2,-15);g.quadraticCurveTo(12,-3,-2,9);g.closePath();g.stroke();
@@ -614,6 +636,56 @@ function equippedInventoryIndices(ent){
  return equipped;
 }
 
+const POCKET_CELLS=8;
+function migrateCharacterPack(ent){
+ if(ent.storageLayoutVersion===1)return;
+ const oldPack=(ent.mesaSourceSheet?.inventario?.equipado||[]).find(item=>
+   characterItems[item?.nome]?.slot==='pack'&&ent.inventory.includes(item.nome));
+ if(oldPack&&!(ent.equipment?.pack))(ent.equipment||={}).pack=oldPack.nome;
+ const oldOrder=backpackLayout(ent);
+ const worn=new Set(equippedInventoryIndices(ent).values());
+ const indices=oldOrder.map((_,i)=>i).sort((a,b)=>Number(worn.has(a))-Number(worn.has(b))||oldOrder[a]-oldOrder[b]);
+ ent.inventoryCells=Array(ent.inventory.length);
+ indices.forEach((index,cell)=>{ent.inventoryCells[index]=cell;});
+ ent.storageLayoutVersion=1;
+}
+function backpackCapacity(ent){
+ return characterItems[ent.equipment?.pack]?.capacity||0;
+}
+function characterStorage(ent,kind){
+ const saved=ent.itemStorage?.[kind];
+ if(Array.isArray(saved))return saved;
+ return (ent.mesaSourceSheet?.inventario?.[kind]||[]).filter(item=>item?.nome).map(item=>item.nome);
+}
+function hasVehicleStorage(ent){
+ return ent.hasVehicleStorage===true||characterStorage(ent,'veiculo').length>0;
+}
+function setVehicleStorage(ent,enabled){
+ if(state.mode!=='gm'||ent!==getSelectedEntity()||!enabled&&characterStorage(ent,'veiculo').length)return;
+ beginEdit();ent.hasVehicleStorage=enabled;finishEdit();updateUI();saveBank();
+}
+function transferCharacterStorage(ent,kind,index,toStorage){
+ if(ent!==getSelectedEntity()||!['gm','player'].includes(state.mode)||
+   !['casa','veiculo'].includes(kind)||kind==='veiculo'&&!hasVehicleStorage(ent))return;
+ const stored=[...characterStorage(ent,kind)];
+ const source=toStorage?ent.inventory:stored;
+ const name=source[index];
+ if(!name||toStorage&&[...equippedInventoryIndices(ent).values()].includes(index))return;
+ if(!toStorage&&ent.inventory.length-equippedInventoryIndices(ent).size>=POCKET_CELLS+backpackCapacity(ent)){
+   alert(translateSiteText('Sem espaço para carregar mais itens.'));
+   return;
+ }
+ beginEdit();
+ source.splice(index,1);
+ if(toStorage){
+   ent.inventoryCells?.splice(index,1);
+   stored.push(name);
+ }else ent.inventory.push(name);
+ (ent.itemStorage||={})[kind]=stored;
+ if(kind==='veiculo')ent.hasVehicleStorage=true;
+ finishEdit();updateUI();saveBank();
+}
+
 function moveBackpackItem(ent,index,cell,fromSlot){
  if(ent!==getSelectedEntity()||!['gm','player'].includes(state.mode)||!ent.inventory[index])return;
  const positions=backpackLayout(ent);
@@ -642,10 +714,10 @@ function characterItemDetails(name){
      return translateSiteText(label)+' · '+translateSiteText(data[field])+unit;
    });
  const description=siteLanguage==='zh-CN'&&data.descricao_zh||data.descricao;
- return [description,fields.join('  ·  ')].filter(Boolean).join('\n');
+ return [description,characterItems[name]?.capacity?translateSiteText('Espaços da mochila')+' · '+characterItems[name].capacity:'',fields.join('  ·  ')].filter(Boolean).join('\n');
 }
 
-const equipmentSlotIcons={head:'⛑️',body:'🛡️',feet:'🥾',hand:'⚔️',light:'🔦',waist:'🪢'};
+const equipmentSlotIcons={head:'⛑️',body:'🛡️',feet:'🥾',hand:'⚔️',light:'🔦',waist:'🪢',pack:'🎒'};
 function inventoryIcon(name){
  const item=characterItems[name];
  const key=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
@@ -710,12 +782,17 @@ function renderCharacterEquipment(ent){
    });
    if(slot)details.append(action('Tirar','remove'));
    else if(item?.slot)details.append(action('Equipar','equip'));
+   if(!slot){
+     const store=kind=>{selectedInventoryItem=null;transferCharacterStorage(ent,kind,index,true);};
+     details.append(characterActionButton('Guardar em casa',()=>store('casa')));
+     if(hasVehicleStorage(ent))details.append(characterActionButton('Guardar no veículo / nave',()=>store('veiculo')));
+   }
    if(item?.use&&(!item.slot||slot))details.append(action(
      item.use==='light'?(ent.lanternLit?'Apagar':'Acender'):'Usar','use'));
  };
- const cellButton=(index,label,slot)=>{
+ const cellButton=(index,label,slot,storedName)=>{
    const button=document.createElement('button');button.type='button';button.className='inventory-cell';
-   const name=ent.inventory[index];
+   const name=storedName||ent.inventory[index];
    if(slot)button.dataset.slot=slot;
    const {art,symbol}=name?inventoryIcon(name):{symbol:equipmentSlotIcons[slot]};
    if(art||symbol){
@@ -729,7 +806,7 @@ function renderCharacterEquipment(ent){
    const title=name?characterItemName(name):label;
    button.setAttribute('aria-label',[label,name&&title].filter(Boolean).join(' · '));
    if(name||slot)button.title=title;
-   if(name){
+   if(name&&!storedName){
      button.draggable=true;
      button.ondragstart=event=>{
        dragged={index,name,slot};
@@ -752,15 +829,43 @@ function renderCharacterEquipment(ent){
      source=>characterItemAction(ent,source.name,'equip'));
    return button;
  }));
- const byCell=new Map(positions.map((cell,index)=>[cell,index]));
- const size=Math.max(12,Math.ceil((Math.max(-1,...positions)+2)/4)*4);
- inventory.replaceChildren(...Array.from({length:size},(_,cell)=>{
-   const index=byCell.get(cell),visible=!equippedIndices.has(index);
-   const button=cellButton(visible?index:undefined,index===undefined||!visible?translateSiteText('Espaço vazio'):'');
-   setTarget(button,source=>!source.slot||!visible||index===undefined,
+ const byCell=new Map(positions.map((cell,index)=>[cell,index]).filter(([,index])=>!equippedIndices.has(index)));
+ const size=POCKET_CELLS+backpackCapacity(ent);
+ const makeCell=cell=>{
+   const index=byCell.get(cell);
+   const button=cellButton(index,index===undefined?translateSiteText('Espaço vazio'):'');
+   setTarget(button,source=>!source.slot||index===undefined,
      source=>moveBackpackItem(ent,source.index,cell,source.slot));
    return button;
- }));
+ };
+ inventory.replaceChildren(...Array.from({length:POCKET_CELLS},(_,cell)=>makeCell(cell)));
+ const pack=document.getElementById('packInventory');
+ pack.hidden=size===POCKET_CELLS;
+ pack.querySelector('summary').textContent=translateSiteText('Mochila')+' · '+backpackCapacity(ent);
+ pack.querySelector('.storage-grid').replaceChildren(...Array.from({length:backpackCapacity(ent)},(_,i)=>makeCell(POCKET_CELLS+i)));
+ const excess=document.getElementById('overflowInventory');
+ const overflow=[...byCell.keys()].filter(cell=>cell>=size);
+ excess.hidden=!overflow.length;
+ excess.querySelector('.storage-grid').replaceChildren(...overflow.map(makeCell));
+ for(const kind of ['casa','veiculo']){
+   const storage=document.getElementById(kind+'Inventory');
+   storage.hidden=kind==='veiculo'&&!hasVehicleStorage(ent);
+   storage.querySelector('.storage-grid').replaceChildren(...characterStorage(ent,kind).map((name,index)=>{
+     const button=cellButton(undefined,characterItemName(name),null,name);
+     button.onclick=()=>{
+       selectedInventoryItem=null;
+       const label=document.createElement('strong');label.textContent=characterItemName(name);
+       const stats=document.createElement('small');stats.textContent=characterItemDetails(name);
+       details.replaceChildren(label,stats,characterActionButton('Levar consigo',()=>transferCharacterStorage(ent,kind,index,false)));
+     };
+     return button;
+   }));
+ }
+ const vehicleToggle=document.getElementById('characterHasVehicle');
+ vehicleToggle.parentElement.hidden=state.mode!=='gm';
+ vehicleToggle.checked=hasVehicleStorage(ent);
+ vehicleToggle.disabled=characterStorage(ent,'veiculo').length>0;
+ vehicleToggle.onchange=()=>setVehicleStorage(ent,vehicleToggle.checked);
  showSelection();
  const picker=document.getElementById('characterItemPicker');
  picker.parentElement.classList.toggle('hidden',state.mode!=='gm');
@@ -771,8 +876,9 @@ function renderCharacterEquipment(ent){
  }
 }
 
-const marketItems=mesaItemCatalog.filter(item=>item.disponivelCampanha==='true'&&
- item.preco&&Number.isFinite(Number(item.preco))&&Number(item.preco)>=0);
+const marketItems=[{id:'mochila_viagem',nome:'Mochila de Viagem',categoria:'Exploração',preco:'45'},
+ ...mesaItemCatalog.filter(item=>item.disponivelCampanha==='true'&&
+ item.preco&&Number.isFinite(Number(item.preco))&&Number(item.preco)>=0)];
 let marketActor=null;
 function creditLabel(amount){
  return Number(amount||0).toLocaleString(siteLanguage)+' '+translateSiteText('créditos');
@@ -793,6 +899,10 @@ function openCharacterMarket(){
 function buyCharacterMarketItem(id){
  const actor=marketActor,item=marketItems.find(entry=>entry.id===id);
  if(!canShop(actor)||!item||actor.credits<Number(item.preco))return false;
+ if(actor.inventory.length-equippedInventoryIndices(actor).size>=POCKET_CELLS+backpackCapacity(actor)&&characterItems[item.nome]?.slot!=='pack'){
+   alert(translateSiteText('Sem espaço para carregar mais itens.'));
+   return false;
+ }
  beginEdit();
  const previousBalance=actor.credits;
  actor.credits-=Number(item.preco);
