@@ -2,3 +2,5 @@ Sound effects by Kenney (kenney.nl), CC0 1.0.
 Packs: Casino Audio, Digital Audio, Impact Sounds, RPG Audio, Interface Sounds, Sci-fi Sounds.
 https://creativecommons.org/publicdomain/zero/1.0/
 step-water.ogg is a synthesized effect created for Mesa Estelar.
+grass-recorded-*.ogg: edits of FOSSarts, “stepping on grass 1”, CC0 1.0. https://freesound.org/people/FOSSarts/sounds/740144/
+tall-grass-recorded-*.ogg: edits of KidsTeam, “Gras Gehen.m4a”, CC0 1.0. https://freesound.org/people/KidsTeam/sounds/653114/

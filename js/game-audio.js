@@ -2,8 +2,8 @@ const soundClips={
  laser:['laser'],energy:['energy'],shot:['shot'],hit:['hit'],metal:['metal-hit'],
  melee:['melee'],dice:['dice-throw-1','dice-throw-2'],grab:['dice-grab-1'],
  alarm:['alarm'],open:['door-open'],close:['door-close'],click:['click'],
- water:['step-water'],grass:['foot-grass-soft-a','foot-grass-soft-b'],
- tallGrass:['foot-tall-grass-a','foot-tall-grass-b'],
+ water:['step-water'],grass:['grass-recorded-a','grass-recorded-b','grass-recorded-c'],
+ tallGrass:['tall-grass-recorded-a','tall-grass-recorded-b','tall-grass-recorded-c'],
  wood:['step-wood-a','step-wood-b'],stone:['step-stone-a','step-stone-b']
 };
 const playingSounds=new Set();
@@ -51,7 +51,7 @@ function playActorStep(ent){
    highGrassAt(floor,ent.x,ent.y)?'tallGrass':
    /stone|paving|cobble|marble|ceramic/i.test(mat)?'stone':
    /grass|grama/i.test(mat)?'grass':null;
- if(kind)playGameSound(kind,kind==='water'?.12:kind==='grass'||kind==='tallGrass'?.11:.08);
+ if(kind)playGameSound(kind,kind==='water'?.12:kind==='grass'||kind==='tallGrass'?.16:.08);
 }
 function initGameSound(){
  refreshGameSoundButton();
