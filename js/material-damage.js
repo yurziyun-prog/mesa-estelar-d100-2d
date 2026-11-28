@@ -83,7 +83,9 @@ function toggleGmRestore(){
  if(state.mode!=='gm')return;
  gmRestoreArmed=!gmRestoreArmed;
  gmRosterPlacementIds=null;gmPlacementTemplate=null;
- document.getElementById('gmRestoreTool').setAttribute('aria-pressed',String(gmRestoreArmed));
+ const button=document.getElementById('gmRestoreTool');
+ button.setAttribute('aria-pressed',String(gmRestoreArmed));
+ button.classList.toggle('btn-gold',gmRestoreArmed);
  gmRestoreNotice(gmRestoreArmed?'Clique em uma criatura, personagem ou planta para restaurar.':'');
 }
 function gmRestoreNotice(message){

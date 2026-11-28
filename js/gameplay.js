@@ -40,12 +40,13 @@ function refreshGmFocus(){
  const hint=document.getElementById('gmControlHint');
  if(hint)hint.textContent=controlled?'Controlando '+controlled.name+' · Esc libera':preview?'Enter para controlar '+preview.name+' · Tab muda':'Tab escolhe · Enter controla · Esc libera';
  const sheet=document.getElementById('characterSheetPanel');if(sheet)sheet.classList.toggle('hidden',state.mode==='architect'||(state.mode==='gm'&&!controlled));
- const empty=document.getElementById('gmNoCharacter');if(empty)empty.classList.toggle('hidden',state.mode!=='gm'||!!controlled);
+ const empty=document.getElementById('gmNoCharacter');if(empty)empty.classList.toggle('hidden',state.mode!=='gm');
  const tools=document.getElementById('rightPlayerControls');if(tools)tools.classList.toggle('hidden',state.mode!=='gm'||!controlled);
  const stats=document.getElementById('gmSessionStats');if(stats){const actors=gmActors(),pcs=actors.filter(e=>e.type==='pc');stats.textContent='Personagens: '+pcs.length+' · NPCs/criaturas: '+(actors.length-pcs.length)+' · Total no banco: '+state.entities.length+' · Cenário: '+getScene().name;}
 }
 function setMode(mode) {
   const priorMode=state.mode;
+  if(priorMode==='gm'&&mode!=='gm'&&gmRestoreArmed)toggleGmRestore();
   if(mode!==priorMode&&typeof clearTransientStairClimbs==='function')clearTransientStairClimbs(state.entities);
   if(state.scenes && state.activeSceneId){
     migrateModeScenes();

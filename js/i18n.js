@@ -1,4 +1,5 @@
 const SITE_ZH = new Map(`
+Clique no botão e depois no alvo ferido ou caído.|先点按钮，再点受伤或倒下的目标。
 Restaurar no mapa|恢复地图目标
 Clique em uma criatura, personagem ou planta para restaurar.|点击怪物、角色或植物即可恢复。
 Nenhum alvo danificado neste ponto.|这里没有受损的目标。

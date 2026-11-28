@@ -12,7 +12,7 @@ function mesaCreatureDesign(sheet,seed){
  const palette=['#6c825e','#587b87','#896b5b','#82748d','#a18452','#587268'];
  return {form,scale,seed,color:palette[seed%palette.length]};
 }
-function drawMesaCreature(g,design,stride,key){
+function drawMesaCreature(g,design,stride,key,time=null){
  const {form,scale,seed,color}=design;
  const ellipse=(x,y,rx,ry,fill,angle=0)=>{
    g.fillStyle=fill;g.strokeStyle='#212b32';g.lineWidth=.9;
@@ -23,15 +23,19 @@ function drawMesaCreature(g,design,stride,key){
    g.beginPath();g.moveTo(...points[0]);for(const point of points.slice(1))g.lineTo(...point);g.stroke();
    g.strokeStyle=color;g.lineWidth=width;g.stroke();
  };
+ const sway=(phase,amount)=>time===null?0:Math.sin(time/880+seed%19+phase)*amount;
  const eye=(x,y)=>ellipse(x,y,1.45,1.6,'#ffd27f');
  g.save();
  g.translate(0,13*(1-scale));g.scale(scale,scale);
  if(key==='cila'){
    for(let i=0;i<6;i++){
      g.save();g.rotate(i*Math.PI/3-.14);
-     limb([[4,0],[10,-2],[17,0],[24,1]],3.5);
-     ellipse(24,1,3.3,2.2,'#866a4c');
-     eye(25,0);
+     const tip=sway(i*1.65,1.6);
+     limb([[4,0],[10,-2],[17,tip*.5],[24,1+tip]],3.5);
+     g.strokeStyle='#dbc09a70';g.lineWidth=.65;g.beginPath();
+     g.moveTo(8,-1);g.quadraticCurveTo(15,-1,22,tip);g.stroke();
+     ellipse(24,1+tip,3.3,2.2,'#866a4c');
+     eye(25,tip);
      g.restore();
    }
    ellipse(0,0,9,7.4,'#906a62');
@@ -48,8 +52,16 @@ function drawMesaCreature(g,design,stride,key){
      ellipse(x,y,2.6,1.8,color,angle);
    }
  }else if(form==='serpent'){
-   limb([[-13,8],[-6,13],[5,11],[10,4],[5,-1],[-4,2],[-7,-3],[-3,-9]],5);
-   ellipse(-3,-10,4.8,5,color);eye(-5,-11);eye(-1,-11);
+   const tail=sway(1,1.7);
+   g.lineCap='round';g.beginPath();
+   g.moveTo(-14,8+tail);g.bezierCurveTo(-4,21,18,9,8,1);
+   g.bezierCurveTo(3,-4,-8,7,-8,0);g.quadraticCurveTo(-9,-6,-3,-10);
+   g.strokeStyle='#27353c';g.lineWidth=6.7;g.stroke();
+   g.strokeStyle=color;g.lineWidth=5.1;g.stroke();
+   for(const [x,y] of [[-9,11],[-5,13],[0,13],[5,11],[9,7],[9,3],[-6,-2]])
+     ellipse(x,y,1.1,.67,'#ffffff56',-.35);
+   avatarShape(g,color,[[-7,-10],[-6,-14],[-1,-16],[3,-13],[2,-9],[-3,-7]]);
+   eye(-4.5,-12);eye(.5,-12);
  }else if(form==='humanoid'){
    const infected=/errante_parasitado|carnical_dominante|inchado_pustulento/.test(key);
    const torso=infected?'#665349':color;
@@ -72,7 +84,11 @@ function drawMesaCreature(g,design,stride,key){
    eye(0,3);eye(5,3);
  }else{
    if(form==='winged')for(const side of [-1,1]){
-     avatarShape(g,'#697d8b',[[side*3,1],[side*10,-10],[side*20,-13],[side*16,-3],[side*20,5],[side*7,6]]);
+     const tip=-13+sway(0,1.5);
+     avatarShape(g,'#83a6a6b8',[[side*3,1],[side*10,-10],[side*20,tip],[side*16,-3],[side*20,5],[side*7,6]]);
+     g.strokeStyle='#314a51';g.lineWidth=.75;g.beginPath();
+     g.moveTo(side*5,1);g.quadraticCurveTo(side*12,-2,side*19,tip+1);
+     g.moveTo(side*7,2);g.lineTo(side*18,4);g.stroke();
    }
    if(form==='reptile'||form==='beast')limb([[7,7],[14,11],[20,9]],3);
    const mechanical=key==='cao_de_sucata';
