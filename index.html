@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <title>Mesa RPG 2D — Arquiteto, Mestre & Jogador</title>
-  <link rel="stylesheet" href="css/style.css?v=player-session" />
+  <link rel="stylesheet" href="css/style.css?v=network-play" />
 </head>
 <body>
 
@@ -31,6 +31,7 @@
     <select id="siteLanguage" class="ctrl" aria-label="Idioma / 语言" onchange="setSiteLanguage(this.value)">
       <option value="pt-BR">Português</option><option value="zh-CN">中文</option>
     </select>
+    <button class="btn" type="button" onclick="openControlSettings()">⚙ Configurações · 设置</button>
     <button class="btn" onclick="openMesaCloud()">☁️ Nuvem</button>
     <button class="btn" type="button" onclick="centerMap(state.mode==='player')">Centralizar mapa</button>
     <button id="recenterButton" class="btn hidden" type="button" onclick="recenterView()">Centralizar personagem</button>
@@ -302,15 +303,6 @@
           <button type="button" class="tool-btn" data-world-action="dig" onclick="chooseWorldAction('dig')">Escavar</button>
         </div>
         <p id="worldActionStatus" role="status" class="library-hint"></p>
-        <div class="section-title">Comandos</div>
-        <div style="font-size:12px; line-height:1.6; color:var(--text-muted);">
-          • <b>WASD / Setas:</b> Caminhar<br/>
-          • <b>Shift:</b> Correr · <b>Espaço:</b> Pular<br/>
-          • <b>Arrastar tronco:</b> Aproximar-se e mover com o mouse<br/>
-          • <b>E ou Clique próximo:</b> Portas, baús, escadas<br/>
-          • <b>Botão Direito:</b> Mover câmera<br/>
-          • <b>Scroll:</b> Zoom
-        </div>
       </div>
     </div>
     <section id="characterLeftPanel" class="hidden">
@@ -663,7 +655,10 @@
 <script src="js/portable-ladder.js?v=stairwell-visibility-sync-fall-20261123" defer></script>
 <script src="js/object-properties.js?v=stair-tree-size-20261126" defer></script>
 <script src="js/i18n.js?v=push-at-doorways" defer></script>
-<script src="js/player-session.js?v=player-session" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js" integrity="sha384-x0YgkOr/3UOZP2CRDxGW9e0Q+2Qjyr3uJrm4xU32Y7ZCNAo7Cc7bjhrZMi/dwczu" crossorigin="anonymous" defer></script>
+<script src="js/player-network.js?v=network-play" defer></script>
+<script src="js/player-session.js?v=network-play" defer></script>
+<script src="js/control-settings.js?v=network-play" defer></script>
 <script src="js/cloud-bank.js?v=player-session" defer></script>
 <script src="js/terrain-tools.js?v=water-depth-swimming-light" defer></script>
 <script src="js/building.js?v=door-clearance" defer></script>
@@ -676,7 +671,7 @@
 <script src="js/plants.js?v=clear-canopies-daylight" defer></script>
 <script src="js/scenery.js?v=equipment-controls" defer></script>
 <script src="js/vertical-world.js?v=cave-joins-20261126" defer></script>
-<script src="js/material-damage.js?v=player-session" defer></script>
+<script src="js/material-damage.js?v=network-play" defer></script>
 <script src="js/character-catalog.js?v=mesa-specialty-formulas" defer></script>
 <script src="js/item-catalog.js?v=equipment-controls" defer></script>
 <script src="js/mesa-creatures.js?v=locked-creature-targets" defer></script>
@@ -684,8 +679,8 @@
 <script src="js/equipment-devices.js?v=equipment-controls" defer></script>
 <script src="js/character-system.js?v=player-session" defer></script>
 <script src="js/creature-combat.js?v=equipment-controls" defer></script>
-<script src="js/game-audio.js?v=field-grass" defer></script>
-<script src="js/main.js?v=player-session" defer></script>
+<script src="js/game-audio.js?v=network-play" defer></script>
+<script src="js/main.js?v=network-play" defer></script>
 <dialog id="characterD100Sheet" class="lock-dialog">
  <form class="character-form" onsubmit="saveD100Sheet(event)">
   <h3><span>Ficha d100</span> <span id="d100SheetName" data-user-text></span></h3>
@@ -701,9 +696,14 @@
    <button type="submit" class="btn btn-primary">Salvar ficha</button></div>
  </form>
 </dialog>
+<dialog id="controlsDialog" class="lock-dialog">
+  <h3></h3><div id="controlBindings" class="tool-grid"></div><p data-controls-help></p>
+  <button type="button" class="btn" data-restore-controls onclick="resetControlSettings()"></button>
+  <button type="button" class="btn" data-close-controls onclick="this.closest('dialog').close()"></button>
+</dialog>
 <dialog id="playerSessionHost" class="lock-dialog">
   <h3>Acesso de jogador · 玩家入口</h3>
-  <p>Mantenha esta aba aberta. Sessão entre abas deste navegador.</p>
+  <p>Mantenha esta aba aberta. Envie o link e a senha ao jogador.</p>
   <label>Personagem · 角色 <select class="ctrl"></select></label>
   <button type="button" class="btn" onclick="generatePlayerPassword()">Gerar senha · 生成密码</button>
   <p><output style="user-select:all;overflow-wrap:anywhere"></output></p>

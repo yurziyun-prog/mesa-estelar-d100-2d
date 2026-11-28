@@ -556,5 +556,4 @@ html .character-section-title, html[lang="zh-CN"] .character-section-title {
 .guest-player [onclick^="openCharacterEditor"],
 .guest-player [onclick^="openMesaCloud"],
 .guest-player [onclick^="exportJSON"],
-.guest-player [onclick*="importFile"],
-.guest-player [data-world-action]:not([data-world-action="shoot"]) { display:none !important; }
+.guest-player [onclick*="importFile"] { display:none !important; }

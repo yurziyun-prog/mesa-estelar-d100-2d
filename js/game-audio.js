@@ -2,12 +2,12 @@ const soundClips={
  laser:['laser'],energy:['energy'],shot:['shot'],hit:['hit'],metal:['metal-hit'],
  melee:['melee'],dice:['dice-throw-1','dice-throw-2'],grab:['dice-grab-1'],
  alarm:['alarm'],open:['door-open'],close:['door-close'],click:['click'],
- water:['step-water'],grass:['grass-recorded-a','grass-recorded-b','grass-recorded-c'],
- tallGrass:['tall-grass-recorded-a','tall-grass-recorded-b','tall-grass-recorded-c'],
+ water:['step-water'],grass:['grass-recorded-a-soft','grass-recorded-b-soft','grass-recorded-c-soft'],
+ tallGrass:['tall-grass-recorded-a-soft','tall-grass-recorded-b-soft','tall-grass-recorded-c-soft'],
  wood:['step-wood-a','step-wood-b'],stone:['step-stone-a','step-stone-b']
 };
 const playingSounds=new Set();
-const actorStepAt=new WeakMap();
+const actorStepAt=new Map();
 const audioPreference='mesa2d-sound-muted';
 let soundMuted=localStorage.getItem(audioPreference)==='true';
 
@@ -38,10 +38,10 @@ function toggleGameSound(){
  refreshGameSoundButton();
 }
 function playActorStep(ent){
- if(soundMuted||ent!==activeActor()||ent.sceneId!==state.activeSceneId||ent.floor!==state.currentFloor)return;
+ if(playerHostView||soundMuted||ent!==activeActor()||ent.sceneId!==state.activeSceneId||ent.floor!==state.currentFloor)return;
  const now=performance.now();
- if((actorStepAt.get(ent)||0)>now)return;
- actorStepAt.set(ent,now+(keys.shift?210:330));
+ if((actorStepAt.get(ent.id)||0)>now)return;
+ actorStepAt.set(ent.id,now+(keys.shift?210:330));
  const floor=getScene().floors[ent.floor];
  const surface=topMapSurfaceAt(floor,ent.x,ent.y);
  const building=(floor.buildings||[]).find(room=>room.hasFloor&&buildingDistance(ent.x,ent.y,room)<0);
@@ -51,7 +51,7 @@ function playActorStep(ent){
    highGrassAt(floor,ent.x,ent.y)?'tallGrass':
    /stone|paving|cobble|marble|ceramic/i.test(mat)?'stone':
    /grass|grama/i.test(mat)?'grass':null;
- if(kind)playGameSound(kind,kind==='water'?.12:kind==='grass'||kind==='tallGrass'?.16:.08);
+ if(kind)playGameSound(kind,kind==='water'?.12:kind==='grass'||kind==='tallGrass'?.12:.08);
 }
 function initGameSound(){
  refreshGameSoundButton();

@@ -165,8 +165,10 @@ function setupInputs() {
       if(k==='v') { pasteSelectedObject(); return; }
       if(k==='s') { saveCurrentSceneToBank(); return; }
     }
-    if(guestPage&&[' ','Delete','Backspace'].includes(e.key)){e.preventDefault();return;}
-    if(e.key === ' ' && activeActor()) {
+    const binding=controlKey(e);
+    if(guestPage&&(e.key==='Delete'||e.key==='Backspace')){e.preventDefault();return;}
+    if(binding===' '&&guestPage){e.preventDefault();if(!e.repeat)guestCommand('jump');return;}
+    if(binding===' ' && activeActor()) {
       e.preventDefault();
       const ent=activeActor();
       if(ent && ent.sceneId===state.activeSceneId) {
@@ -179,7 +181,7 @@ function setupInputs() {
       return;
     }
     if(e.key.startsWith('Arrow'))e.preventDefault();
-    keys[e.key.toLowerCase()] = true;
+    if(binding){pressedControls.set(e.code,binding);keys[binding]=true;e.preventDefault();}
     if(e.key.toLowerCase()==='r'&&!e.repeat&&!rotateArchitectSelection())state.rotation=(state.rotation+1)%4;
     if (e.key === 'Delete' || e.key === 'Backspace') {
       if(state.mode==='architect'){
@@ -189,13 +191,21 @@ function setupInputs() {
       }
       // O modo Jogador nunca exclui personagens.
     }
-    if (e.key.toLowerCase() === 'e' && !e.repeat && activeActor()) {
+    if (binding==='e' && !e.repeat && activeActor()) {
       const ent = activeActor();
       if (ent && ent.sceneId === state.activeSceneId&&!guestCommand('interact'))interactNearby(ent);
     }
   });
 
-  window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+  window.addEventListener('keyup', e=>{
+    const binding=pressedControls.get(e.code);
+    pressedControls.delete(e.code);
+    if(binding)keys[binding]=[...pressedControls.values()].includes(binding);
+  });
+  window.addEventListener('blur',()=>{
+    pressedControls.clear();
+    for(const key of Object.keys(keys))keys[key]=false;
+  });
   canvas.addEventListener('mouseleave',()=>{buildingPointer=null;tokenPointer=null;});
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   document.addEventListener('pointerdown',e=>{
@@ -254,6 +264,7 @@ function setupInputs() {
       if (!ent || ent.sceneId !== state.activeSceneId) return;
       const floor=getScene().floors[ent.floor];
       if(guestPage){
+        if(worldAction&&worldAction!=='shoot'){guestCommand(worldAction,{x:wx,y:wy});return;}
         const target=targetCreatureAt(ent,wx,wy);
         if(target){
           selectCombatCreature(ent,target);

@@ -331,10 +331,10 @@ function drawMapShot(floor){
  ctx.restore();
 }
 
-function inspectOrDamage(actor,floor,x,y){
- if(worldAction==='shoot'&&actor.hp<=0){worldNotice('Personagem caído. O Mestre pode restaurar seus PV.');return;}
+function inspectOrDamage(actor,floor,x,y,action=worldAction){
+ if(action==='shoot'&&actor.hp<=0){worldNotice('Personagem caído. O Mestre pode restaurar seus PV.');return;}
  const weapon=equippedMapGun(actor);
- if(worldAction==='shoot'){
+ if(action==='shoot'){
    const creature=targetCreatureAt(actor,x,y);
    if(creature){
      selectCombatCreature(actor,creature);
@@ -345,7 +345,7 @@ function inspectOrDamage(actor,floor,x,y){
  const target=damageTargetAt(floor,x,y);
  if(!target){worldNotice('Nenhum objeto neste ponto.');return;}
  const health=materialDurability(target.item,target.kind);
- if(worldAction==='inspect'){
+ if(action==='inspect'){
    worldNotice(translateSiteText('Dureza')+' '+health.hardness+' · PV '+health.pv+'/'+health.maxPv);
    return;
  }
@@ -379,21 +379,21 @@ function diggableAt(floor,x,y,trim=false){
  return (trim?vegetation:[...vegetation,'dirt','sand','mud','sandDesert','snow']).includes(surface);
 }
 
-function digGround(actor,floor,x,y){
+function digGround(actor,floor,x,y,action=worldAction){
  if(Math.hypot(x-actor.x,y-actor.y)>62){worldNotice('Aproxime-se para cavar.');return;}
- if(!diggableAt(floor,x,y,worldAction==='trim')||damageTargetAt(floor,x,y)){
+ if(!diggableAt(floor,x,y,action==='trim')||damageTargetAt(floor,x,y)){
    worldNotice('Este ponto não pode ser escavado.');return;
  }
  const scene=getScene(),below=floorIndexForLevel(scene,floorLevel(scene,actor.floor)-1);
- const tunnel=worldAction==='dig'&&below>=0&&(scene.floors[below].caves||[]).some(c=>insideCave(c,x,y))&&
+ const tunnel=action==='dig'&&below>=0&&(scene.floors[below].caves||[]).some(c=>insideCave(c,x,y))&&
    canMoveTo(below,x,y,true);
  beginEdit();
  (floor.excavations ||= []);
  const existing=floor.excavations.find(p=>Math.hypot(p.x-x,p.y-y)<14);
- if(existing&&worldAction==='dig')Object.assign(existing,{x,y,target:tunnel?below:null,trimmed:false});
- if(!existing)floor.excavations.push({x,y,target:tunnel?below:null,trimmed:worldAction==='trim'});
+ if(existing&&action==='dig')Object.assign(existing,{x,y,target:tunnel?below:null,trimmed:false});
+ if(!existing)floor.excavations.push({x,y,target:tunnel?below:null,trimmed:action==='trim'});
  finishEdit();
- worldNotice(tunnel?'Abertura para a caverna. Use E para descer.':worldAction==='trim'?'Vegetação removida.':'Solo escavado.');
+ worldNotice(tunnel?'Abertura para a caverna. Use E para descer.':action==='trim'?'Vegetação removida.':'Solo escavado.');
 }
 
 function useExcavation(actor){
