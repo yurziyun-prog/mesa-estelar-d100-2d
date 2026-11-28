@@ -89,6 +89,8 @@ function creatureMeleeAttack(attacker,target,floor,now,move=null,hunt=false){
    (attacker.attrs.FOR+attacker.attrs.DES)));
  const roll=Math.floor(Math.random()*100)+1;
  creatureStrike={floor,x0:attacker.x,y0:attacker.y,x:target.x,y:target.y,hit:roll<=chance,until:now+270};
+ playGameSound('melee',.29);
+ if(roll<=chance)playGameSound('hit',.24);
  markBattleMotion(attacker,'melee',target.x-attacker.x,target.y-attacker.y);
  if(roll<=chance){
    markBattleMotion(target,'hit',target.x-attacker.x,target.y-attacker.y);

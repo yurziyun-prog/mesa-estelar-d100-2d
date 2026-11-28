@@ -1,4 +1,6 @@
 const SITE_ZH = new Map(`
+Som ligado|声音开启
+Som desligado|声音关闭
 Personagem caído. O Mestre pode restaurar seus PV.|角色已倒下，主持人可以恢复生命值。
 Restaurar PV|恢复生命值
 Ataques e ações especiais|攻击与特殊动作
@@ -786,6 +788,7 @@ function setSiteLanguage(language,refresh=true) {
   document.getElementById('siteLanguage').value=siteLanguage;
   translateSiteNode(document.head);
   translateSiteNode(document.body);
+  if(refresh&&typeof refreshGameSoundButton==='function')refreshGameSoundButton();
   if(refresh&&typeof updateUI==='function')updateUI();
 }
 

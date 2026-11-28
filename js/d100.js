@@ -73,7 +73,7 @@ function migrateD100Characters(){
 function isSwimmingSkill(skill){
  return /^(natação|natacao|swimming|游泳)$/i.test(String(skill?.name||'').trim());
 }
-function d100Roll(){return Math.floor(Math.random()*100)+1;}
+function d100Roll(){playGameSound('dice');return Math.floor(Math.random()*100)+1;}
 function testD100Attribute(key){
  const ent=getSelectedEntity();if(!ent||!D100_ATTRIBUTES.includes(key))return;
  const roll=d100Roll();

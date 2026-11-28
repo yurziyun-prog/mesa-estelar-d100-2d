@@ -247,6 +247,8 @@ function fireAtCreature(actor,floor,target,weapon){
 function showMapShot(actor,floor,x,y,weapon,impact=true){
  markBattleMotion(actor,'fire',x-actor.x,y-actor.y);
  const energy=/laser|phaser|blaster|gauss|energia/i.test(weapon||'');
+ playGameSound(/laser/i.test(weapon||'')?'laser':energy?'energy':'shot',.36);
+ if(impact)playGameSound(energy?'metal':'hit',.18);
  mapShot={floor,x0:actor.x+9,y0:actor.y-9,x,y:y-7,energy,impact,until:performance.now()+220};
 }
 function drawMapShot(floor){

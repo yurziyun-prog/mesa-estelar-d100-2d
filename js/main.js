@@ -533,3 +533,4 @@ initSceneryCatalog();
 initVerticalWorld();
 initTerrainTools();
 init();
+initGameSound();

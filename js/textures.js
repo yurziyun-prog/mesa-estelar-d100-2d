@@ -841,6 +841,7 @@ function drawGrassOverToken(x,y,colors){
 const entityWalkUntil=new WeakMap();
 function markEntityWalking(ent,duration){
  entityWalkUntil.set(ent,performance.now()+duration);
+ playActorStep(ent);
 }
 function entityIsWalking(ent,now=performance.now()){
  return (entityWalkUntil.get(ent)||0)>now;

@@ -307,6 +307,7 @@ function interactNearby(entity) {
   }).filter(hit=>hit.distance<58).sort((a,b)=>a.distance-b.distance)[0]?.d;
   if(toggleNearbyCurtain(floor,entity,door))return;
   if (door) {
+    const wasOpen=door.open;
     if (door.lockCode && !door.open) {
       const answer=prompt('Digite o código de acesso:');
       if(answer===null)return;
@@ -323,6 +324,7 @@ function interactNearby(entity) {
       door.open = !door.open;
       logEvent(`${entity.name} ${door.open ? 'abriu' : 'fechou'} uma porta.`);
     }
+    if(Boolean(wasOpen)!==Boolean(door.open))playGameSound(door.open?'open':'close',.29);
     return;
   }
 
@@ -478,6 +480,7 @@ function speakSelected() {
 }
 
 function rollDice(sides) {
+  playGameSound('dice');
   const res = Math.floor(Math.random() * sides) + 1;
   logEvent(`🎲 d${sides}: ${res}`);
 }
