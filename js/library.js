@@ -76,7 +76,10 @@ function renderArchitectLibrary(){
    for(const [id,label] of kenneyExtraPacks)packs.add(new Option(label,id));
  }
  const pack=architectCategory==='downloads'&&packs.value;
- const matching=(pack?extraKenneyEntries(pack):catalogEntries(architectCategory)).filter(([id,,label])=>
+ const available=pack?extraKenneyEntries(pack):catalogEntries(architectCategory);
+ const curated=architectCategory==='props'?curatedKenneyProps.map(([id,label])=>
+   [id,'',label,'downloadProp','Decoração para depósitos e postos avançados']):[];
+ const matching=[...available,...curated].filter(([id,,label])=>
    (label.toLocaleLowerCase('pt-BR').includes(query)||translateSiteText(label).toLocaleLowerCase().includes(query))&&
    isItemInBuildCollection(id,architectCategory));
  const pageSize=64,pages=Math.max(1,Math.ceil(matching.length/pageSize));
@@ -102,11 +105,11 @@ function renderArchitectLibrary(){
   const emoji=document.createElement('span');emoji.className='emoji';emoji.textContent=icon;
   const name=document.createElement('span');name.textContent=label;
   if(kind==='terrain')button.classList.toggle('active',state.tool==='terrainBrush'&&state.brush.mat===id);
-  const thumbnail=catalogThumbnail(kind,id);
+  const thumbnail=extraKenneyThumbnail(id)||catalogThumbnail(kind,id);
   if(thumbnail){
     button.append(thumbnail,name);
   }else if(architectCategory==='downloads'){
-    const preview=extraKenneyThumbnail(id)||createDownloadThumbnail(id);
+    const preview=createDownloadThumbnail(id);
     button.append(preview||emoji,name);
   }else button.append(emoji,name);
   button.onclick=()=>selectArchitectLibraryItem(id,label,kind);
