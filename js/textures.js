@@ -890,8 +890,11 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
   const body=ent.color||'#688aab';
   ctx.save();
   // Silhueta superior em vez de um emoji circular: pés, torso, rosto e equipamento.
-  ctx.fillStyle='rgba(0,0,0,.3)';
-  ctx.beginPath();ctx.ellipse(cx+3,cy+9,15+lift*.15,8+lift*.1,0,0,Math.PI*2);ctx.fill();
+  if(ent.creature)drawCreatureGroundShadow(ctx,ent,cx,cy,lift);
+  else{
+    ctx.fillStyle='rgba(0,0,0,.3)';
+    ctx.beginPath();ctx.ellipse(cx+3,cy+9,15+lift*.15,8+lift*.1,0,0,Math.PI*2);ctx.fill();
+  }
   const selected=ent.id===state.selectedEntityId;
   const preview=state.mode==='gm'&&ent.id===gmPreviewId;
   if(selected||preview){
@@ -906,7 +909,7 @@ function drawCharacterToken(ent, isBelow, grass=null, water=null) {
   }
   if(!isBelow&&state.mode==='player'&&selectedCombatCreature(activeActor())===ent){
     ctx.save();ctx.strokeStyle='#ff7867';ctx.lineWidth=2;ctx.setLineDash([4,3]);
-    ctx.beginPath();ctx.ellipse(cx,cy+10,22*(ent.creature?.scale||1),8,0,0,Math.PI*2);ctx.stroke();ctx.restore();
+    ctx.beginPath();ctx.ellipse(cx,cy+10,ent.creature?creatureMapWidth(ent)*.43:22,8,0,0,Math.PI*2);ctx.stroke();ctx.restore();
   }
   ctx.translate(cx,cy-lift);
   if(!immersed&&state.timeOfDay==='night'){

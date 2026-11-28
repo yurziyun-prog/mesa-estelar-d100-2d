@@ -80,21 +80,50 @@ function creatureAsset(filename){
  const image=creatureImages.get(filename);
  return image.complete&&image.naturalWidth?image:null;
 }
-function drawOriginalMesaCreature(g,ent){
- const name=(ent.mesaSourceSheet?.nome||ent.name).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+function creatureArtKey(ent){
+ return (ent.mesaSourceSheet?.nome||ent.name).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
    .toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+}
+
+function creatureMapWidth(ent){
+ const scale=ent.creature?.scale||1;
+ return (creatureArtKey(ent)==='cila'?60:52)*scale;
+}
+
+function drawCreatureGroundShadow(g,ent,x,y,lift){
+ const width=creatureMapWidth(ent);
+ const radial=creatureArtKey(ent)==='cila';
+ const yOffset=radial?2:6;
+ const alpha=Math.max(.13,.46-Math.max(0,lift)*.015);
+ g.save();
+ g.translate(x+width*.035,y+yOffset);
+ g.scale(width*(radial?.36:.39),width*(radial?.33:.22));
+ const gradient=g.createRadialGradient(0,0,.15,0,0,1);
+ gradient.addColorStop(0,'rgba(19,24,14,'+alpha+')');
+ gradient.addColorStop(.54,'rgba(19,24,14,'+alpha*.54+')');
+ gradient.addColorStop(1,'rgba(19,24,14,0)');
+ g.fillStyle=gradient;
+ g.beginPath();g.arc(0,0,1,0,Math.PI*2);g.fill();
+ g.restore();
+}
+
+function drawOriginalMesaCreature(g,ent){
+ const name=creatureArtKey(ent);
  const filename=Object.hasOwn(mesaCreatureArt,name)?mesaCreatureArt[name]:null;
  if(!filename)return false;
  const time=performance.now();
  const walking=ent.hp!==0&&!terrainMotionPreference.matches&&entityIsWalking(ent,time);
- const width=52*ent.creature.scale;
+ const width=creatureMapWidth(ent);
  const motion=Object.hasOwn(mesaCreatureMotion,name)?mesaCreatureMotion[name]:null;
  if(motion){
    const [sheet,,walkFrames]=motion;
    const image=creatureAsset(sheet);
    if(image){
      const frame=walking?Math.floor(time/95)%walkFrames:0;
+     g.save();
+     g.filter='saturate(.91) contrast(1.08)';
      g.drawImage(image,frame*96,walking?96:0,96,96,-width/2,-width/2,width,width);
+     g.restore();
      return true;
    }
  }

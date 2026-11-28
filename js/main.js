@@ -105,7 +105,7 @@ function considerHoveredToken(ent,x,y){
  const zoom=state.camera.zoom;
  const px=x*zoom+state.camera.x,py=y*zoom+state.camera.y;
  const distance=Math.hypot(tokenPointer.x-px,tokenPointer.y-py);
- if(distance>Math.max(9,23*zoom)||hoveredToken&&distance>=hoveredToken.distance)return;
+ if(distance>Math.max(9,(ent.creature?creatureMapWidth(ent)/2:23)*zoom)||hoveredToken&&distance>=hoveredToken.distance)return;
  hoveredToken={name:ent.name,distance};
 }
 function drawHoveredTokenName(){

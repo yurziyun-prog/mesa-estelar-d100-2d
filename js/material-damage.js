@@ -123,8 +123,8 @@ function targetCreatureAt(actor,x,y){
  let selected=null,distance=Infinity;
  for(const ent of state.entities){
    if(ent===actor||ent.sceneId!==actor.sceneId||ent.floor!==actor.floor||!combatCreature(ent))continue;
-   const scale=ent.creature?.scale||1;
-   const dx=(x-ent.x)/(27*scale+3),dy=(y-ent.y)/(27*scale+3);
+   const radius=(ent.creature?creatureMapWidth(ent)/2:27)+3;
+   const dx=(x-ent.x)/radius,dy=(y-ent.y)/radius;
    const score=dx*dx+dy*dy;
    if(score<=1&&score<=distance){selected=ent;distance=score;}
  }
