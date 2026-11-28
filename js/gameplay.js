@@ -147,22 +147,43 @@ function openedDoorLeaf(d){
   const hx=d.x+side*half;
   return {x1:hx,y1:d.y,x2:hx,y2:d.y+2*half*swing};
 }
+const CLOSED_DOOR_RADIUS=24;
+function doorOccupants(entity){
+ return state.entities.filter(other=>other.sceneId===entity.sceneId&&other.floor===entity.floor);
+}
+function doorClosingBlocked(door,entity){
+ return doorOccupants(entity).some(other=>
+   Math.hypot(other.x-door.x,other.y-door.y)<CLOSED_DOOR_RADIUS||
+   openDoorPassageAt(door,other.x,other.y,0)
+ );
+}
+// Let old saves escape a closed door only by moving away on the same side.
+function escapingClosedDoor(door,x,y,walker){
+ if(door.open||!walker||Math.hypot(walker.x-door.x,walker.y-door.y)>=CLOSED_DOOR_RADIUS)return false;
+ const vertical=door.orient==='v';
+ const offset=vertical?walker.x-door.x:walker.y-door.y;
+ const next=vertical?x-door.x:y-door.y;
+ return Math.abs(next)>Math.abs(offset)&&next*offset>=0;
+}
+function closedDoorBlocksStep(door,x,y,walker){
+ return !door.open&&Math.hypot(x-door.x,y-door.y)<CLOSED_DOOR_RADIUS&&!escapingClosedDoor(door,x,y,walker);
+}
 function wallBlocksCharacter(wall,x,y){
  return distToSegment(x,y,wall.x1,wall.y1,wall.x2,wall.y2)<10+(wall.width||16)/2;
 }
-function openDoorPassageAt(door,x,y,clearance=0,depth=26){
- if(!door.open)return false;
+function openDoorPassageAt(door,x,y,clearance=0,depth=26,walker=null){
+ if(!door.open&&!escapingClosedDoor(door,x,y,walker))return false;
  const along=door.orient==='v'?y-door.y:x-door.x;
  const across=door.orient==='v'?x-door.x:y-door.y;
  return Math.abs(along)<Math.max(2,(door.width||68)/2-clearance)&&Math.abs(across)<=depth;
 }
-function wallBlocksAtOpening(floor,wall,x,y,clearance){
+function wallBlocksAtOpening(floor,wall,x,y,clearance,walker=null){
  if(!wallBlocksCharacter(wall,x,y))return false;
  if(wall.extendedUp)return true;
  const vertical=Math.abs(wall.x2-wall.x1)<Math.abs(wall.y2-wall.y1);
  return !(floor.doors||[]).some(door=>(door.orient==='v')===vertical&&
    Math.abs(vertical?door.x-wall.x1:door.y-wall.y1)<=(wall.width||16)/2+5&&
-   openDoorPassageAt(door,x,y,clearance));
+   openDoorPassageAt(door,x,y,clearance,26,walker));
 }
 function crossesWall(floor,x1,y1,x2,y2,extensionsOnly=false){
  const walls=extensionsOnly?floor.walls.filter(wall=>wall.extendedUp):floor.walls;
@@ -220,7 +241,7 @@ function canWalkStep(ent,x,y){
  const floor=getScene().floors[ent.floor];
  if(Math.abs(reliefAt(floor,x,y)-reliefAt(floor,ent.x,ent.y))>.25)return false;
  const depth=waterDepthAt(floor,x,y);
- if(tokenBlocksStep(ent,x,y)||!canMoveTo(ent.floor,x,y,false,depth))return false;
+ if(tokenBlocksStep(ent,x,y)||!canMoveTo(ent.floor,x,y,false,depth,null,ent))return false;
  if(depth!=='deep'||waterDepthAt(floor,ent.x,ent.y)==='deep')return true;
  const grant=swimPermission.get(ent),now=performance.now();
  if(grant?.floor===floor&&grant.until>now&&Math.hypot(grant.x-x,grant.y-y)<=SWIM_TARGET_RANGE){
@@ -232,17 +253,17 @@ function canWalkStep(ent,x,y){
  }
  return false;
 }
-function canMoveTo(floorIdx, nx, ny, jumpLanding = false, waterAccess = null, ignoredProp = null) {
+function canMoveTo(floorIdx, nx, ny, jumpLanding = false, waterAccess = null, ignoredProp = null, walker = null) {
   const source = getScene().floors[floorIdx];
   const floor = source && ignoredProp ? {...source,props:source.props.filter(prop=>prop!==ignoredProp)} : source;
   if (!floor) return false;
   const r = 12;
   if(chimneyBlocksMovement(getScene(),floorIdx,nx,ny,r))return false;
-  if(caveWallBlocks(floor,nx,ny)||buildingWallBlocks(floor,nx,ny))return false;
+  if(caveWallBlocks(floor,nx,ny)||buildingWallBlocks(floor,nx,ny,walker))return false;
 
-  if(floor.walls.some(wall=>wallBlocksAtOpening(floor,wall,nx,ny,10)))return false;
+  if(floor.walls.some(wall=>wallBlocksAtOpening(floor,wall,nx,ny,10,walker)))return false;
 
-  if (floor.doors.some(d => !d.open && Math.hypot(d.x - nx, d.y - ny) < r + 12)) return false;
+  if (floor.doors.some(d=>closedDoorBlocksStep(d,nx,ny,walker))) return false;
   if (floor.doors.some(d=>{const leaf=openedDoorLeaf(d);return leaf&&distToSegment(nx,ny,leaf.x1,leaf.y1,leaf.x2,leaf.y2)<r+2;}))return false;
   if (floor.windows.some(win => win.orient==='v'?(Math.abs(nx-win.x)<r+9&&Math.abs(ny-win.y)<(win.width||40)/2+r):(Math.abs(ny-win.y)<r+9&&Math.abs(nx-win.x)<(win.width||40)/2+r))) return false;
   if (floor.chests.some(c => Math.hypot(c.x - nx, c.y - ny) < r + 14)) return false;
@@ -312,6 +333,10 @@ function interactNearby(entity,clickedSeat=null) {
   if(toggleNearbyCurtain(floor,entity,door))return;
   if (door) {
     const wasOpen=door.open;
+    if(wasOpen&&doorClosingBlocked(door,entity)){
+      say(entity,siteLanguage==='zh-CN'?'门口有人，先让开再关门。':'A passagem está ocupada. Afaste-se da porta para fechar.');
+      return;
+    }
     if (door.lockCode && !door.open) {
       const answer=prompt('Digite o código de acesso:');
       if(answer===null)return;

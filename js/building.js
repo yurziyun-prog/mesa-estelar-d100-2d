@@ -80,7 +80,7 @@ function architectOpeningPosition(floor,x,y,halfWidth){
   return carveOpeningOnWalls(floor,x,y,halfWidth);
 }
 
-function buildingWallBlocks(floor,x,y) {
+function buildingWallBlocks(floor,x,y,walker=null) {
   return (floor.buildings||[]).some(b=>{
     if(Math.abs(buildingDistance(x,y,b))>=b.wallThickness/2+10)return false;
     if(mergedBoundary(floor,b,x,y))return false;
@@ -92,7 +92,7 @@ function buildingWallBlocks(floor,x,y) {
       const low=vertical?b.x:b.y,high=low+(vertical?b.w:b.h);
       return (!door.buildingId||door.buildingId===b.id)&&
         Math.min(Math.abs(cross-low),Math.abs(cross-high))<=b.wallThickness/2+6&&
-        openDoorPassageAt(door,x,y,10,b.wallThickness/2+12);
+        openDoorPassageAt(door,x,y,10,b.wallThickness/2+12,walker);
     });
   });
 }

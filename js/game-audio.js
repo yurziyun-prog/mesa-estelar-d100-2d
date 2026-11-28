@@ -2,8 +2,8 @@ const soundClips={
  laser:['laser'],energy:['energy'],shot:['shot'],hit:['hit'],metal:['metal-hit'],
  melee:['melee'],dice:['dice-throw-1','dice-throw-2'],grab:['dice-grab-1'],
  alarm:['alarm'],open:['door-open'],close:['door-close'],click:['click'],
- tallGrass:['step-tall-grass'],water:['step-water'],
- grass:['step-grass-a','step-grass-b'],wood:['step-wood-a','step-wood-b'],stone:['step-stone-a','step-stone-b']
+ water:['step-water'],
+ wood:['step-wood-a','step-wood-b'],stone:['step-stone-a','step-stone-b']
 };
 const playingSounds=new Set();
 const actorStepAt=new WeakMap();
@@ -47,9 +47,9 @@ function playActorStep(ent){
  const mat=surface?.mat||building?.floorMaterial||floor.baseTerrain||'';
  const kind=waterDepthAt(floor,ent.x,ent.y)?'water':
    onPlacedBridge(floor,ent.x,ent.y)||/wood|bridge|madeira/i.test(mat)?'wood':
-   highGrassAt(floor,ent.x,ent.y)?'tallGrass':
-   /stone|paving|cobble|marble|ceramic/i.test(mat)?'stone':'grass';
- playGameSound(kind,kind==='water'?.12:.08);
+   highGrassAt(floor,ent.x,ent.y)?null:
+   /stone|paving|cobble|marble|ceramic/i.test(mat)?'stone':null;
+ if(kind)playGameSound(kind,kind==='water'?.12:.08);
 }
 function initGameSound(){
  refreshGameSoundButton();

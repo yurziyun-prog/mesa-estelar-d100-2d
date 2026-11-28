@@ -175,6 +175,10 @@ function interactCaveDoor(floor,entity){
    if(!door.open){
      door.open=true;
    }else if(cave.openings&&insideCave(cave,entity.x,entity.y)&&!caveDoorThreshold(door,entity.x,entity.y,23)){
+     if(doorOccupants(entity).some(other=>caveDoorThreshold(door,other.x,other.y,23))){
+       say(entity,siteLanguage==='zh-CN'?'门口有人，先让开再关门。':'A passagem está ocupada. Afaste-se da porta para fechar.');
+       return true;
+     }
      door.open=false;
    }
    return true;
