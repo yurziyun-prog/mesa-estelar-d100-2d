@@ -46,3 +46,57 @@ const mesaCreatureArt={
   "vespa_de_vidro": "vespa_de_vidro.webp",
   "errante_parasitado": "errante_parasitado.webp"
 };
+
+// Folhas renderizadas do acervo 3D, quadros quadrados de 96px.
+const mesaCreatureMotion={
+  "cao_de_sucata": [
+    "cao_de_sucata-motion.webp",
+    6,
+    8
+  ],
+  "macaco_de_calico": [
+    "macaco_de_calico-motion.webp",
+    6,
+    8
+  ],
+  "enxame_de_ratos": [
+    "enxame_de_ratos-motion.webp",
+    6,
+    8
+  ],
+  "inchado_pustulento": [
+    "inchado_pustulento-motion.webp",
+    6,
+    8
+  ],
+  "lagarto_de_galeria": [
+    "lagarto_de_galeria-motion.webp",
+    6,
+    8
+  ],
+  "limo_de_esgoto": [
+    "limo_de_esgoto-motion.webp",
+    6,
+    8
+  ],
+  "mariposa_cinza_de_calico": [
+    "mariposa_cinza_de_calico-motion.webp",
+    6,
+    8
+  ],
+  "rastejador_de_tubulacoes": [
+    "rastejador_de_tubulacoes-motion.webp",
+    6,
+    8
+  ],
+  "rato_gigante_de_esgoto": [
+    "rato_gigante_de_esgoto-motion.webp",
+    6,
+    8
+  ],
+  "sentinela_imperial_corrompida": [
+    "sentinela_imperial_corrompida-motion.webp",
+    6,
+    8
+  ]
+};

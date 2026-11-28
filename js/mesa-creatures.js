@@ -72,19 +72,50 @@ function drawMesaCreature(g,design,stride){
 
 
 const creatureImages=new Map();
-function drawOriginalMesaCreature(g,ent){
- const name=(ent.mesaSourceSheet?.nome||ent.name).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-   .toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
- const filename=Object.hasOwn(mesaCreatureArt,name)?mesaCreatureArt[name]:null;
- if(!filename)return false;
+function creatureAsset(filename){
  if(!creatureImages.has(filename)){
    const image=new Image();image.src='assets/creatures/'+filename;
    creatureImages.set(filename,image);
  }
  const image=creatureImages.get(filename);
- if(!image.complete||!image.naturalWidth)return false;
+ return image.complete&&image.naturalWidth?image:null;
+}
+function drawOriginalMesaCreature(g,ent,stride){
+ const name=(ent.mesaSourceSheet?.nome||ent.name).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+   .toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+ const filename=Object.hasOwn(mesaCreatureArt,name)?mesaCreatureArt[name]:null;
+ if(!filename)return false;
+ const time=performance.now();
+ const animated=ent.hp!==0&&!terrainMotionPreference.matches;
+ const walking=animated&&(ent.walkingUntil>time||typeof draggingEntity!=='undefined'&&draggingEntity===ent);
+ const phase=time/430+(ent.creature.seed||0)%31;
  const width=52*ent.creature.scale;
+ const motion=Object.hasOwn(mesaCreatureMotion,name)?mesaCreatureMotion[name]:null;
+ if(motion){
+   const [sheet,idleFrames,walkFrames]=motion;
+   const image=creatureAsset(sheet);
+   if(image){
+     const frame=animated?Math.floor(time/(walking?95:150))%(walking?walkFrames:idleFrames):0;
+     g.drawImage(image,frame*96,walking?96:0,96,96,-width/2,-width/2,width,width);
+     return true;
+   }
+ }
+ const image=creatureAsset(filename);
+ if(!image)return false;
  const height=width*image.naturalHeight/image.naturalWidth;
- g.drawImage(image,-width/2,-height/2,width,height);
+ if(name==='cila'&&animated){
+   // A base permanece ancorada. As pontas das cabeças ondulam mais do que o corpo.
+   const bands=18;
+   for(let band=0;band<bands;band++){
+     const sy=Math.floor(band*image.naturalHeight/bands);
+     const sh=Math.floor((band+1)*image.naturalHeight/bands)-sy;
+     if(!sh)continue;
+     const offset=Math.sin(phase+band*.37)*(1-band/(bands-1))**2*width*.054;
+     g.drawImage(image,0,sy,image.naturalWidth,sh,-width/2+offset,-height/2+sy*height/image.naturalHeight,width,sh*height/image.naturalHeight+.06);
+   }
+ }else{
+   const bob=animated?(walking?Math.abs(stride||Math.sin(phase*2)*2):.5*Math.sin(phase)):0;
+   g.drawImage(image,-width/2,-height/2-bob,width,height);
+ }
  return true;
 }
