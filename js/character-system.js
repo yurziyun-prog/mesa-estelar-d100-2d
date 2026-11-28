@@ -39,7 +39,9 @@ function characterIdentity(ent){
 
 function characterAppearance(ent){
  const {form:legacyForm,...appearance}=ent.appearance||{};
- return {...avatarDefaults,clothing:ent.color||avatarDefaults.clothing,...appearance};
+ const form=characterVisualForm(characterIdentity(ent).species);
+ const skin={dragon:'#a47953',crocodile:'#637e52',robot:'#8296aa'}[form]||avatarDefaults.skin;
+ return {...avatarDefaults,skin,clothing:ent.color||avatarDefaults.clothing,...appearance};
 }
 
 function characterVisualForm(species){
@@ -113,33 +115,43 @@ function avatarShading(g,color,x,y,w,h){
  g.restore();
 }
 
-function drawScaledAvatarHead(g,a,form,cap){
+function drawScaledAvatarHead(g,a,form,cap,sex){
  const crocodile=form==='crocodile';
- const jaw=crocodile
-   ? [[-10,-16],[-5,-21],[4,-21],[10,-16],[14,-12],[16,-8],[14,-4],[6,-3],[-2,-6],[-9,-8]]
-   : [[-11,-17],[-5,-22],[5,-22],[10,-18],[9,-12],[6,-5],[0,-3],[-6,-6],[-9,-11]];
- if(!crocodile)for(const side of [-1,1]){
-   avatarShape(g,'#c8b28a',[[side*4,-20],[side*8,-30],[side*12,-32],[side*10,-25],[side*9,-18]]);
-   avatarShape(g,a.skin,[[side*8,-15],[side*14,-19],[side*12,-12],[side*8,-9]]);
+ const female=sex==='Feminino';
+ if(crocodile){
+   // Três quartos: crânio baixo, focinho comprido e mandíbula em um plano separado.
+   avatarShape(g,a.skin,[[-10,-16],[-7,-22],[1,-22],[6,-18],[11,-15],[19,-15],[22,-12],[21,-8],
+     [16,-5],[7,-4],[-1,-5],[-8,-9]]);
+   avatarShape(g,'#a8ad83',[[-3,-10],[5,-9],[15,-9],[21,-11],[20,-7],[15,-5],[6,-4],[1,-6]]);
+   g.strokeStyle='#293932';g.lineWidth=.85;g.beginPath();
+   g.moveTo(-3,-11);g.bezierCurveTo(5,-8,14,-11,21,-11);g.stroke();
+   g.fillStyle='#e8dfb5';
+   for(const [x,y] of [[4,-9.6],[8,-9.9],[13,-10.3],[17,-10.7]]){
+     g.beginPath();g.moveTo(x,y);g.lineTo(x+1.4,y-.25);g.lineTo(x+.6,y+1.6);g.fill();
+   }
+ }else{
+   // Os chifres seguem para trás. O focinho tem dois planos de escamas, sem linha escura sob o queixo.
+   const width=female?8:10;
+   for(const side of [-1,1]){
+     avatarShape(g,'#b9a383',[[side*5,-20],[side*8,-25],[side*15,-28],[side*11,-22],[side*width,-17]]);
+     avatarShape(g,a.skin,[[side*(width-1),-17],[side*(width+5),-20],[side*(width+2),-12],[side*(width-1),-10]]);
+   }
+   avatarShape(g,a.skin,[[-width,-17],[-5,-23],[3,-23],[width,-19],[width+1,-14],[7,-9],[4,-5],[-2,-5],[-7,-9]]);
+   avatarShape(g,'#c8a77e',[[-5,-10],[1,-11],[8,-10],[8,-7],[4,-5],[-2,-5],[-5,-7]]);
+   g.fillStyle='#e3c295';g.beginPath();g.ellipse(2,-10,5,1.7,-.16,0,Math.PI*2);g.fill();
+   g.strokeStyle='#75563f';g.lineWidth=.6;g.beginPath();
+   g.moveTo(-4,-8);g.quadraticCurveTo(2,-6.8,7,-8.5);g.stroke();
  }
- avatarShape(g,a.skin,jaw);
- avatarShape(g,crocodile?'#a6ab81':'#c6a47d',crocodile
-   ? [[-3,-10],[5,-9],[15,-8],[14,-4],[6,-3],[0,-5]]
-   : [[-6,-9],[0,-10],[7,-9],[6,-5],[0,-3],[-6,-6]]);
- const brow=crocodile?[[-6,-16],[5,-15]]:[[-5,-15],[5,-15]];
- for(const [x,y] of brow){
-   g.fillStyle='#1d282c';g.beginPath();g.ellipse(x,y,2.6,1.65,-.23,0,Math.PI*2);g.fill();
-   g.fillStyle='#eac17b';g.beginPath();g.ellipse(x,y,1.7,1.04,-.23,0,Math.PI*2);g.fill();
-   g.fillStyle=a.eyes;g.fillRect(x-.35,y-.95,.7,1.85);
+ const eyes=crocodile?[[-5,-17],[5,-16.7]]:female?[[-4.2,-15.7],[4.7,-15.6]]:[[-5,-16],[5,-16]];
+ for(const [x,y] of eyes){
+   g.fillStyle='#32413b';g.beginPath();g.ellipse(x,y,2.5,1.4,-.16,0,Math.PI*2);g.fill();
+   g.fillStyle='#e8bf75';g.beginPath();g.ellipse(x,y,1.85,1,-.16,0,Math.PI*2);g.fill();
+   g.fillStyle=a.eyes;g.fillRect(x-.33,y-.85,.66,1.6);
  }
- g.strokeStyle='#273332';g.lineWidth=.85;g.beginPath();
- g.moveTo(crocodile?-3:-5,-8);g.quadraticCurveTo(3,-6,crocodile?15:6,crocodile?-7:-8);g.stroke();
- for(const x of crocodile?[2,6,10,13]:[-4,3]){
-   g.fillStyle='#f4e7bf';g.beginPath();g.moveTo(x,-7.6);g.lineTo(x+1.5,-7.7);g.lineTo(x+.7,-5.8);g.fill();
- }
- g.fillStyle='#28332d';g.fillRect(crocodile?11:1,crocodile?-10:-11,1.5,.9);
- g.fillStyle='#ffffff36';
- for(const [x,y] of [[-6,-19],[-1,-20],[3,-18],[8,-12]])g.fillRect(x,y,1.8,.85);
+ g.fillStyle='#293b34';
+ for(const [x,y] of crocodile?[[16,-13],[19,-13]]:[[1,-10.8],[4,-11]])g.fillRect(x,y,1.16,.73);
+ g.fillStyle='#ffffff41';
+ for(const [x,y] of [[-6,-19],[-2,-21],[2,-20],[7,-13],[11,-13]])g.fillRect(x,y,1.6,.7);
  if(cap)avatarShape(g,'#6b513b',[[-11,-20],[-7,-23],[-5,-25],[5,-25],[8,-22],[12,-20],[7,-19],[-9,-19]]);
 }
 
@@ -170,7 +182,7 @@ function drawAvatarHead(g,a,form,cap,sex){
    return;
  }
  if(form==='dragon'||form==='crocodile'){
-   drawScaledAvatarHead(g,a,form,cap);
+   drawScaledAvatarHead(g,a,form,cap,sex);
    return;
  }
  if(form==='reptilian'||form==='thalassian'){
@@ -198,22 +210,27 @@ function drawAvatarHead(g,a,form,cap,sex){
    if(cap)avatarShape(g,'#67513e',[[-8,-20],[-4,-23],[5,-23],[9,-20]]);
    return;
  }else if(form==='robot'){
-   avatarShape(g,'#8397a8',[[-9,-20],[9,-20],[11,-13],[8,-5],[-8,-5],[-11,-13]]);
-   g.fillStyle='#263447';g.fillRect(-8,-16,16,5);
+   avatarShape(g,'#4c5d70',[[-11,-17],[-9,-20],[9,-20],[11,-17],[11,-10],[8,-5],[-8,-5],[-11,-10]]);
+   avatarShape(g,a.skin,[[-8,-19],[-5,-23],[5,-23],[8,-19],[8,-10],[5,-6],[-5,-6],[-8,-10]]);
+   avatarShape(g,'#253747',[[-7,-17],[-4,-19],[4,-19],[7,-17],[5,-12],[-5,-12]]);
+   g.fillStyle='#80e3da';g.fillRect(-5,-16,10,1.7);
+   g.fillStyle='#516273';for(const x of [-4,-1,2])g.fillRect(x,-9,1.1,2);
+   g.fillStyle='#bfcbd7';g.fillRect(-4,-21,8,.8);
+   return;
  }else{
    if(form==='nymari'||form==='aeral'){
      avatarShape(g,a.skin,[[-8,-15],[-14,-20],[-10,-10],[-7,-9]]);
      avatarShape(g,a.skin,[[8,-15],[14,-20],[10,-10],[7,-9]]);
    }
    const large=form==='grey'||form==='arisian';
-   const faceWidth=large?11:sex==='Feminino'?8.4:9.5;
+   const faceWidth=large?11:sex==='Feminino'?7.6:8.35;
    const jaw=sex==='Feminino'?faceWidth*.67:faceWidth*.80;
    g.strokeStyle='#28323b';g.lineWidth=.85;
    g.beginPath();
    g.moveTo(-faceWidth,-14);
    g.bezierCurveTo(-faceWidth,-26,faceWidth,-26,faceWidth,-14);
    g.quadraticCurveTo(faceWidth,-7.2,jaw,-5.8);
-   g.quadraticCurveTo(0,-.5,-jaw,-5.8);
+   g.quadraticCurveTo(0,-2.3,-jaw,-5.8);
    g.quadraticCurveTo(-faceWidth,-7.2,-faceWidth,-14);
    g.closePath();
    avatarShading(g,a.skin,-faceWidth-1,-25,2*faceWidth+2,25);
@@ -248,8 +265,8 @@ function drawAvatarHead(g,a,form,cap,sex){
  }
  for(const side of [-1,1]){
    g.fillStyle='#eee4d1';
-   g.beginPath();g.ellipse(side*3.7,-13,2.15,1.22,0,0,Math.PI*2);g.fill();
-   g.fillStyle=a.eyes;g.beginPath();g.arc(side*3.7,-13,1.05,0,Math.PI*2);g.fill();
+   g.beginPath();g.ellipse(side*3.5,-13,1.8,1.0,0,0,Math.PI*2);g.fill();
+   g.fillStyle=a.eyes;g.beginPath();g.arc(side*3.5,-13,.83,0,Math.PI*2);g.fill();
    g.fillStyle='#fff3d8';g.fillRect(side*3.7-.45,-13.46,.38,.38);
    g.strokeStyle='rgba(28,20,23,.68)';g.lineWidth=.6;
    g.beginPath();g.moveTo(side*1.9,-15.1);g.quadraticCurveTo(side*3.7,-15.8,side*5.5,-15.05);g.stroke();
@@ -310,7 +327,10 @@ function drawCharacterAppearance(g,ent,stride=0){
    g.strokeStyle=a.skin;g.lineWidth=4;g.lineCap='round';g.beginPath();
    g.moveTo(7,10);g.quadraticCurveTo(19,23,23,14);g.stroke();
  }
- const leg='#353e4e',boots=equipped.feet?'#664937':'#242a36';
+ const scaled=form==='dragon'||form==='crocodile';
+ const mechanical=form==='robot';
+ const leg=mechanical?'#566b7e':scaled?a.skin:'#353e4e';
+ const boots=equipped.feet?'#664937':mechanical?'#394756':scaled?a.skin:'#242a36';
  g.lineCap='round';
  for(const side of [-1,1]){
    const lift=side*stride;
@@ -318,6 +338,13 @@ function drawCharacterAppearance(g,ent,stride=0){
    g.moveTo(side*hips*.48,8);g.quadraticCurveTo(side*hips*.53,12,side*hips*.60,16+lift);g.stroke();
    g.strokeStyle=boots;g.lineWidth=5.1;g.beginPath();
    g.moveTo(side*hips*.60,15+lift);g.lineTo(side*hips*.65,18+lift);g.stroke();
+   if(scaled&&!equipped.feet){
+     const toe=side*hips*.65;
+     for(const offset of [-1.8,0,1.8])avatarShape(g,'#d3c09d',[[toe+offset-.6,17+lift],[toe+offset+.6,17+lift],[toe+offset,20+lift]]);
+   }
+   if(mechanical){
+     g.fillStyle='#a2b7c7';g.fillRect(side*hips*.53-1.8,11+lift,3.6,1.6);
+   }
  }
  if(a.hairStyle==='long'&&a.helmet==='none'&&['human','nymari','aeral','zutariano'].includes(form)){
    g.fillStyle=a.hair;g.beginPath();g.ellipse(0,-12,10,13,0,0,Math.PI*2);g.fill();
@@ -329,7 +356,11 @@ function drawCharacterAppearance(g,ent,stride=0){
      g.strokeStyle=pair?a.skin:cloth;g.lineWidth=pair?3.8:5.1;
      g.beginPath();g.moveTo(side*(half-1),root);
      g.quadraticCurveTo(side*(half+bend+1),root+5,handX,handY);g.stroke();
-     g.fillStyle=a.skin;g.beginPath();g.ellipse(handX,handY,2.5,3,0,0,Math.PI*2);g.fill();
+     if(mechanical)avatarShape(g,'#99adbd',[[handX-2.2,handY-2],[handX+2.2,handY-2],[handX+2.5,handY+2],[handX-1.8,handY+3]]);
+     else{
+       g.fillStyle=a.skin;g.beginPath();g.ellipse(handX,handY,2.15,2.8,-side*.22,0,Math.PI*2);g.fill();
+       if(scaled)for(const offset of [-1,1])avatarShape(g,'#d3c09d',[[handX+offset-.5,handY+1.7],[handX+offset+.5,handY+1.7],[handX+offset,handY+3.7]]);
+     }
    }
  }
  g.fillStyle=cloth;g.strokeStyle='#202935';g.lineWidth=1.3;
@@ -351,6 +382,10 @@ function drawCharacterAppearance(g,ent,stride=0){
  g.strokeStyle='rgba(236,220,201,.27)';g.lineWidth=.75;
  g.beginPath();g.moveTo(-hips+2,10.2);g.quadraticCurveTo(0,12,hips-2,10.2);g.stroke();
  drawProfessionDetails(g,outfit,half,hips);
+ if(mechanical){
+   avatarShape(g,'#566d80',[[-6,-6],[6,-6],[5,0],[0,3],[-5,0]]);
+   g.fillStyle='#87ddd7';g.fillRect(-2,-3,4,1.5);
+ }
  g.strokeStyle='rgba(232,217,204,.35)';g.lineWidth=1;
  g.beginPath();g.moveTo(-4,-7);g.quadraticCurveTo(0,-3,4,-7);g.stroke();
  g.strokeStyle='rgba(18,23,32,.60)';g.lineWidth=2.3;
@@ -406,7 +441,9 @@ function drawCharacterPortrait(id,ent){
    picture.width*.52,picture.height*.55,picture.width*.62);
  light.addColorStop(0,'#3b5167');light.addColorStop(1,'#121b28');
  g.fillStyle=light;g.fillRect(0,0,picture.width,picture.height);
- g.save();g.translate(picture.width/2,picture.height/2+4);g.scale(2.2,2.2);
+ const {form}=characterAnatomy(ent,characterAppearance(ent));
+ const zoom=form==='dragon'?Math.min(2.2,picture.width/60,picture.height/65):2.2;
+ g.save();g.translate(picture.width/2,picture.height/2+(form==='dragon'?10:4));g.scale(zoom,zoom);
  drawCharacterAppearance(g,ent);g.restore();
 }
 
