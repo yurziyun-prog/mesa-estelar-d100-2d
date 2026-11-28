@@ -65,20 +65,23 @@ function renderArchitectLibrary(){
  if(architectCategory==='brush'){selectTool('brush');syncArchitectBrushUI();}
 
  document.getElementById('architectLibraryTitle').textContent=LIBRARY_LABELS[architectCategory];
- document.getElementById('architectLibraryDescription').textContent=architectCategory==='brush'?'Pinte diretamente no mapa com formatos e texturas diferentes.':architectCategory==='create'?'Um espaço preparado para editores futuros.':architectCategory==='downloads'?'Selecione um pacote Kenney e escolha um recurso para usar no mapa. Licença CC0.':architectCategory==='terrain'?'Terrenos naturais: grama, água, areia, lama e solo de cavernas. Pisos de construção ficam em Elementos de construção.':
+ document.getElementById('architectLibraryDescription').textContent=architectCategory==='brush'?'Pinte diretamente no mapa com formatos e texturas diferentes.':architectCategory==='create'?'Um espaço preparado para editores futuros.':architectCategory==='downloads'?'Selecione um pacote e escolha um recurso para usar no mapa.':architectCategory==='terrain'?'Terrenos naturais: grama, água, areia, lama e solo de cavernas. Pisos de construção ficam em Elementos de construção.':
   architectCategory==='characters'?'Selecione um modelo e clique no mapa para colocá-lo.':
   'Os novos itens seguem a coleção de construção selecionada, sem modificar os anteriores.';
  const query=(document.getElementById('architectLibrarySearch')?.value||'').toLocaleLowerCase('pt-BR');
  grid.replaceChildren();
  const packs=document.getElementById('architectDownloadPack');
  packs.hidden=architectCategory!=='downloads';
+ document.getElementById('architectPackCredits').hidden=packs.hidden;
  if(packs.options.length===1){
    for(const [id,label] of kenneyExtraPacks)packs.add(new Option(label,id));
  }
  const pack=architectCategory==='downloads'&&packs.value;
  const available=pack?extraKenneyEntries(pack):catalogEntries(architectCategory);
- const curated=architectCategory==='props'?curatedKenneyProps.map(([id,label])=>
-   [id,'',label,'downloadProp','Decoração para depósitos e postos avançados']):[];
+ const curated=architectCategory==='props'?[
+   ...curatedKenneyProps.map(([id,label])=>[id,'',label,'downloadProp','Decoração para depósitos e postos avançados']),
+   ...curatedSciFiProps.map(([id,label])=>[id,'',label,'downloadProp','Decoração para hangares e estações'])
+ ]:[];
  const matching=[...available,...curated].filter(([id,,label])=>
    (label.toLocaleLowerCase('pt-BR').includes(query)||translateSiteText(label).toLocaleLowerCase().includes(query))&&
    isItemInBuildCollection(id,architectCategory));

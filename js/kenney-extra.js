@@ -1,5 +1,6 @@
 const extraKenneySprites=new Map();
 const extraKenneyImages=new Map();
+const curatedSciFiSizes=new Map(curatedSciFiProps.map(([id,,size])=>[id,size]));
 for(const [pack,label,cell,names] of kenneyExtraPacks){
  names.forEach((name,index)=>extraKenneySprites.set('kenney_extra_'+pack+'_'+index,{
    pack,label:label+' · '+name,cell,x:(index%16)*cell,y:Math.floor(index/16)*cell
@@ -23,7 +24,7 @@ function drawExtraKenneySprite(g,sprite,x,y,size){
 function drawExtraKenneyProp(prop){
  const sprite=extraKenneySprites.get(prop.type);
  if(!sprite)return false;
- const size=sprite.pack==='pirates'||sprite.pack==='space'?78:34;
+ const size=curatedSciFiSizes.get(prop.type)??(['pirates','space','starships','ultimate_spaceships'].includes(sprite.pack)?78:34);
  ctx.save();
  ctx.translate(prop.x,prop.y);
  ctx.rotate((prop.rot||0)*Math.PI/2);
